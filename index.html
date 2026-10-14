@@ -1667,7 +1667,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   }
 
   function renderSearch(){
-    __prepareLocalifyDerived();
+    // Use the catalog index prepared by the normal app render instead of rebuilding
+    // every track, album and artist index each time the search query changes.
     const q=state.search.trim().toLowerCase();
     const catalog=__localifyCatalog();
     const ft=q?catalog.searchTracks.filter(x=>x.text.includes(q)).map(x=>x.t):state.tracks;
@@ -4323,14 +4324,48 @@ function openPresetsMenu(){
   },{passive:true});
   let __localifySearchTimer=0;
     $("#profileMenu").addEventListener("click",e=>{const item=e.target.closest?.("[data-profile-menu-action]");if(!item)return;e.preventDefault();e.stopPropagation();const action=item.getAttribute("data-profile-menu-action");closeProfileMenu();if(action==="profile")showProfile();else if(action==="stats")showListeningStats();else if(action==="settings")showAccountSettings()});
-$("#globalSearch").addEventListener("input",e=>{
+function submitGlobalSearch(){
+    const input=$("#globalSearch");
+    if(!input)return;
+    state.search=input.value;
+    clearTimeout(__localifySearchTimer);
+    localifyClearPages();
+    if(state.search.trim()){
+      state.currentView="search";
+      state.detail=null;
+      state.selected=[];
+      renderNav();
+      renderSearch();
+      $("#main").scrollTop=0;
+    }else if(state.currentView==="search"){
+      state.currentView="home";
+      state.detail=null;
+      render();
+    }
+  }
+  const globalSearchInput=$("#globalSearch");
+  globalSearchInput.addEventListener("input",e=>{
     state.search=e.target.value;
+    state.detail=null;
     localifyClearPages();
     clearTimeout(__localifySearchTimer);
     __localifySearchTimer=setTimeout(()=>{
-      if(state.search.trim()){state.currentView="search";renderSearch()}
-      else if(state.currentView==="search"){state.currentView="home";render()}
+      if(state.search.trim()){
+        state.currentView="search";
+        state.detail=null;
+        renderNav();
+        renderSearch();
+      }else if(state.currentView==="search"){
+        state.currentView="home";
+        render();
+      }
     },90);
+  });
+  globalSearchInput.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){
+      e.preventDefault();
+      submitGlobalSearch();
+    }
   });
   $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#profileBtn").onclick=e=>{e.preventDefault();e.stopPropagation();toggleProfileMenu()};$("#discordTopBtn").onclick=openDiscordSetup;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#presetBtn").onclick=openPresetsMenu;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importPresetFile(f,pendingExpectedPresetKind)};
   $$("#nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
