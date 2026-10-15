@@ -261,3 +261,5 @@ int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
  std::thread(server).detach();std::thread(rpcLoop).detach();MSG msg;while(GetMessageW(&msg,0,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}Run=false;disconnectDiscord();WSACleanup();GdiplusShutdown(GP);return 0;
 }
 // Clean rebuild trigger: stable, resizable Windows desktop player 4.4 without asset tooltip text.
+// Clean rebuild trigger: stable, resizable Windows desktop player 4.1.
+// Static MinGW runtime verification build.
