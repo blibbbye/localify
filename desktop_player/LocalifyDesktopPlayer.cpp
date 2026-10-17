@@ -30,7 +30,7 @@ using namespace Gdiplus;
 static const int PORT=4219;
 static const char* CLIENT_ID="1550620411740561568";
 static const char* DEFAULT_COVER_URL="https://raw.githubusercontent.com/blibbbye/Localify/main/favicon.png";
-struct Presence{bool playing=false,shuffle=false;std::string song,artist,album,cover,repeat="off";double pos=0,dur=0,volume=0.9;uint64_t version=0;};
+struct Presence{bool playing=false,shuffle=false;std::string song,artist,album,cover,localCoverData,repeat="off";double pos=0,dur=0,volume=0.9;uint64_t version=0;};
 struct Cmd{uint64_t seq=0;std::string action;double value=0;};
 static HWND H=nullptr;static ULONG_PTR GP=0;static std::mutex M;
 static Presence P;static Cmd C;static std::unique_ptr<Bitmap> Cover;static std::string CoverUrl;
@@ -116,23 +116,68 @@ static std::string req(SOCKET s){
  }
  return d;
 }
+static std::vector<BYTE> decodeBase64(const std::string&s){
+ static const std::string chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+ std::vector<BYTE> out;out.reserve(s.size()*3/4);
+ uint32_t buffer=0;int bits=-8;
+ for(unsigned char ch:s){
+  if(ch=='=')break;
+  size_t v=chars.find((char)ch);if(v==std::string::npos)continue;
+  buffer=(buffer<<6)|(uint32_t)v;bits+=6;
+  if(bits>=0){out.push_back((BYTE)((buffer>>bits)&0xFF));bits-=8;}
+ }
+ return out;
+}
 static void coverLoad(std::string url,uint64_t token){
  std::thread([url,token]{
   if(url.empty())return;
-  HINTERNET se=WinHttpOpen(L"LocalifyDesktopPlayer/3",WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,0,0,0);if(!se)return;
-  URL_COMPONENTS u{};u.dwStructSize=sizeof(u);wchar_t host[256]{},path[4096]{};u.lpszHostName=host;u.dwHostNameLength=256;u.lpszUrlPath=path;u.dwUrlPathLength=4096;
-  std::wstring wu=W(url);std::vector<BYTE> bytes;HINTERNET co=nullptr,re=nullptr;
-  if(WinHttpCrackUrl(wu.c_str(),0,0,&u)){co=WinHttpConnect(se,host,u.nPort,0);if(co)re=WinHttpOpenRequest(co,L"GET",path,0,0,0,(u.nScheme==INTERNET_SCHEME_HTTPS)?WINHTTP_FLAG_SECURE:0);}
-  if(re&&WinHttpSendRequest(re,0,0,0,0,0,0)&&WinHttpReceiveResponse(re,0)){
-   for(;;){DWORD n=0;if(!WinHttpQueryDataAvailable(re,&n)||!n)break;size_t z=bytes.size();bytes.resize(z+n);DWORD got=0;if(!WinHttpReadData(re,bytes.data()+z,n,&got)){bytes.resize(z);break;}bytes.resize(z+got);if(bytes.size()>8*1024*1024){bytes.clear();break;}}
+  std::vector<BYTE> bytes;
+  const size_t base64Marker=url.find(";base64,");
+  if(url.rfind("data:image/",0)==0&&base64Marker!=std::string::npos){
+   bytes=decodeBase64(url.substr(base64Marker+8));
+  }else if(url.rfind("https://",0)==0||url.rfind("http://",0)==0){
+   HINTERNET se=WinHttpOpen(L"LocalifyDesktopPlayer/4",WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,0,0,0);
+   if(se){
+    URL_COMPONENTS u{};u.dwStructSize=sizeof(u);wchar_t host[256]{},path[4096]{};
+    u.lpszHostName=host;u.dwHostNameLength=256;u.lpszUrlPath=path;u.dwUrlPathLength=4096;
+    HINTERNET co=nullptr,re=nullptr;std::wstring wu=W(url);
+    if(WinHttpCrackUrl(wu.c_str(),0,0,&u)){
+     co=WinHttpConnect(se,host,u.nPort,0);
+     if(co)re=WinHttpOpenRequest(se?co:nullptr,L"GET",path,0,0,0,(u.nScheme==INTERNET_SCHEME_HTTPS)?WINHTTP_FLAG_SECURE:0);
+    }
+    if(re&&WinHttpSendRequest(re,0,0,0,0,0,0)&&WinHttpReceiveResponse(re,0)){
+     for(;;){
+      DWORD n=0;if(!WinHttpQueryDataAvailable(re,&n)||!n)break;
+      if(bytes.size()+n>8*1024*1024){bytes.clear();break;}
+      size_t offset=bytes.size();bytes.resize(offset+n);DWORD got=0;
+      if(!WinHttpReadData(re,bytes.data()+offset,n,&got)){bytes.resize(offset);break;}
+      bytes.resize(offset+got);
+     }
+    }
+    if(re)WinHttpCloseHandle(re);if(co)WinHttpCloseHandle(co);WinHttpCloseHandle(se);
+   }
   }
   std::unique_ptr<Bitmap> b;
-  if(!bytes.empty()){HGLOBAL h=GlobalAlloc(GMEM_MOVEABLE,bytes.size());if(h){void*p=GlobalLock(h);memcpy(p,bytes.data(),bytes.size());GlobalUnlock(h);IStream*st=nullptr;if(SUCCEEDED(CreateStreamOnHGlobal(h,TRUE,&st))){Bitmap*x=Bitmap::FromStream(st,FALSE);if(x&&x->GetLastStatus()==Ok){
+  if(!bytes.empty()){
+   HGLOBAL h=GlobalAlloc(GMEM_MOVEABLE,bytes.size());
+   if(h){
+    void*p=GlobalLock(h);
+    if(p){memcpy(p,bytes.data(),bytes.size());GlobalUnlock(h);}
+    IStream*st=nullptr;
+    if(SUCCEEDED(CreateStreamOnHGlobal(h,TRUE,&st))){
+     Bitmap*x=Bitmap::FromStream(st,FALSE);
+     if(x&&x->GetLastStatus()==Ok){
       UINT bw=x->GetWidth(),bh=x->GetHeight();
       std::unique_ptr<Bitmap> copy(new Bitmap(bw,bh,PixelFormat32bppARGB));
-      if(copy&&copy->GetLastStatus()==Ok){Graphics cg(copy.get());cg.SetInterpolationMode(InterpolationModeHighQualityBicubic);cg.DrawImage(x,0,0,(INT)bw,(INT)bh);b=std::move(copy);}
-    }delete x;st->Release();}else GlobalFree(h);}}
-  if(re)WinHttpCloseHandle(re);if(co)WinHttpCloseHandle(co);WinHttpCloseHandle(se);
+      if(copy&&copy->GetLastStatus()==Ok){
+       Graphics cg(copy.get());cg.SetInterpolationMode(InterpolationModeHighQualityBicubic);
+       cg.DrawImage(x,0,0,(INT)bw,(INT)bh);b=std::move(copy);
+      }
+     }
+     delete x;st->Release();
+    }else GlobalFree(h);
+   }
+  }
   if(b){std::lock_guard<std::mutex>l(M);if(token==CoverToken)Cover=std::move(b);}
   else if(url!=DEFAULT_COVER_URL){coverLoad(DEFAULT_COVER_URL,token);return;}
   InvalidateRect(H,nullptr,FALSE);
@@ -144,8 +189,8 @@ static void http(SOCKET s){
  if(m=="OPTIONS"){reply(s,"204 No Content","text/plain","");closesocket(s);return;}
  if(m=="GET"&&t.rfind("/health",0)==0){std::string body="{\"ok\":true,\"desktopPlayer\":true,\"discordConnected\":"+std::string(Discord.load()?"true":"false")+",\"serverListening\":"+std::string(Server.load()?"true":"false")+",\"port\":4219,\"version\":\"4.5\"}";reply(s,"200 OK","application/json",body);closesocket(s);return;}
  if(m=="GET"&&t.rfind("/control",0)==0){uint64_t q=0;size_t p=t.find("since=");if(p!=std::string::npos)q=_strtoui64(t.c_str()+p+6,0,10);std::lock_guard<std::mutex>l(M);std::string z=C.seq>q?"{\"seq\":"+std::to_string(C.seq)+",\"action\":\""+esc(C.action)+"\",\"value\":"+std::to_string(C.value)+"}":"{\"seq\":"+std::to_string(q)+"}";reply(s,"200 OK","application/json",z);closesocket(s);return;}
- if(m=="POST"&&t=="/presence"){size_t p=r.find("\r\n\r\n");if(p==std::string::npos){reply(s,"400 Bad Request","text/plain","bad");closesocket(s);return;}std::string body=r.substr(p+4);Presence n;n.playing=jb(body,"playing",true);n.shuffle=jb(body,"shuffle",false);n.song=js(body,"song");n.artist=js(body,"artist");n.album=js(body,"album");n.cover=js(body,"coverUrl");n.repeat=js(body,"repeat");if(n.repeat!="all"&&n.repeat!="one")n.repeat="off";n.pos=std::max(0.0,jn(body,"currentTime"));n.dur=std::max(0.0,jn(body,"duration"));n.volume=std::clamp(jn(body,"volume",0.9),0.0,1.0);
-  std::string displayCover=n.cover;if(displayCover.rfind("https://",0)!=0||displayCover.size()>300)displayCover=registryCoverUrl(n.album);if(displayCover.rfind("https://",0)!=0||displayCover.size()>300)displayCover=DEFAULT_COVER_URL;
+ if(m=="POST"&&t=="/presence"){size_t p=r.find("\r\n\r\n");if(p==std::string::npos){reply(s,"400 Bad Request","text/plain","bad");closesocket(s);return;}std::string body=r.substr(p+4);Presence n;n.playing=jb(body,"playing",true);n.shuffle=jb(body,"shuffle",false);n.song=js(body,"song");n.artist=js(body,"artist");n.album=js(body,"album");n.cover=js(body,"coverUrl");n.localCoverData=js(body,"localCoverData");n.repeat=js(body,"repeat");if(n.repeat!="all"&&n.repeat!="one")n.repeat="off";n.pos=std::max(0.0,jn(body,"currentTime"));n.dur=std::max(0.0,jn(body,"duration"));n.volume=std::clamp(jn(body,"volume",0.9),0.0,1.0);
+  std::string displayCover=n.localCoverData;if(displayCover.rfind("data:image/jpeg;base64,",0)!=0||displayCover.size()>500000)displayCover=n.cover;if(displayCover.rfind("https://",0)!=0||displayCover.size()>300){displayCover=registryCoverUrl(n.album);}if(displayCover.rfind("https://",0)!=0||displayCover.size()>300)displayCover=DEFAULT_COVER_URL;
   bool nc=false;uint64_t tok=0;{std::lock_guard<std::mutex>l(M);n.version=P.version+1;P=n;if(CoverUrl!=displayCover){CoverUrl=displayCover;++CoverToken;tok=CoverToken;nc=true;}}
   if(nc){{std::lock_guard<std::mutex>l(M);Cover.reset();}InvalidateRect(H,nullptr,FALSE);coverLoad(displayCover,tok);}
   else InvalidateRect(H,nullptr,FALSE);
