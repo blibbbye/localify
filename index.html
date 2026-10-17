@@ -1874,6 +1874,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   let discordSocket=null;
   let discordReconnectTimer=null;
   let discordLastPayloadKey="";
+  let discordLastSentLocalCoverData="";
   let discordLastSentAt=0;
   let discordPresenceRequest=0;
   const discordCoverCache=new Map();
@@ -2355,20 +2356,23 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
 
   const discordLocalArtworkCache=new Map();
   async function localArtworkForDiscord(t){
-    if(!t)return "";
+    if(!t)return {data:"",key:"none:unknown"};
     const album=albumById(t.albumId);
     const candidates=[t.cover,album?.cover,...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
     const source=candidates.find(v=>typeof v==="string"&&/^data:image\/[^,]+;base64,/i.test(v.trim())&&v.length<=5*1024*1024);
-    if(!source)return "";
+    if(!source)return {data:"",key:"none:"+String(t.id||"track")};
     const cached=discordLocalArtworkCache.get(t.id);
-    if(cached&&cached.source===source)return cached.data;
+    if(cached&&cached.source===source)return {data:cached.data,key:cached.key};
+    let hash=2166136261;
+    for(let i=0;i<source.length;i++){hash^=source.charCodeAt(i);hash=Math.imul(hash,16777619)}
+    const key="image-"+source.length+"-"+(hash>>>0).toString(36);
     return new Promise(resolve=>{
       const img=new Image();let done=false;
       const finish=value=>{
         if(done)return;done=true;clearTimeout(timer);
         img.onload=null;img.onerror=null;
-        if(value)discordLocalArtworkCache.set(t.id,{source,data:value});
-        resolve(value||"");
+        if(value)discordLocalArtworkCache.set(t.id,{source,data:value,key});
+        resolve({data:value||"",key:value?key:"none:"+String(t.id||"track")});
       };
       const timer=setTimeout(()=>finish(""),1800);
       img.onload=()=>{
@@ -2410,8 +2414,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     const start=Math.round(Date.now()-currentTime*1000);
     const end=duration>0?Math.round(start+duration*1000):0;
 
-    const localCoverData=await localArtworkForDiscord(t);
-    return {kind:"presence",playing:!!playing,song,artist,album:albumName(t)||"",coverUrl,localCoverData,currentTime,duration,start,end,
+    const localArtwork=await localArtworkForDiscord(t);
+    return {kind:"presence",playing:!!playing,song,artist,album:albumName(t)||"",coverUrl,localCoverData:localArtwork.data,localCoverKey:localArtwork.key,currentTime,duration,start,end,
       volume:Number.isFinite(Number(state.settings.volume))?Math.max(0,Math.min(1,Number(state.settings.volume))):0.9,
       shuffle:!!state.settings.shuffle,repeat:["all","one"].includes(state.settings.repeat)?state.settings.repeat:"off"};
   }
@@ -2429,10 +2433,14 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     let p;
     try{p=await discordPayload(t,true,false)}catch(e){
       console.warn("Localify Discord payload build failed",e);
-      p={kind:"presence",playing:true,song:sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),localCoverData:await localArtworkForDiscord(t).catch(()=>""),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0,volume:Number(state.settings.volume??.9),shuffle:!!state.settings.shuffle,repeat:state.settings.repeat||"off"};
+      const localArtwork=await localArtworkForDiscord(t).catch(()=>({data:"",key:"none:"+String(t.id||"track")}));
+      p={kind:"presence",playing:true,song:sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),localCoverData:localArtwork.data,localCoverKey:localArtwork.key,currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0,volume:Number(state.settings.volume??.9),shuffle:!!state.settings.shuffle,repeat:state.settings.repeat||"off"};
     }
     if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
-    void sendDesktopBridgeMessage(p);
+    const bridgePayload={...p};
+    if(p.localCoverData&&p.localCoverData===discordLastSentLocalCoverData)delete bridgePayload.localCoverData;
+    else if(p.localCoverData)discordLastSentLocalCoverData=p.localCoverData;
+    void sendDesktopBridgeMessage(bridgePayload);
     const key=[p.song,p.artist,p.coverUrl,Math.floor(p.currentTime/5),Math.round(p.duration)].join("|"),now=Date.now();
     if(force||key!==discordLastPayloadKey||now-discordLastSentAt>=4500){
       discordLastPayloadKey=key;discordLastSentAt=now;sendDiscordMessage(p);
