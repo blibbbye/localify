@@ -60,7 +60,7 @@ static std::string httpText(const std::string&url){
  if(re)WinHttpCloseHandle(re);if(co)WinHttpCloseHandle(co);WinHttpCloseHandle(se);return out;
 }
 static std::string jsonStringForKey(const std::string&j,const std::string&key){
- std::string q="\\\""+esc(key)+"\\\"";
+ std::string q="\""+esc(key)+"\"";
  size_t p=j.find(q);if(p==std::string::npos)return"";
  p=j.find(':',p+q.size());if(p==std::string::npos)return"";
  ++p;while(p<j.size()&&isspace((unsigned char)j[p]))++p;
@@ -181,7 +181,7 @@ static bool readRpcPacket(HANDLE pipe,uint32_t&opcode,std::string&payload,DWORD 
  if(!readExactPipe(pipe,(char*)header,sizeof(header),timeoutMs))return false;
  opcode=header[0];uint32_t length=header[1];
  if(length>2*1024*1024)return false;
- payload.assign(length,'\\0');
+ payload.assign(length,'\0');
  return length==0||readExactPipe(pipe,payload.data(),length,timeoutMs);
 }
 static void disconnectDiscord(){
@@ -250,7 +250,7 @@ static void txt(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float
 static void center(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float size,const Color&c,bool bold=false){FontFamily ff(L"Segoe UI");Font f(&ff,size,bold?FontStyleBold:FontStyleRegular,UnitPixel);SolidBrush b(c);StringFormat sf;sf.SetAlignment(StringAlignmentCenter);sf.SetLineAlignment(StringAlignmentCenter);g.DrawString(s,-1,&f,RectF(x,y,w,h),&sf,&b);}
 static RECT closeR(){return{430,8,468,38};}static RECT minR(){return{400,8,430,38};}
 static RECT coverRectFor(int w,int h){
- int topPad=18, bottomPad=86;
+ int topPad=18, bottomPad=128;
  int size=std::max(96,std::min(220,std::min(w/3,std::max(96,h-topPad-bottomPad))));
  int y=topPad+20;
  return RECT{22,y,22+size,y+size};
@@ -267,19 +267,17 @@ static void paint(HDC out){
  SolidBrush glow(Color(18,125,211,252));g.FillEllipse(&glow,-90,-100,340,180);
  txt(g,L"LOCALIFY",22,16,160,24,12,Color(255,125,211,252),true);
  Presence p;{
-   std::lock_guard<std::mutex> lock(M);
-   p=P;
+   std::lock_guard<std::mutex> lock(M);p=P;
  }
- RECT cr=coverRectFor(w,h);
- int coverW=cr.right-cr.left,coverH=cr.bottom-cr.top;
+ RECT cr=coverRectFor(w,h);int coverW=cr.right-cr.left,coverH=cr.bottom-cr.top;
  fill(g,(float)cr.left,(float)cr.top,(float)coverW,(float)coverH,16,Color(255,30,34,42));
  {
    std::lock_guard<std::mutex> lock(M);
-   if(Cover) g.DrawImage(Cover.get(),RectF((REAL)cr.left,(REAL)cr.top,(REAL)coverW,(REAL)coverH));
-   else center(g,L"♪",(float)cr.left,(float)cr.top,(float)coverW,(float)coverH,38,Color(255,125,211,252),true);
+   if(Cover)g.DrawImage(Cover.get(),RectF((REAL)cr.left,(REAL)cr.top,(REAL)coverW,(REAL)coverH));
+   else center(g,L"♫",(float)cr.left,(float)cr.top,(float)coverW,(float)coverH,38,Color(255,125,211,252),true);
  }
  float infoX=(float)cr.right+18;
- float infoW=(float)std::max<int>(150,(int)w-cr.right-34);
+ float infoW=(float)std::max<int>(120,(int)w-cr.right-34);
  std::wstring song=W(p.song.empty()?(p.playing?"Unknown song":"Nothing playing"):p.song);
  std::wstring artist=W(p.artist.empty()?"Unknown Artist":p.artist);
  txt(g,song.c_str(),infoX,(float)cr.top+4,infoW,34,20,Color(255,247,248,250),true);
@@ -289,16 +287,30 @@ static void paint(HDC out){
 
  float controlX=infoX;
  float controlW=(float)std::max<int>(150,(int)w-(int)controlX-22);
- int progressY=h-86;
+ int progressY=h-118;
  fill(g,controlX,(float)progressY,controlW,6,3,Color(255,43,48,58));
  double ratio=p.dur>0?std::clamp(p.pos/p.dur,0.0,1.0):0;
  if(ratio>0)fill(g,controlX,(float)progressY,controlW*(float)ratio,6,3,Color(255,125,211,252));
- float by=(float)progressY+16;
- fill(g,controlX,by,54,34,10,Color(255,30,35,44));center(g,L"‹",controlX,by,54,34,18,Color(255,214,220,228),true);
- fill(g,controlX+62,by,66,34,10,Color(255,125,211,252));center(g,p.playing?L"Ⅱ":L"▶",controlX+62,by,66,34,16,Color(255,7,16,24),true);
- fill(g,controlX+136,by,54,34,10,Color(255,30,35,44));center(g,L"›",controlX+136,by,54,34,18,Color(255,214,220,228),true);
- txt(g,L"Discord",22,(float)h-30,70,16,9,Server.load()?Color(255,130,240,160):Color(255,145,153,168),true);
- txt(g,Discord.load()?L"Connected":L"Waiting for Discord",(float)22+58,(float)h-30,180,16,9,
+ float by=(float)progressY+13;
+ fill(g,controlX,by,50,32,9,Color(255,30,35,44));center(g,L"PREV",controlX,by,50,32,9,Color(255,214,220,228),true);
+ fill(g,controlX+58,by,62,32,9,Color(255,125,211,252));center(g,p.playing?L"Ⅱ":L"▶",controlX+58,by,62,32,15,Color(255,7,16,24),true);
+ fill(g,controlX+128,by,50,32,9,Color(255,30,35,44));center(g,L"NEXT",controlX+128,by,50,32,9,Color(255,214,220,228),true);
+
+ float optionY=(float)h-59;
+ fill(g,controlX,optionY,52,25,7,p.shuffle?Color(255,125,211,252):Color(255,30,35,44));
+ center(g,L"SHUFFLE",controlX,optionY,52,25,8,p.shuffle?Color(255,7,16,24):Color(255,193,201,211),true);
+ fill(g,controlX+58,optionY,54,25,7,p.repeat!="off"?Color(255,125,211,252):Color(255,30,35,44));
+ center(g,p.repeat=="one"?L"REPEAT 1":L"REPEAT",controlX+58,optionY,54,25,8,p.repeat!="off"?Color(255,7,16,24):Color(255,193,201,211),true);
+ float volLabelX=controlX+120;
+ txt(g,L"VOL",volLabelX,optionY+5,24,15,8,Color(255,157,165,179),true);
+ float volX=volLabelX+27,volW=std::max(26.0f,controlX+controlW-volX-3);
+ fill(g,volX,optionY+10,volW,5,3,Color(255,43,48,58));
+ float volRatio=(float)std::clamp(p.volume,0.0,1.0);
+ if(volRatio>0)fill(g,volX,optionY+10,volW*volRatio,5,3,Color(255,125,211,252));
+ fill(g,volX+volW*volRatio-4,optionY+5,8,15,4,Color(255,225,243,255));
+
+ txt(g,L"Discord",22,(float)h-30,58,16,9,Server.load()?Color(255,130,240,160):Color(255,145,153,168),true);
+ txt(g,Discord.load()?L"Connected":L"Waiting for Discord",(float)80,(float)h-30,210,16,9,
      Discord.load()?Color(255,135,230,164):Color(255,145,153,168));
  BitBlt(out,0,0,w,h,m,0,0,SRCCOPY);
  SelectObject(m,old);DeleteObject(bm);DeleteDC(m);
@@ -315,18 +327,29 @@ static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
     POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};
     RECT rc{};GetClientRect(h,&rc);RECT cr=coverRectFor(rc.right,rc.bottom);
     float infoX=(float)cr.right+18;
-    int progressY=rc.bottom-86;
     float controlW=(float)std::max<int>(150,rc.right-(int)infoX-22);
+    int progressY=rc.bottom-118;
     if(p.y>=progressY-8&&p.y<=progressY+14&&p.x>=(int)infoX&&p.x<=(int)(infoX+controlW)){
       double d;{std::lock_guard<std::mutex> lock(M);d=P.dur;}
       if(d>0)issue("seek",std::clamp((p.x-infoX)/(double)controlW,0.0,1.0)*d);
       return 0;
     }
-    float by=(float)progressY+16;
-    if(p.y>=(int)by&&p.y<=(int)by+34){
-      if(p.x>=(int)infoX&&p.x<(int)infoX+54)issue("prev");
-      else if(p.x>=(int)infoX+62&&p.x<(int)infoX+128)issue("toggle");
-      else if(p.x>=(int)infoX+136&&p.x<(int)infoX+190)issue("next");
+    float by=(float)progressY+13;
+    if(p.y>=(int)by&&p.y<=(int)by+32){
+      if(p.x>=(int)infoX&&p.x<(int)infoX+50)issue("prev");
+      else if(p.x>=(int)infoX+58&&p.x<(int)infoX+120)issue("toggle");
+      else if(p.x>=(int)infoX+128&&p.x<(int)infoX+178)issue("next");
+      return 0;
+    }
+    float optionY=(float)rc.bottom-59;
+    if(p.y>=(int)optionY&&p.y<=(int)optionY+25){
+      if(p.x>=(int)infoX&&p.x<(int)infoX+52)issue("shuffle");
+      else if(p.x>=(int)infoX+58&&p.x<(int)infoX+112)issue("repeat");
+      else {
+        float volX=infoX+147.0f,volW=std::max(26.0f,infoX+controlW-volX-3);
+        if(p.x>=(int)volX&&p.x<=(int)(volX+volW))issue("volume",std::clamp((p.x-volX)/(double)volW,0.0,1.0));
+      }
+      return 0;
     }
     return 0;
   }
@@ -339,8 +362,8 @@ static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
 int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
  GdiplusStartupInput gi;if(GdiplusStartup(&GP,&gi,0)!=Ok)return 1;WSADATA wd;WSAStartup(MAKEWORD(2,2),&wd);
  WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.hInstance=hi;wc.lpfnWndProc=wnd;wc.lpszClassName=L"LocalifyPlayer3";wc.hCursor=LoadCursor(0,IDC_ARROW);RegisterClassExW(&wc);
- H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer3",L"Localify Desktop Player",
-  WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,560,340,0,0,hi,0);if(!H)return 1;
+ H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer3",L"Localify Discord Player",
+  WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,640,390,0,0,hi,0);if(!H)return 1;
  BOOL dark=TRUE;DwmSetWindowAttribute(H,DWMWA_USE_IMMERSIVE_DARK_MODE,&dark,sizeof(dark));
  SetWindowPos(H,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_SHOWWINDOW);
  ShowWindow(H,show);UpdateWindow(H);SetTimer(H,1,500,0);
