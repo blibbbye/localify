@@ -165,7 +165,7 @@ static bool pw(uint32_t op,const std::string&j){
  return true;
 }
 static bool readExactPipe(HANDLE pipe,char*dst,DWORD need,DWORD timeoutMs){
- DWORD have=0;const ULONGLONG deadline=GetTickCount64()+timeoutMs;
+ DWORD have=0;ULONGLONG deadline=GetTickCount64()+timeoutMs;
  while(have<need&&Run&&GetTickCount64()<deadline){
   DWORD available=0;
   if(!PeekNamedPipe(pipe,nullptr,0,nullptr,&available,nullptr))return false;
@@ -173,6 +173,8 @@ static bool readExactPipe(HANDLE pipe,char*dst,DWORD need,DWORD timeoutMs){
   DWORD take=std::min<DWORD>(available,need-have),got=0;
   if(!ReadFile(pipe,dst+have,take,&got,nullptr)||!got)return false;
   have+=got;
+  // Once a frame has started arriving, allow fragmented named-pipe writes to finish.
+  deadline=GetTickCount64()+std::max<DWORD>(timeoutMs,1000);
  }
  return have==need;
 }
