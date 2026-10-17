@@ -2289,6 +2289,14 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       return Promise.resolve(null);
     }
   }
+  function sendDiscordToDesktop(payload){
+    const bridgePayload={...payload};
+    if(payload.localCoverData){
+      if(payload.localCoverData===discordLastSentLocalCoverData)delete bridgePayload.localCoverData;
+      else discordLastSentLocalCoverData=payload.localCoverData;
+    }else discordLastSentLocalCoverData="";
+    return sendDesktopBridgeMessage(bridgePayload);
+  }
   async function checkDesktopPlayer(){
     if(state.settings.discordPresence===false){setDiscordUi("disabled","Discord Rich Presence is off");return}
     try{
@@ -2437,10 +2445,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       p={kind:"presence",playing:true,song:sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),localCoverData:localArtwork.data,localCoverKey:localArtwork.key,currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0,volume:Number(state.settings.volume??.9),shuffle:!!state.settings.shuffle,repeat:state.settings.repeat||"off"};
     }
     if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
-    const bridgePayload={...p};
-    if(p.localCoverData&&p.localCoverData===discordLastSentLocalCoverData)delete bridgePayload.localCoverData;
-    else if(p.localCoverData)discordLastSentLocalCoverData=p.localCoverData;
-    void sendDesktopBridgeMessage(bridgePayload);
+    void sendDiscordToDesktop(p);
     const key=[p.song,p.artist,p.coverUrl,Math.floor(p.currentTime/5),Math.round(p.duration)].join("|"),now=Date.now();
     if(force||key!==discordLastPayloadKey||now-discordLastSentAt>=4500){
       discordLastPayloadKey=key;discordLastSentAt=now;sendDiscordMessage(p);
@@ -2456,7 +2461,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       const updated={...p,coverUrl:resolvedCover,currentTime:Number(audio.currentTime||p.currentTime||0)};
       const updatedKey=[updated.song,updated.artist,updated.coverUrl,Math.floor(updated.currentTime/5),Math.round(updated.duration)].join("|");
       if(updatedKey===discordLastPayloadKey)return;
-      discordLastPayloadKey=updatedKey;discordLastSentAt=Date.now();sendDiscordMessage(updated);
+      discordLastPayloadKey=updatedKey;discordLastSentAt=Date.now();void sendDiscordToDesktop(updated);sendDiscordMessage(updated);
       window.dispatchEvent(new CustomEvent("localify:discord-presence",{detail:updated}));window.LocalifyDiscordPresence=updated;
     }).catch(e=>console.warn("Localify background Discord cover lookup failed",e));
   }
@@ -2464,6 +2469,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   function clearDiscordPresence(){
     discordPresenceRequest++;
     discordLastPayloadKey="";
+    discordLastSentLocalCoverData="";
     const t=trackById(state.currentId);
     if(t){
       void sendDesktopBridgeMessage({
