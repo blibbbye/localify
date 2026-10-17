@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
   <meta name="theme-color" content="#7dd3fc" />
-  <meta name="localify-build" content="2026-10-12-listening-stats-artwork-1" />
+  <meta name="localify-build" content="2026-10-18-discord-connector-fix-1" />
   <title>Localify — Your Music, Your Files</title>
   <meta name="description" content="Localify — your music, your files. A personal music library and player.">
   <meta property="og:type" content="website">
@@ -1882,6 +1882,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   // URLs make the same cover work in the website, Google Sites embeds, and Discord.
   const LOCALIFY_GITHUB_RAW_BASE="https://raw.githubusercontent.com/blibbbye/Localify/main/";
   const LOCALIFY_COVER_DIRECTORY=LOCALIFY_GITHUB_RAW_BASE+"covers/";
+  const LOCALIFY_DEFAULT_ART_URL=LOCALIFY_GITHUB_RAW_BASE+"favicon.png";
   const LOCALIFY_COVER_MAP_URL=LOCALIFY_GITHUB_RAW_BASE+"covers.json";
   const LOCALIFY_COVER_EXTENSIONS=[".jpg",".jpeg",".png",".webp",".gif",".avif"];
   const LOCALIFY_COVER_LOAD_TIMEOUT=3500;
@@ -1951,17 +1952,11 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   }
 
   function discordDirectCoverUrl(t){
-    const albumTitle=trackCoverReference(t);
-    const known=knownCoverUrlForTrack(t);
-    if(known)return known;
     const album=albumById(t?.albumId);
-    const raw=[safeExistingCover(albumTitle,t?.cover),safeExistingCover(albumTitle,album?.cover),...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
-    for(const value of raw){
-      if(typeof value!=="string"||!value.trim())continue;
-      const mapped=coverMapUrl(value);
-      if(mapped)return mapped;
-    }
-    return "";
+    const explicit=[t?.discordCoverUrl,album?.discordCoverUrl,t?.cover,album?.cover,
+      ...artistIdsForTrack(t).map(id=>artistById(id)?.image)]
+      .find(value=>typeof value==="string"&&/^https:\/\/[^\s]+$/i.test(value.trim()));
+    return explicit?String(explicit).trim():LOCALIFY_DEFAULT_ART_URL;
   }
   function normalizeCoverAlbumName(value){
     return String(value||"")
@@ -2249,13 +2244,14 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     if(discordCoverCache.has(cacheKey))return discordCoverCache.get(cacheKey)||"";
     if(discordCoverRequests.has(cacheKey))return discordCoverRequests.get(cacheKey);
     const request=(async()=>{
+      const a=albumById(t?.albumId);
+      const explicit=[t?.discordCoverUrl,a?.discordCoverUrl].find(v=>typeof v==="string"&&/^https:\/\/[^\s]+$/i.test(v.trim()));
+      if(explicit&&await checkImageUrl(explicit.trim()))return explicit.trim();
       await Promise.all([loadLocalifyCoverMap(),loadLocalifyCoverFileIndex()]);
       const external=externalCoverForAlbum(album);
-      if(external){
-        if(await checkImageUrl(external)){discordCoverCache.set(cacheKey,external);return external;}
-      }
+      if(external&&await checkImageUrl(external)){discordCoverCache.set(cacheKey,external);return external;}
       const builtin=builtInCoverForAlbum(album);
-      if(builtin){discordCoverCache.set(cacheKey,builtin);return builtin;}
+      if(builtin&&await checkImageUrl(builtin)){discordCoverCache.set(cacheKey,builtin);return builtin;}
       for(const filename of coverFileCandidates(album)){
         const url=new URL(encodeURIComponent(filename),LOCALIFY_COVER_DIRECTORY).href;
         if(await checkImageUrl(url)){discordCoverCache.set(cacheKey,url);return url}
@@ -2280,24 +2276,38 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
         cache:"no-store",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify(payload),
-        keepalive:true
-      }).catch(()=>null);
-    }catch{return Promise.resolve(null)}
+        keepalive:true,
+        targetAddressSpace:"loopback"
+      }).catch(e=>{
+        console.warn("Localify Discord bridge request failed",e);
+        setDiscordUi("error","Allow local-network access or start Discord Player");
+        return null;
+      });
+    }catch(e){
+      setDiscordUi("error","Allow local-network access or start Discord Player");
+      return Promise.resolve(null);
+    }
   }
   async function checkDesktopPlayer(){
+    if(state.settings.discordPresence===false){setDiscordUi("disabled","Discord Rich Presence is off");return}
     try{
-      const r=await fetch("http://127.0.0.1:4219/health",{cache:"no-store"});
-      if(!r.ok)return;
+      const r=await fetch("http://127.0.0.1:4219/health",{cache:"no-store",targetAddressSpace:"loopback"});
+      if(!r.ok){setDiscordUi("error","Localify Discord Player is not responding");return}
       const m=await r.json();
-      if(!m?.desktopPlayer)return;
-      setDiscordUi(m.discordConnected?"connected":"searching",m.discordConnected?"Localify Desktop Player connected":"Localify Desktop Player running");
+      if(!m?.desktopPlayer){setDiscordUi("error","Start Localify Discord Player");return}
+      if(m.discordConnected)setDiscordUi("connected","Discord connected");
+      else setDiscordUi("searching","Open Discord desktop to connect");
       const t=trackById(state.currentId);
       if(t&&!audio.paused)sendDiscordPresence(true);
-    }catch{}
+    }catch(e){
+      setDiscordUi("error","Allow local-network access for Localify");
+    }
   }
   async function pollDesktopControl(){
     try{
-      const r=await fetch("http://127.0.0.1:4219/control?since="+encodeURIComponent(desktopControlSeq),{cache:"no-store"});
+      const r=await fetch("http://127.0.0.1:4219/control?since="+encodeURIComponent(desktopControlSeq),{
+        cache:"no-store",targetAddressSpace:"loopback"
+      });
       if(!r.ok)return;
       const m=await r.json();
       if(!Number.isFinite(+m.seq)||+m.seq<=desktopControlSeq)return;
@@ -2308,6 +2318,18 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       else if(m.action==="play")audio.play().catch(()=>{});
       else if(m.action==="pause")audio.pause();
       else if(m.action==="seek"&&Number.isFinite(+m.value)&&audio.duration)audio.currentTime=Math.max(0,Math.min(audio.duration,+m.value));
+      else if(m.action==="volume"&&Number.isFinite(+m.value)){
+        const v=Math.max(0,Math.min(1,+m.value));state.settings.volume=v;audio.volume=v;await save();renderPlayer();sendDiscordPresence(true);
+      }else if(m.action==="shuffle"){
+        state.settings.shuffle=!state.settings.shuffle;
+        if(state.settings.shuffle&&state.currentId&&state.queue.length){
+          const current=state.currentId;state.queue=[current,...shuffleArr(state.queue.filter(id=>id!==current))];state.queueIndex=0;
+        }
+        await save();renderPlayer();renderCurrentViewWithoutScroll();sendDiscordPresence(true);
+      }else if(m.action==="repeat"){
+        state.settings.repeat=state.settings.repeat==="off"?"all":state.settings.repeat==="all"?"one":"off";
+        await save();renderPlayer();sendDiscordPresence(true);
+      }
     }catch{}
   }
 
@@ -2335,15 +2357,14 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     const song=sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song");
     const artists=artistNamesForTrack(t).map(x=>sanitizeDiscordText(x,"")).filter(Boolean);
     const artist=sanitizeDiscordText(artists.join(", "),"Unknown Artist");
-    let coverUrl=knownCoverUrlForTrack(t);
-
-    // Album title is used for artwork when present. For tracks without an album,
-    // the song title itself becomes the artwork lookup reference. Neither is sent
-    // as an album field in the Discord payload, and album artists are never used here.
+    const album=albumById(t?.albumId);
+    const explicitCover=[t?.discordCoverUrl,album?.discordCoverUrl].find(v=>typeof v==="string"&&/^https:\/\/[^\s]+$/i.test(v.trim()));
+    let coverUrl=explicitCover?explicitCover.trim():"";
+    if(resolveCover&&coverUrl&&!await checkImageUrl(coverUrl))coverUrl="";
     if(resolveCover&&!coverUrl){
       try{coverUrl=await resolveGithubAlbumCover(t)}catch(e){console.warn("Localify Discord cover resolver failed",e)}
     }
-    if(!coverUrl)coverUrl=discordDirectCoverUrl(t);
+    if(!coverUrl)coverUrl=LOCALIFY_DEFAULT_ART_URL;
 
     let duration=Number(audio.duration||t?.duration||0);
     if(!Number.isFinite(duration)||duration<0)duration=0;
@@ -2353,7 +2374,9 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     const start=Math.round(Date.now()-currentTime*1000);
     const end=duration>0?Math.round(start+duration*1000):0;
 
-    return {kind:"presence",playing:!!playing,song,artist,album:albumName(t)||"",coverUrl,currentTime,duration,start,end};
+    return {kind:"presence",playing:!!playing,song,artist,album:albumName(t)||"",coverUrl,currentTime,duration,start,end,
+      volume:Number.isFinite(Number(state.settings.volume))?Math.max(0,Math.min(1,Number(state.settings.volume))):0.9,
+      shuffle:!!state.settings.shuffle,repeat:["all","one"].includes(state.settings.repeat)?state.settings.repeat:"off"};
   }
 
   async function sendDiscordPresence(force=false){
@@ -2382,9 +2405,10 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     // Resolve GitHub artwork in the background. When it finishes, update the
     // same song only if the user is still listening to it.
     resolveGithubAlbumCover(t).then(cover=>{
-      if(!cover)return;
+      const resolvedCover=cover||LOCALIFY_DEFAULT_ART_URL;
+      if(resolvedCover===p.coverUrl)return;
       if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
-      const updated={...p,coverUrl:cover,currentTime:Number(audio.currentTime||p.currentTime||0)};
+      const updated={...p,coverUrl:resolvedCover,currentTime:Number(audio.currentTime||p.currentTime||0)};
       const updatedKey=[updated.song,updated.artist,updated.coverUrl,Math.floor(updated.currentTime/5),Math.round(updated.duration)].join("|");
       if(updatedKey===discordLastPayloadKey)return;
       discordLastPayloadKey=updatedKey;discordLastSentAt=Date.now();sendDiscordMessage(updated);
