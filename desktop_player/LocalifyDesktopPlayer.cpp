@@ -30,7 +30,7 @@ using namespace Gdiplus;
 static const int PORT=4219;
 static const char* CLIENT_ID="1550620411740561568";
 static const char* DEFAULT_COVER_URL="https://raw.githubusercontent.com/blibbbye/Localify/main/favicon.png";
-struct Presence{bool playing=false,shuffle=false;std::string song,artist,album,cover,localCoverData,repeat="off";double pos=0,dur=0,volume=0.9;uint64_t version=0;};
+struct Presence{bool playing=false,shuffle=false;std::string song,artist,album,cover,localCoverData,localCoverKey,repeat="off";double pos=0,dur=0,volume=0.9;uint64_t version=0;};
 struct Cmd{uint64_t seq=0;std::string action;double value=0;};
 static HWND H=nullptr;static ULONG_PTR GP=0;static std::mutex M;
 static Presence P;static Cmd C;static std::unique_ptr<Bitmap> Cover;static std::string CoverUrl;
@@ -189,9 +189,12 @@ static void http(SOCKET s){
  if(m=="OPTIONS"){reply(s,"204 No Content","text/plain","");closesocket(s);return;}
  if(m=="GET"&&t.rfind("/health",0)==0){std::string body="{\"ok\":true,\"desktopPlayer\":true,\"discordConnected\":"+std::string(Discord.load()?"true":"false")+",\"serverListening\":"+std::string(Server.load()?"true":"false")+",\"port\":4219,\"version\":\"4.5\"}";reply(s,"200 OK","application/json",body);closesocket(s);return;}
  if(m=="GET"&&t.rfind("/control",0)==0){uint64_t q=0;size_t p=t.find("since=");if(p!=std::string::npos)q=_strtoui64(t.c_str()+p+6,0,10);std::lock_guard<std::mutex>l(M);std::string z=C.seq>q?"{\"seq\":"+std::to_string(C.seq)+",\"action\":\""+esc(C.action)+"\",\"value\":"+std::to_string(C.value)+"}":"{\"seq\":"+std::to_string(q)+"}";reply(s,"200 OK","application/json",z);closesocket(s);return;}
- if(m=="POST"&&t=="/presence"){size_t p=r.find("\r\n\r\n");if(p==std::string::npos){reply(s,"400 Bad Request","text/plain","bad");closesocket(s);return;}std::string body=r.substr(p+4);Presence n;n.playing=jb(body,"playing",true);n.shuffle=jb(body,"shuffle",false);n.song=js(body,"song");n.artist=js(body,"artist");n.album=js(body,"album");n.cover=js(body,"coverUrl");n.localCoverData=js(body,"localCoverData");n.repeat=js(body,"repeat");if(n.repeat!="all"&&n.repeat!="one")n.repeat="off";n.pos=std::max(0.0,jn(body,"currentTime"));n.dur=std::max(0.0,jn(body,"duration"));n.volume=std::clamp(jn(body,"volume",0.9),0.0,1.0);
+ if(m=="POST"&&t=="/presence"){size_t p=r.find("\r\n\r\n");if(p==std::string::npos){reply(s,"400 Bad Request","text/plain","bad");closesocket(s);return;}std::string body=r.substr(p+4);Presence n;n.playing=jb(body,"playing",true);n.shuffle=jb(body,"shuffle",false);n.song=js(body,"song");n.artist=js(body,"artist");n.album=js(body,"album");n.cover=js(body,"coverUrl");n.localCoverData=js(body,"localCoverData");n.localCoverKey=js(body,"localCoverKey");n.repeat=js(body,"repeat");if(n.repeat!="all"&&n.repeat!="one")n.repeat="off";n.pos=std::max(0.0,jn(body,"currentTime"));n.dur=std::max(0.0,jn(body,"duration"));n.volume=std::clamp(jn(body,"volume",0.9),0.0,1.0);
   std::string displayCover=n.localCoverData;if(displayCover.rfind("data:image/jpeg;base64,",0)!=0||displayCover.size()>500000)displayCover=n.cover;if(displayCover.rfind("https://",0)!=0||displayCover.size()>300){displayCover=registryCoverUrl(n.album);}if(displayCover.rfind("https://",0)!=0||displayCover.size()>300)displayCover=DEFAULT_COVER_URL;
-  bool nc=false;uint64_t tok=0;{std::lock_guard<std::mutex>l(M);n.version=P.version+1;P=n;if(CoverUrl!=displayCover){CoverUrl=displayCover;++CoverToken;tok=CoverToken;nc=true;}}
+  bool nc=false;uint64_t tok=0;{std::lock_guard<std::mutex>l(M);
+   if(n.localCoverKey.empty()&&n.song==P.song&&n.album==P.album){n.localCoverKey=P.localCoverKey;n.localCoverData=P.localCoverData;}
+   else if(n.localCoverData.empty()&&!n.localCoverKey.empty()&&n.localCoverKey==P.localCoverKey)n.localCoverData=P.localCoverData;
+   n.version=P.version+1;P=n;if(CoverUrl!=displayCover){CoverUrl=displayCover;++CoverToken;tok=CoverToken;}}
   if(nc){{std::lock_guard<std::mutex>l(M);Cover.reset();}InvalidateRect(H,nullptr,FALSE);coverLoad(displayCover,tok);}
   else InvalidateRect(H,nullptr,FALSE);
   reply(s,"204 No Content","text/plain","");closesocket(s);return;}
