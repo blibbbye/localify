@@ -2353,6 +2353,42 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     return (text||fallback).slice(0,max);
   }
 
+  const discordLocalArtworkCache=new Map();
+  async function localArtworkForDiscord(t){
+    if(!t)return "";
+    const album=albumById(t.albumId);
+    const candidates=[t.cover,album?.cover,...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
+    const source=candidates.find(v=>typeof v==="string"&&/^data:image\/[^,]+;base64,/i.test(v.trim())&&v.length<=5*1024*1024);
+    if(!source)return "";
+    const cached=discordLocalArtworkCache.get(t.id);
+    if(cached&&cached.source===source)return cached.data;
+    return new Promise(resolve=>{
+      const img=new Image();let done=false;
+      const finish=value=>{
+        if(done)return;done=true;clearTimeout(timer);
+        img.onload=null;img.onerror=null;
+        if(value)discordLocalArtworkCache.set(t.id,{source,data:value});
+        resolve(value||"");
+      };
+      const timer=setTimeout(()=>finish(""),1800);
+      img.onload=()=>{
+        try{
+          const iw=img.naturalWidth||1,ih=img.naturalHeight||1,scale=Math.min(1,512/Math.max(iw,ih));
+          const canvas=document.createElement("canvas");
+          canvas.width=Math.max(1,Math.round(iw*scale));canvas.height=Math.max(1,Math.round(ih*scale));
+          const ctx=canvas.getContext("2d");
+          if(!ctx){finish("");return}
+          ctx.fillStyle="#10141a";ctx.fillRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img,0,0,canvas.width,canvas.height);
+          const data=canvas.toDataURL("image/jpeg",.8);
+          finish(data.startsWith("data:image/jpeg;base64,")&&data.length<=450000?data:"");
+        }catch{finish("")}
+      };
+      img.onerror=()=>finish("");
+      img.src=source;
+    });
+  }
+
   async function discordPayload(t,playing=true,resolveCover=true){
     const song=sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song");
     const artists=artistNamesForTrack(t).map(x=>sanitizeDiscordText(x,"")).filter(Boolean);
@@ -2374,7 +2410,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     const start=Math.round(Date.now()-currentTime*1000);
     const end=duration>0?Math.round(start+duration*1000):0;
 
-    return {kind:"presence",playing:!!playing,song,artist,album:albumName(t)||"",coverUrl,currentTime,duration,start,end,
+    const localCoverData=await localArtworkForDiscord(t);
+    return {kind:"presence",playing:!!playing,song,artist,album:albumName(t)||"",coverUrl,localCoverData,currentTime,duration,start,end,
       volume:Number.isFinite(Number(state.settings.volume))?Math.max(0,Math.min(1,Number(state.settings.volume))):0.9,
       shuffle:!!state.settings.shuffle,repeat:["all","one"].includes(state.settings.repeat)?state.settings.repeat:"off"};
   }
@@ -2392,7 +2429,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     let p;
     try{p=await discordPayload(t,true,false)}catch(e){
       console.warn("Localify Discord payload build failed",e);
-      p={kind:"presence",playing:true,song:sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0};
+      p={kind:"presence",playing:true,song:sanitizeDiscordText(displayTrackTitle(t,true),"Unknown song"),artist:sanitizeDiscordText(artistName(t),"Unknown Artist"),coverUrl:discordDirectCoverUrl(t),localCoverData:await localArtworkForDiscord(t).catch(()=>""),currentTime:Number(audio.currentTime||0),duration:Number(audio.duration||t?.duration||0),start:Math.round(Date.now()-Number(audio.currentTime||0)*1000),end:0,volume:Number(state.settings.volume??.9),shuffle:!!state.settings.shuffle,repeat:state.settings.repeat||"off"};
     }
     if(requestId!==discordPresenceRequest||state.currentId!==t.id||audio.paused||state.settings.discordPresence===false)return;
     void sendDesktopBridgeMessage(p);
