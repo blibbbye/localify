@@ -2497,17 +2497,18 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     const currentLine=t?`${esc(displayTrackTitle(t,true)||"Unknown song")} <span class="muted">• ${esc(artistName(t)||"Unknown artist")}</span>`:"Nothing is playing right now.";
     setModal(`<div class="modalHead"><h2>Discord</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
       <div class="discordPanel">
-        <div class="discordConnectCard"><div class="discordConnectIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></div><div><div class="discordConnectTitle" id="discordModalStatus">Checking Localify Desktop Player…</div><div class="discordConnectSub">Localify Desktop Player publishes your current song to Discord and provides a mini player with playback controls.</div></div></div>
+        <div class="discordConnectCard"><div class="discordConnectIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></div><div><div class="discordConnectTitle" id="discordModalStatus">Checking Localify Desktop Player…</div><div class="discordConnectSub">Localify Discord Player sends your current song and artist to Discord, shows locally saved album artwork in its mini player, and provides playback controls.</div></div></div>
         <div class="modalSection"><div class="modalSectionTitle">Listening status</div>
           <div style="display:flex;align-items:center;gap:10px;padding:7px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
-          <div class="help">OOoo shii</div>
+          <div class="help">If your browser asks to let Localify access your local network, choose Allow. This permission is needed for the website to talk to the desktop connector.</div>
           <div class="creditsBox" style="margin-top:10px"><div><strong>Now playing</strong><div class="subtle" style="margin-top:3px">${currentLine}</div></div></div>
         </div>
-        <div class="modalSection"><div class="modalSectionTitle">Localify Desktop Player and Discord </div>
-          <div class="discordStep"><div class="discordStepNum">1</div><div><strong>Download Localify Desktop Player</strong><p>Download and run the exe</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">2</div><div><strong>Open Discord on Desktop</strong><p>Make sure Discord Desktop is running.</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Run <code>Localify Discord Player.exe</code></strong><p>Keep the mini player running while you use Localify.</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">4</div><div><strong>Play music in Localify</strong><p></p></div></div>
+        <div class="modalSection"><div class="modalSectionTitle">Connect Localify to Discord</div>
+          <div class="discordStep"><div class="discordStepNum">1</div><div><strong>Download the latest connector</strong><p>Use the Download EXE button below.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">2</div><div><strong>Open Discord Desktop</strong><p>The desktop app must be running, not just Discord in a browser.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Run <code>Localify Discord Player.exe</code></strong><p>Leave the connector open while listening.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">4</div><div><strong>Allow local-network access</strong><p>Accept your browser’s prompt for Localify if it appears, then press Reconnect.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">5</div><div><strong>Play music in Localify</strong><p>Your current song and artist should appear on Discord.</p></div></div>
         </div>
         <div class="discordActions"><a class="primary btnIcon" href="https://raw.githubusercontent.com/blibbbye/Localify/main/Localify%20Discord%20Player.exe" download="Localify Discord Player.exe">${uiIcon("download")} Download EXE</a><button class="secondary btnIcon" id="discordReconnect">${uiIcon("repeat")} Reconnect</button><button class="secondary" id="discordDone">Done</button></div>
         <div class="help">The Desktop Player listens only on your computer at <code>127.0.0.1:4219</code>. Your music files stay in Localify.</div>
