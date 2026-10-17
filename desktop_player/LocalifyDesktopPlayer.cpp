@@ -205,6 +205,22 @@ static bool connectDiscord(){
  }
  Discord=false;InvalidateRect(H,nullptr,FALSE);return false;
 }
+static bool sendRpcCommand(const std::string&json,const std::string&nonce){
+ if(!connectDiscord()||!pw(1,json)){disconnectDiscord();return false;}
+ const std::string needle="\"nonce\":\""+nonce+"\"";
+ const ULONGLONG deadline=GetTickCount64()+1800;
+ while(Run&&GetTickCount64()<deadline){
+  uint32_t opcode=0;std::string payload;
+  DWORD remain=(DWORD)std::max<ULONGLONG>(1,deadline-GetTickCount64());
+  if(!readRpcPacket(Pipe,opcode,payload,std::min<DWORD>(remain,300)))continue;
+  if(opcode==3){if(!pw(4,payload)){disconnectDiscord();return false;}continue;}
+  if(opcode==2){disconnectDiscord();return false;}
+  if(opcode!=1||payload.find(needle)==std::string::npos)continue;
+  if(payload.find("\"evt\":\"ERROR\"")!=std::string::npos){OutputDebugStringA(payload.c_str());return false;}
+  return true;
+ }
+ return false;
+}
 static bool activity(const Presence&p){
  if(!connectDiscord())return false;
  std::string discordCover=p.cover;
@@ -214,8 +230,10 @@ static bool activity(const Presence&p){
  std::string q="{\"type\":2,\"name\":\""+esc(p.song.empty()?"Unknown song":p.song)+"\",\"details\":\"\",\"state\":\""+esc(p.artist.empty()?"Unknown Artist":p.artist)+"\",\"status_display_type\":1,\"instance\":false";
  q+=",\"assets\":{\"large_image\":\""+esc(discordCover)+"\",\"large_text\":\"Localify artwork\"}";
  if(end>0)q+=",\"timestamps\":{\"start\":"+std::to_string(start*1000)+",\"end\":"+std::to_string(end*1000)+"}";
- q+="}";std::string z="{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":"+std::to_string(GetCurrentProcessId())+",\"activity\":"+q+"},\"nonce\":\""+std::to_string(GetTickCount64())+"\"}";
- if(!pw(1,z)){disconnectDiscord();return false;}
+ q+="}";
+ std::string nonce=std::to_string(GetTickCount64());
+ std::string z="{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":"+std::to_string(GetCurrentProcessId())+",\"activity\":"+q+"},\"nonce\":\""+nonce+"\"}";
+ if(!sendRpcCommand(z,nonce)){disconnectDiscord();return false;}
  return true;
 }
 static void rpcLoop(){
@@ -228,7 +246,11 @@ static void rpcLoop(){
     else {sent=0;active=false;}
    }
   }else if(active){
-   if(connectDiscord())pw(1,"{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":"+std::to_string(GetCurrentProcessId())+",\"activity\":null},\"nonce\":\"clear\"}");
+   if(connectDiscord()){
+    std::string nonce="clear-"+std::to_string(GetTickCount64());
+    std::string z="{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":"+std::to_string(GetCurrentProcessId())+",\"activity\":null},\"nonce\":\""+nonce+"\"}";
+    if(!sendRpcCommand(z,nonce))disconnectDiscord();
+   }
    active=false;sent=p.version;
   }else connectDiscord();
   Sleep(1000);
