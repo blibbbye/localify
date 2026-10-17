@@ -234,17 +234,6 @@ static void rpcLoop(){
   Sleep(1000);
  }
 }
-static void fill(Graphics&g,float x,float y,float w,float h,float r,const Color&c){static void activity(const Presence&p){
- if(!connectDiscord())return;
- std::string discordCover=p.cover.empty()?registryCoverUrl(p.album):p.cover;
- long long start=(long long)time(nullptr)-(long long)std::max(0.0,p.pos),end=p.dur>0?start+(long long)p.dur:0;
- std::string q="{\"type\":2,\"name\":\""+esc(p.song.empty()?"Unknown song":p.song)+"\",\"details\":\"\",\"state\":\""+esc(p.artist.empty()?"Unknown Artist":p.artist)+"\",\"status_display_type\":1,\"instance\":false";
- if(!p.cover.empty()&&p.cover.size()<=300)q+=",\"assets\":{\"large_image\":\""+esc(p.cover)+"\"}";
- if(end>0)q+=",\"timestamps\":{\"start\":"+std::to_string(start*1000)+",\"end\":"+std::to_string(end*1000)+"}";
- q+="}";std::string z="{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":"+std::to_string(GetCurrentProcessId())+",\"activity\":"+q+"},\"nonce\":\""+std::to_string(GetTickCount64())+"\"}";
- if(!pw(1,z)){disconnectDiscord();}
-}
-static void rpcLoop(){uint64_t sent=0;bool active=false;while(Run){Presence p;{std::lock_guard<std::mutex>l(M);p=P;}if(p.playing){if(p.version!=sent){activity(p);sent=p.version;}active=true;}else if(active){if(connectDiscord())pw(1,"{\"cmd\":\"SET_ACTIVITY\",\"args\":{\"pid\":"+std::to_string(GetCurrentProcessId())+",\"activity\":null},\"nonce\":\"clear\"}");active=false;sent=p.version;}else connectDiscord();Sleep(1000);}}
 static void fill(Graphics&g,float x,float y,float w,float h,float r,const Color&c){GraphicsPath p;p.AddArc(x,y,r,r,180,90);p.AddArc(x+w-r,y,r,r,270,90);p.AddArc(x+w-r,y+h-r,r,r,0,90);p.AddArc(x,y+h-r,r,r,90,90);p.CloseFigure();SolidBrush b(c);g.FillPath(&b,&p);}
 static void txt(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float size,const Color&c,bool bold=false){FontFamily ff(L"Segoe UI");Font f(&ff,size,bold?FontStyleBold:FontStyleRegular,UnitPixel);SolidBrush b(c);StringFormat sf;sf.SetFormatFlags(StringFormatFlagsNoWrap);sf.SetTrimming(StringTrimmingEllipsisCharacter);g.DrawString(s,-1,&f,RectF(x,y,w,h),&sf,&b);}
 static void center(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float size,const Color&c,bool bold=false){FontFamily ff(L"Segoe UI");Font f(&ff,size,bold?FontStyleBold:FontStyleRegular,UnitPixel);SolidBrush b(c);StringFormat sf;sf.SetAlignment(StringAlignmentCenter);sf.SetLineAlignment(StringAlignmentCenter);g.DrawString(s,-1,&f,RectF(x,y,w,h),&sf,&b);}
