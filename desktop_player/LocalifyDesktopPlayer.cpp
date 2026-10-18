@@ -35,6 +35,9 @@ struct Cmd{uint64_t seq=0;std::string action;double value=0;};
 static HWND H=nullptr;static ULONG_PTR GP=0;static std::mutex M;
 static Presence P;static Cmd C;static std::unique_ptr<Bitmap> Cover;static std::string CoverUrl;
 static uint64_t CoverToken=0;static std::atomic<bool> Run{true},Server{false},Discord{false};static std::atomic<int> DiscordState{0};static std::atomic<bool> DiscordReconnectRequested{false};static HANDLE Pipe=INVALID_HANDLE_VALUE;
+static std::string DiscordClientId=CLIENT_ID;
+static std::wstring DiscordDiagnostic=L"Connecting to Discord...";
+static std::mutex DiscordStatusMutex;
 
 static std::wstring W(const std::string&s){if(s.empty())return L"";int n=MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),0,0);if(n<=0)return L"";std::wstring r(n,L'\0');MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),r.data(),n);return r;}
 static std::string esc(const std::string&s){std::string r;for(unsigned char c:s){switch(c){case '"':r+="\\\"";break;case '\\':r+="\\\\";break;case '\n':r+="\\n";break;case '\r':r+="\\r";break;default:r.push_back((char)c);}}return r;}
@@ -42,6 +45,57 @@ static std::string js(const std::string&j,const char*k){
  std::string q="\"";q+=k;q+="\"";size_t p=j.find(q);if(p==std::string::npos)return"";p=j.find(':',p+q.size());if(p==std::string::npos)return"";++p;while(p<j.size()&&isspace((unsigned char)j[p]))++p;if(p>=j.size()||j[p]!='"')return"";++p;
  std::string r;bool e=false;while(p<j.size()){char c=j[p++];if(e){e=false;if(c=='n')r+='\n';else r+=c;}else if(c=='\\')e=true;else if(c=='"')break;else r+=c;}return r;}
 static double jn(const std::string&j,const char*k,double fallback=0){std::string q="\"";q+=k;q+="\"";size_t p=j.find(q);if(p==std::string::npos)return fallback;p=j.find(':',p+q.size());if(p==std::string::npos)return fallback;return atof(j.c_str()+p+1);}
+
+static void setDiscordStatus(int state,const std::string&message){
+ DiscordState=state;
+ std::lock_guard<std::mutex> lock(DiscordStatusMutex);
+ DiscordDiagnostic=W(message);
+}
+static bool validClientId(const std::wstring&id){
+ if(id.size()<17||id.size()>20)return false;
+ for(wchar_t ch:id)if(ch<L'0'||ch>L'9')return false;
+ return true;
+}
+static std::wstring discordIniPath(){
+ wchar_t module[MAX_PATH]{};
+ DWORD n=GetModuleFileNameW(nullptr,module,MAX_PATH);
+ std::wstring p(module,n?n:0);
+ size_t slash=p.find_last_of(L"\\/");
+ if(slash==std::wstring::npos)return L"Localify Discord Player.ini";
+ p.resize(slash+1);p+=L"Localify Discord Player.ini";return p;
+}
+static void loadDiscordClientId(){
+ const std::wstring path=discordIniPath();
+ if(GetFileAttributesW(path.c_str())==INVALID_FILE_ATTRIBUTES){
+  HANDLE f=CreateFileW(path.c_str(),GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);
+  if(f!=INVALID_HANDLE_VALUE){
+   const char*sample="[Discord]\r\n; If the connector reports an invalid Application ID, replace this with your own ID from Discord Developer Portal > General Information.\r\nClientId=1550620411740561568\r\n";
+   DWORD written=0;WriteFile(f,sample,(DWORD)strlen(sample),&written,nullptr);CloseHandle(f);
+  }
+ }
+ wchar_t id[64]{};
+ GetPrivateProfileStringW(L"Discord",L"ClientId",W(CLIENT_ID).c_str(),id,64,path.c_str());
+ if(!validClientId(id)){
+  DiscordClientId.clear();
+  setDiscordStatus(4,"Invalid Application ID in Localify Discord Player.ini");
+  return;
+ }
+ int bytes=WideCharToMultiByte(CP_UTF8,0,id,-1,nullptr,0,nullptr,nullptr);
+ if(bytes<=1){DiscordClientId.clear();setDiscordStatus(4,"Invalid Application ID in Localify Discord Player.ini");return;}
+ std::string value((size_t)bytes,'\\0');
+ WideCharToMultiByte(CP_UTF8,0,id,-1,value.data(),bytes,nullptr,nullptr);
+ value.resize((size_t)bytes-1);
+ DiscordClientId=value;
+}
+static bool looksLikeInvalidClientId(const std::string&payload){
+ std::string lower=payload;
+ std::transform(lower.begin(),lower.end(),lower.begin(),[](unsigned char c){return (char)std::tolower(c);});
+ return lower.find("4000")!=std::string::npos ||
+        lower.find("4007")!=std::string::npos ||
+        lower.find("invalid client id")!=std::string::npos ||
+        lower.find("invalid client_id")!=std::string::npos ||
+        lower.find("invalid client")!=std::string::npos;
+}
 
 static std::string encPath(const std::string&s){
  const char* h="0123456789ABCDEF";std::string r;
@@ -250,9 +304,15 @@ static void disconnectDiscord(){
 static bool connectDiscord(){
  if(Pipe!=INVALID_HANDLE_VALUE&&Discord.load())return true;
  if(Pipe!=INVALID_HANDLE_VALUE)disconnectDiscord();
- DiscordState=0;
+ if(DiscordClientId.empty()){
+  setDiscordStatus(4,"Enter a valid Application ID in Localify Discord Player.ini");
+  return false;
+ }
+ setDiscordStatus(0,"Looking for Discord desktop...");
  bool pipeOpened=false;
- const std::string hello="{\"v\":1,\"client_id\":\""+std::string(CLIENT_ID)+"\"}";
+ int lastFailure=0;
+ std::string lastMessage;
+ const std::string hello="{\"v\":1,\"client_id\":\""+DiscordClientId+"\"}";
  for(int i=0;i<10&&Run;i++){
   for(int style=0;style<2&&Run;style++){
    wchar_t name[96];
@@ -262,53 +322,77 @@ static bool connectDiscord(){
    if(h==INVALID_HANDLE_VALUE)continue;
    pipeOpened=true;
    Pipe=h;
-   if(!pw(0,hello)){disconnectDiscord();continue;}
-   // Discord may send a ping before READY. Process protocol packets until
-   // READY arrives rather than assuming the first packet is the handshake reply.
-   const ULONGLONG deadline=GetTickCount64()+3500;
+   setDiscordStatus(0,"Discord IPC found; checking handshake...");
+   if(!pw(0,hello)){
+    lastFailure=6;lastMessage="Discord closed the IPC connection during handshake";
+    disconnectDiscord();continue;
+   }
+   const ULONGLONG deadline=GetTickCount64()+1800;
    while(Run&&Pipe!=INVALID_HANDLE_VALUE&&GetTickCount64()<deadline){
     uint32_t opcode=0;std::string response;
     DWORD remain=(DWORD)std::max<ULONGLONG>(1,deadline-GetTickCount64());
-    if(!readRpcPacket(Pipe,opcode,response,std::min<DWORD>(remain,3500)))break;
+    if(!readRpcPacket(Pipe,opcode,response,std::min<DWORD>(remain,1800))){
+     lastFailure=6;lastMessage="Discord IPC closed or timed out before READY; check the Application ID";
+     break;
+    }
     if(opcode==3){
-     if(!pw(4,response))break;
+     if(!pw(4,response)){lastFailure=6;lastMessage="Could not answer Discord IPC ping";break;}
      continue;
     }
-    if(opcode==2)break;
+    if(opcode==2){
+     OutputDebugStringA(("Localify Discord handshake CLOSE: "+response).c_str());
+     if(looksLikeInvalidClientId(response)){
+      setDiscordStatus(4,"Discord rejected the Application ID. Edit Localify Discord Player.ini");
+      disconnectDiscord();
+      return false;
+     }
+     lastFailure=5;lastMessage="Discord closed the IPC handshake; check its Application ID and restart Discord";
+     break;
+    }
     if(opcode!=1)continue;
     if(response.find("\"evt\":\"READY\"")!=std::string::npos){
-     Discord=true;DiscordState=1;InvalidateRect(H,nullptr,FALSE);return true;
+     Discord=true;setDiscordStatus(1,"Connected to Discord");
+     InvalidateRect(H,nullptr,FALSE);return true;
     }
     if(response.find("\"evt\":\"ERROR\"")!=std::string::npos){
-     OutputDebugStringA(response.c_str());
-     DiscordState=3;
+     OutputDebugStringA(("Localify Discord handshake ERROR: "+response).c_str());
+     if(looksLikeInvalidClientId(response)){
+      setDiscordStatus(4,"Discord rejected the Application ID. Edit Localify Discord Player.ini");
+      disconnectDiscord();
+      return false;
+     }
+     lastFailure=5;lastMessage="Discord returned an IPC error; restart Discord and retry";
      break;
     }
    }
-   disconnectDiscord();
+   if(Pipe!=INVALID_HANDLE_VALUE)disconnectDiscord();
   }
  }
  Discord=false;
- DiscordState=pipeOpened?3:2;
+ if(lastFailure==0){
+  if(pipeOpened){lastFailure=6;lastMessage="Discord pipe opened but no READY reply arrived; check the Application ID";}
+  else {lastFailure=2;lastMessage="Discord desktop app was not found; open the Discord desktop app";}
+ }
+ setDiscordStatus(lastFailure,lastMessage);
  InvalidateRect(H,nullptr,FALSE);
  return false;
 }
 
 static bool sendRpcCommand(const std::string&json,const std::string&nonce){
- if(!connectDiscord()||!pw(1,json)){DiscordState=3;disconnectDiscord();return false;}
+ if(!connectDiscord()||!pw(1,json)){setDiscordStatus(5,"Discord RPC command failed; reconnect the connector");disconnectDiscord();return false;}
  const std::string needle="\"nonce\":\""+nonce+"\"";
  const ULONGLONG deadline=GetTickCount64()+1800;
  while(Run&&GetTickCount64()<deadline){
   uint32_t opcode=0;std::string payload;
   DWORD remain=(DWORD)std::max<ULONGLONG>(1,deadline-GetTickCount64());
   if(!readRpcPacket(Pipe,opcode,payload,std::min<DWORD>(remain,300)))continue;
-  if(opcode==3){if(!pw(4,payload)){DiscordState=3;disconnectDiscord();return false;}continue;}
-  if(opcode==2){DiscordState=3;disconnectDiscord();return false;}
+  if(opcode==3){if(!pw(4,payload)){setDiscordStatus(5,"Could not answer Discord IPC ping");disconnectDiscord();return false;}continue;}
+  if(opcode==2){setDiscordStatus(5,"Discord closed the RPC connection");disconnectDiscord();return false;}
   if(opcode==1&&payload.find("\"evt\":\"ERROR\"")!=std::string::npos){OutputDebugStringA(payload.c_str());DiscordState=3;return false;}
   if(opcode!=1||payload.find(needle)==std::string::npos)continue;
   return true;
  }
- DiscordState=3;
+ setDiscordStatus(6,"Discord RPC response timed out");
  return false;
 }
 
@@ -415,9 +499,12 @@ static void paint(HDC out){
 
  txt(g,L"Discord",22,(float)h-30,58,16,9,Server.load()?Color(255,130,240,160):Color(255,145,153,168),true);
  const int ds=DiscordState.load();
- const wchar_t* discordLabel=Discord.load()?L"Connected — click to reconnect":(ds==2?L"Open Discord desktop app":(ds==3?L"Handshake failed — click to retry":L"Connecting… click to retry"));
- txt(g,discordLabel,(float)80,(float)h-30,250,16,9,
-     Discord.load()?Color(255,135,230,164):(ds==3?Color(255,255,155,120):Color(255,240,200,130)));
+ std::wstring discordLabel;
+ {std::lock_guard<std::mutex> lock(DiscordStatusMutex);discordLabel=DiscordDiagnostic;}
+ if(Discord.load())discordLabel=L"Connected — click to reconnect";
+ if(discordLabel.empty())discordLabel=ds==2?L"Open Discord desktop app":L"Connecting to Discord...";
+ txt(g,discordLabel.c_str(),(float)80,(float)h-30,(float)std::max(210,w-100),16,9,
+     Discord.load()?Color(255,135,230,164):((ds==4||ds==5||ds==6)?Color(255,255,155,120):Color(255,240,200,130)));
  BitBlt(out,0,0,w,h,m,0,0,SRCCOPY);
  SelectObject(m,old);DeleteObject(bm);DeleteDC(m);
 }
@@ -468,7 +555,7 @@ static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
  return DefWindowProcW(h,msg,w,l);
 }
 int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
- GdiplusStartupInput gi;if(GdiplusStartup(&GP,&gi,0)!=Ok)return 1;WSADATA wd;WSAStartup(MAKEWORD(2,2),&wd);
+ GdiplusStartupInput gi;if(GdiplusStartup(&GP,&gi,0)!=Ok)return 1;loadDiscordClientId();WSADATA wd;WSAStartup(MAKEWORD(2,2),&wd);
  WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.hInstance=hi;wc.lpfnWndProc=wnd;wc.lpszClassName=L"LocalifyPlayer3";wc.hCursor=LoadCursor(0,IDC_ARROW);RegisterClassExW(&wc);
  H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer3",L"Localify Discord Player",
   WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,640,390,0,0,hi,0);if(!H)return 1;
