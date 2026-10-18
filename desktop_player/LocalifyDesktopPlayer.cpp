@@ -388,7 +388,7 @@ static bool connectDiscord(){
   while(Run&&Pipe!=INVALID_HANDLE_VALUE&&GetTickCount64()<deadline){
    uint32_t opcode=0;std::string response;
    DWORD remain=(DWORD)std::max<ULONGLONG>(1,deadline-GetTickCount64());
-   if(!readRpcPacket(Pipe,opcode,response,std::min<DWORD>(remain,1200))){
+   if(!readRpcPacket(Pipe,opcode,response,std::min<DWORD>(remain,5000))){
     const DWORD err=LastPipeError;
     lastFailure=6;
     lastMessage="No READY reply from "+LastIpcPipe+". Check that Discord Desktop is open and the Application ID is valid";
@@ -680,7 +680,7 @@ static void paint(HDC out){
  }
  const float infoX=(float)u.cover.right+22;
  const float infoW=(float)w-infoX-38;
- std::wstring song=W(p.song.empty()?L"Nothing playing":p.song);
+ std::wstring song=p.song.empty()?L"Nothing playing":W(p.song);
  std::wstring artist=W(p.artist.empty()?"Play a song in Localify to show it here":p.artist);
  std::wstring album=W(p.album.empty()?"Local library":p.album);
  txt(g,L"NOW PLAYING",infoX,(float)u.card.top+26,170,16,9,Color(255,109,174,232),true);
