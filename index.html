@@ -606,11 +606,10 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       radial-gradient(700px 500px at 5% 25%,var(--theme-glow-b),transparent 64%),
       linear-gradient(180deg,var(--bg) 0%,var(--bg) 100%)!important}
     .topbar{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-color:var(--theme-border)!important}
-    .logo{position:relative;background:var(--theme-a)!important;background-image:none!important;box-shadow:0 8px 25px var(--theme-shadow)!important}
+    .logo{position:relative;background:var(--logo-background,#ffffff)!important;background-image:none!important;box-shadow:0 8px 25px var(--logo-shadow,rgba(255,255,255,.16))!important}
     body.theme-gradient .logo{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b))!important}
     .logo .logoMark{display:block;width:100%;height:100%;padding:4px}
-    .logoMarkCube{fill:none;stroke:rgba(255,255,255,.78);stroke-width:1.7;stroke-linejoin:round}
-    .logoMarkL{fill:none;stroke:#050607;stroke-width:4.1;stroke-linecap:round;stroke-linejoin:round}
+    .logoMarkL{fill:#080a0d;stroke:none}
     .nav button.active{background:var(--theme-soft)!important;color:var(--accent)!important}
     .nav button:hover,.sideAction:hover{background:var(--theme-hover)!important}
     .primary,.rowPlay,.playOverlay{background:var(--theme-a)!important;color:#07090b!important;box-shadow:0 8px 22px var(--theme-shadow)!important}
@@ -785,7 +784,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
 <body>
 <div class="app">
   <aside>
-    <div class="brand"><div class="logo"><svg class="logoMark" viewBox="0 0 36 36" aria-hidden="true"><path class="logoMarkCube" d="M18 3.5 31 10.8v14.4L18 32.5 5 25.2V10.8L18 3.5Z"/><path class="logoMarkCube" d="M5 10.8 18 18.2 31 10.8M18 18.2v14.3"/><path class="logoMarkL" d="M11 7v22h16"/></svg></div><span>LOCALIFY</span></div>
+    <div class="brand"><div class="logo"><svg class="logoMark" viewBox="0 0 36 36" aria-hidden="true"><path class="logoMarkL" d="M10 6h5v18h15v5H10z" transform="rotate(90 18 18)"/></svg></div><span>LOCALIFY</span></div>
     <nav class="nav" id="nav">
       <button data-view="home" class="active"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg></span><span>Home</span></button>
       <button data-view="search"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span><span>Search</span></button>
@@ -884,7 +883,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   const state = {
     version: 12, tracks: [], albums: [], artists: [], playlists: [], folders: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null, libraryFolderHandle: null,
-    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false, theme:{preset:"cyan",mode:"solid",color1:"#38bdf8",color2:"#38bdf8"} },
+    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false, theme:{preset:"white",mode:"solid",color1:"#ffffff",color2:"#ffffff"} },
     profile: { displayName:"", avatar:null },
     analytics: { totalSeconds:0, plays:{}, trackSeconds:{}, days:{}, history:[] },
     currentView:"home", search:"", searchFilter:"all", librarySort:"added", librarySortDir:"desc",
@@ -892,6 +891,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   };
 
   const DEFAULT_LOCALIFY_THEMES={
+    white:{name:"White",mode:"solid",color1:"#ffffff",color2:"#ffffff"},
     cyan:{name:"Cyan",mode:"solid",color1:"#38bdf8",color2:"#38bdf8"},
     blue:{name:"Blue",mode:"solid",color1:"#3b82f6",color2:"#3b82f6"},
     royal:{name:"Royal blue",mode:"solid",color1:"#2563eb",color2:"#2563eb"},
@@ -935,7 +935,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   function themeRgba(hex,alpha){const [r,g,b]=hexToRgb(hex);return "rgba("+r+","+g+","+b+","+alpha+")"}
   function normalizeTheme(theme){
     const raw=theme&&typeof theme==="object"?theme:{};
-    const preset=DEFAULT_LOCALIFY_THEMES[raw.preset]?raw.preset:(raw.preset==="custom"?"custom":"cyan");
+    const preset=DEFAULT_LOCALIFY_THEMES[raw.preset]?raw.preset:(raw.preset==="custom"?"custom":"white");
     const base=DEFAULT_LOCALIFY_THEMES[preset]||DEFAULT_LOCALIFY_THEMES.cyan;
     const legacyMono=raw.preset==="mono";
     const mode=raw.mode==="gradient"?"gradient":raw.mode==="solid"?"solid":base.mode;
@@ -946,6 +946,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     const root=document.documentElement,t=normalizeTheme(state.settings.theme);
     const a=t.color1,b=t.mode==="gradient"?t.color2:t.color1,blend=t.mode==="gradient"?mixHex(a,b,.5):a;
     state.settings.theme=t;
+    root.style.setProperty("--logo-background",a);
+    root.style.setProperty("--logo-shadow",themeRgba(blend,.28));
 
     // Keep the app chrome truly dark. Themes control accents and brand colours,
     // not the base surfaces or the artwork/cards in the library.
@@ -1665,7 +1667,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     let restored=false;
     try{restored=await restoreSaved()}catch(e){console.warn("Localify restore failed",e)}
     try{state.libraryFolderHandle=await idbGetLibraryFolderHandle()}catch{state.libraryFolderHandle=null}
-    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},discordPresence:true,nowSidebarHidden:false,theme:{preset:"cyan",mode:"solid",color1:"#38bdf8",color2:"#38bdf8"}},state.settings||{});
+    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},discordPresence:true,nowSidebarHidden:false,theme:{preset:"white",mode:"solid",color1:"#ffffff",color2:"#ffffff"}},state.settings||{});
     state.settings.shuffle=(state.settings.shuffle===true||state.settings.shuffle===1||state.settings.shuffle==="true");
 
     state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},state.settings.eq||{});
