@@ -29,7 +29,8 @@
 using namespace Gdiplus;
 
 static const int PORT=4219;
-static const char* CLIENT_ID="1550620411740561568";
+static const char* CLIENT_ID="";
+static const wchar_t* LEGACY_UNVERIFIED_CLIENT_ID=L"1550620411740561568";
 static const char* DEFAULT_COVER_URL="https://raw.githubusercontent.com/blibbbye/Localify/main/favicon.png";
 struct Presence{bool playing=false,shuffle=false;std::string song,artist,album,cover,localCoverData,localCoverKey,repeat="off";double pos=0,dur=0,volume=0.9;uint64_t version=0;};
 struct Cmd{uint64_t seq=0;std::string action;double value=0;};
@@ -76,21 +77,27 @@ static void loadDiscordClientId(){
  if(GetFileAttributesW(path.c_str())==INVALID_FILE_ATTRIBUTES){
   HANDLE f=CreateFileW(path.c_str(),GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);
   if(f!=INVALID_HANDLE_VALUE){
-   const char*sample="[Discord]\r\n; If the connector reports an invalid Application ID, replace this with your own ID from Discord Developer Portal > General Information.\r\nClientId=1550620411740561568\r\n";
+   const char*sample="[Discord]\r\n; Required: paste a real Application ID from Discord Developer Portal > General Information.\r\nClientId=\r\n";
    DWORD written=0;WriteFile(f,sample,(DWORD)strlen(sample),&written,nullptr);CloseHandle(f);
   }
  }
  wchar_t id[64]{};
  GetPrivateProfileStringW(L"Discord",L"ClientId",W(CLIENT_ID).c_str(),id,64,path.c_str());
- if(!validClientId(id)){
+ std::wstring loadedId(id);
+ auto ws=[](wchar_t c){return c==L' '||c==L'\t'||c==L'\r'||c==L'\n';};
+ while(!loadedId.empty()&&ws(loadedId.front()))loadedId.erase(loadedId.begin());
+ while(!loadedId.empty()&&ws(loadedId.back()))loadedId.pop_back();
+ // Older builds used an unverified fallback ID. Ask for a real app ID instead of retrying it forever.
+ if(loadedId==LEGACY_UNVERIFIED_CLIENT_ID){loadedId.clear();WritePrivateProfileStringW(L"Discord",L"ClientId",L"",path.c_str());}
+ if(!validClientId(loadedId)){
   DiscordClientId.clear();
-  setDiscordStatus(4,"Invalid Application ID in Localify Discord Player.ini");
+  setDiscordStatus(4,"Setup needed: open Settings and enter your Discord Application ID.");
   return;
  }
- int bytes=WideCharToMultiByte(CP_UTF8,0,id,-1,nullptr,0,nullptr,nullptr);
- if(bytes<=1){DiscordClientId.clear();setDiscordStatus(4,"Invalid Application ID in Localify Discord Player.ini");return;}
+ int bytes=WideCharToMultiByte(CP_UTF8,0,loadedId.c_str(),-1,nullptr,0,nullptr,nullptr);
+ if(bytes<=1){DiscordClientId.clear();setDiscordStatus(4,"Setup needed: open Settings and enter your Discord Application ID.");return;}
  std::string value((size_t)bytes,0);
- WideCharToMultiByte(CP_UTF8,0,id,-1,value.data(),bytes,nullptr,nullptr);
+ WideCharToMultiByte(CP_UTF8,0,loadedId.c_str(),-1,value.data(),bytes,nullptr,nullptr);
  value.resize((size_t)bytes-1);
  DiscordClientId=value;
 }
@@ -560,7 +567,7 @@ static std::wstring connectionDetails(){
  std::wstring d;
  {std::lock_guard<std::mutex>lock(DiscordStatusMutex);d=DiscordDiagnostic;}
  d=L"Localify Discord Connector\r\n\r\nStatus: "+(Discord.load()?std::wstring(L"Connected"):d);
- d+=L"\r\nApplication ID: "+W(DiscordClientId);
+ d+=L"\r\nApplication ID: "+(DiscordClientId.empty()?std::wstring(L"not configured"):W(DiscordClientId));
  d+=L"\r\nLast IPC pipe: "+W(LastIpcPipe);
  if(LastPipeError)d+=L"\r\nLast pipe error: "+std::to_wstring(LastPipeError);
  if(Server.load())d+=L"\r\nLocalify web bridge: online on 127.0.0.1:4219";
@@ -598,12 +605,12 @@ static LRESULT CALLBACK settingsWndProc(HWND h,UINT msg,WPARAM w,LPARAM l){
    CreateWindowExW(0,L"STATIC",L"Discord Application ID",WS_CHILD|WS_VISIBLE,24,65,490,20,h,nullptr,GetModuleHandleW(nullptr),nullptr);
    std::wstring current=DiscordClientId.empty()?W(CLIENT_ID):W(DiscordClientId);
    ClientIdEdit=CreateWindowExW(WS_EX_CLIENTEDGE,L"EDIT",current.c_str(),WS_CHILD|WS_VISIBLE|ES_AUTOHSCROLL,22,88,518,30,h,(HMENU)(INT_PTR)2100,GetModuleHandleW(nullptr),nullptr);
-   CreateWindowExW(0,L"STATIC",L"Used to authenticate Rich Presence with Discord. If the connector says the ID was rejected, paste the Application ID from Developer Portal > General Information.",WS_CHILD|WS_VISIBLE,24,126,515,52,h,nullptr,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"STATIC",L"Required: open the Discord Developer Portal, create or select an application, copy its Application ID from General Information, paste it above, then choose Save & reconnect. A Discord user ID is different.",WS_CHILD|WS_VISIBLE,24,126,515,52,h,nullptr,GetModuleHandleW(nullptr),nullptr);
    KeepOnTopCheck=CreateWindowExW(0,L"BUTTON",L"Keep the connector above other windows",WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX,24,185,400,24,h,(HMENU)(INT_PTR)ID_SETTINGS_TOPMOST,GetModuleHandleW(nullptr),nullptr);
    SendMessageW(KeepOnTopCheck,BM_SETCHECK,KeepOnTop?BST_CHECKED:BST_UNCHECKED,0);
    CreateWindowExW(0,L"BUTTON",L"Open Discord",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,22,224,108,32,h,(HMENU)(INT_PTR)ID_SETTINGS_OPEN,GetModuleHandleW(nullptr),nullptr);
    CreateWindowExW(0,L"BUTTON",L"Copy details",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,138,224,108,32,h,(HMENU)(INT_PTR)ID_SETTINGS_COPY,GetModuleHandleW(nullptr),nullptr);
-   CreateWindowExW(0,L"BUTTON",L"Use built-in ID",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,22,273,116,34,h,(HMENU)(INT_PTR)ID_SETTINGS_DEFAULT,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Open Developer Portal",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,22,273,155,34,h,(HMENU)(INT_PTR)ID_SETTINGS_DEFAULT,GetModuleHandleW(nullptr),nullptr);
    CreateWindowExW(0,L"BUTTON",L"Cancel",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,358,273,78,34,h,(HMENU)(INT_PTR)ID_SETTINGS_CANCEL,GetModuleHandleW(nullptr),nullptr);
    CreateWindowExW(0,L"BUTTON",L"Save & reconnect",WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON,444,273,110,34,h,(HMENU)(INT_PTR)ID_SETTINGS_SAVE,GetModuleHandleW(nullptr),nullptr);
    return 0;
@@ -615,7 +622,7 @@ static LRESULT CALLBACK settingsWndProc(HWND h,UINT msg,WPARAM w,LPARAM l){
     if(saveClientId(idText))DestroyWindow(h);
     return 0;
    }
-   if(id==ID_SETTINGS_DEFAULT){SetWindowTextW(ClientIdEdit,W(CLIENT_ID).c_str());return 0;}
+   if(id==ID_SETTINGS_DEFAULT){ShellExecuteW(nullptr,L"open",L"https://discord.com/developers/applications",nullptr,nullptr,SW_SHOWNORMAL);return 0;}
    if(id==ID_SETTINGS_CANCEL){DestroyWindow(h);return 0;}
    if(id==ID_SETTINGS_OPEN){openDiscordDesktop();return 0;}
    if(id==ID_SETTINGS_COPY){copyWideToClipboard(connectionDetails());MessageBoxW(h,L"Connection details copied to the clipboard.",L"Localify",MB_OK|MB_ICONINFORMATION);return 0;}
@@ -659,7 +666,7 @@ static void paint(HDC out){
  fill(g,24,18,37,31,10,Color(255,61,145,222));
  center(g,L"L",24,18,37,31,18,Color(255,255,255,255),true);
  txt(g,L"LOCALIFY",72,17,180,23,17,Color(255,244,247,252),true);
- txt(g,L"DISCORD PLAYER",73,39,190,16,9,Color(255,122,136,155),true);
+ txt(g,L"DISCORD CONNECTOR",73,39,190,16,9,Color(255,122,136,155),true);
  std::wstring bridge=Server.load()?L"WEB BRIDGE ONLINE":(BridgeError.load()==WSAEADDRINUSE?L"BRIDGE PORT IN USE":L"STARTING LOCAL BRIDGE");
  const Color bridgeColor=Server.load()?Color(255,96,208,155):(BridgeError.load()?Color(255,255,151,124):Color(255,230,187,102));
  fill(g,(float)w-214,23, (float)w-27,49,12,Color(255,21,27,35));
@@ -804,7 +811,7 @@ int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
  loadDiscordClientId();WSADATA wd;WSAStartup(MAKEWORD(2,2),&wd);
  WNDCLASSEXW sc{};sc.cbSize=sizeof(sc);sc.hInstance=hi;sc.lpfnWndProc=settingsWndProc;sc.lpszClassName=L"LocalifyPlayerSettings";sc.hCursor=LoadCursor(0,IDC_ARROW);sc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);RegisterClassExW(&sc);
  WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.hInstance=hi;wc.lpfnWndProc=wnd;wc.lpszClassName=L"LocalifyPlayer5";wc.hCursor=LoadCursor(0,IDC_ARROW);wc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);RegisterClassExW(&wc);
- H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer5",L"Localify — Discord Player",
+ H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer5",L"Localify Discord Connector",
   WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,900,560,0,0,hi,0);
  if(!H)return 1;
  BOOL dark=TRUE;DwmSetWindowAttribute(H,DWMWA_USE_IMMERSIVE_DARK_MODE,&dark,sizeof(dark));
@@ -813,4 +820,4 @@ int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
  MSG msg;while(GetMessageW(&msg,0,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}
  Run=false;disconnectDiscord();WSACleanup();GdiplusShutdown(GP);return 0;
 }
-// Localify Discord Player 5.0 — redesigned player, settings and resilient IPC handshake.
+// Localify Discord Connector 5.1 — redesigned controls and explicit Application ID setup.
