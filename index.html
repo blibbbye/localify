@@ -2593,10 +2593,10 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   }
 
   function updatePlayerTime(){
-    const t=trackById(state.currentId);
-    if($("#curTime"))$("#curTime").textContent=fmt(audio.currentTime);
-    if($("#durTime"))$("#durTime").textContent=fmt(audio.duration||t?.duration);
-    if($("#progress"))$("#progress").value=audio.duration?Math.round(audio.currentTime/audio.duration*1000):0;
+    const t=trackById(state.currentId),waiting=!!state.currentId&&loadingTrackId===state.currentId;
+    if($("#curTime"))$("#curTime").textContent=fmt(waiting?0:audio.currentTime);
+    if($("#durTime"))$("#durTime").textContent=fmt(waiting?(t?.duration||0):(audio.duration||t?.duration));
+    if($("#progress"))$("#progress").value=!waiting&&audio.duration?Math.round(audio.currentTime/audio.duration*1000):0;
   }
   const __artworkAccentCache=new Map();
   let __artworkAccentKey="";
@@ -2837,7 +2837,6 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       audio.preload="auto";
       audio.src=url;
       audio.dataset.localifyTrackId=t.id;
-      audio.currentTime=0;
     }catch(e){
       loadingTrackId=null;renderPlayer();
       console.warn("Localify audio setup failed",e);
