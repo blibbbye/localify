@@ -49,7 +49,7 @@ static const int ID_SETTINGS_SAVE=2101, ID_SETTINGS_DEFAULT=2102, ID_SETTINGS_CA
 
 static std::wstring W(const std::string&s){if(s.empty())return L"";int n=MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),0,0);if(n<=0)return L"";std::wstring r(n,L'\0');MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),r.data(),n);return r;}
 static std::string UTF8(const std::wstring&s){if(s.empty())return"";int n=WideCharToMultiByte(CP_UTF8,0,s.data(),(int)s.size(),nullptr,0,nullptr,nullptr);if(n<=0)return"";std::string r(n,'\0');WideCharToMultiByte(CP_UTF8,0,s.data(),(int)s.size(),r.data(),n,nullptr,nullptr);return r;}
-static std::string esc(const std::string&s){std::string r;for(unsigned char c:s){switch(c){case '"':r+="\\\"";break;case '\\':r+="\\\\";break;case '\n':r+="\\n";break;case '\r':r+="\\r";break;default:r.push_back((char)c);}}return r;}
+static std::string esc(const std::string&s){std::string r;static const char*hex="0123456789abcdef";for(unsigned char c:s){switch(c){case '"':r+="\\\"";break;case '\\':r+="\\\\";break;case '\b':r+="\\b";break;case '\f':r+="\\f";break;case '\n':r+="\\n";break;case '\r':r+="\\r";break;case '\t':r+="\\t";break;default:if(c<0x20){r+="\\u00";r.push_back(hex[c>>4]);r.push_back(hex[c&15]);}else r.push_back((char)c);}}return r;}
 static std::string js(const std::string&j,const char*k){
  std::string q="\"";q+=k;q+="\"";size_t p=j.find(q);if(p==std::string::npos)return"";p=j.find(':',p+q.size());if(p==std::string::npos)return"";++p;while(p<j.size()&&isspace((unsigned char)j[p]))++p;if(p>=j.size()||j[p]!='"')return"";++p;
  std::string r;bool e=false;while(p<j.size()){char c=j[p++];if(e){e=false;if(c=='n')r+='\n';else r+=c;}else if(c=='\\')e=true;else if(c=='"')break;else r+=c;}return r;}
@@ -495,7 +495,7 @@ static bool activity(const Presence&p){
  if(discordCover.rfind("https://",0)!=0||discordCover.size()>300)discordCover=registryCoverUrl(p.album);
  if(discordCover.rfind("https://",0)!=0||discordCover.size()>300)discordCover=DEFAULT_COVER_URL;
  long long start=(long long)time(nullptr)-(long long)std::max(0.0,p.pos),end=p.dur>0?start+(long long)p.dur:0;
- std::string q="{\"type\":2,\"name\":\""+esc(p.song.empty()?"Unknown song":p.song)+"\",\"details\":\"\",\"state\":\""+esc(p.artist.empty()?"Unknown Artist":p.artist)+"\",\"status_display_type\":1,\"instance\":false";
+ std::string q="{\"type\":2,\"name\":\""+esc(p.song.empty()?"Unknown song":p.song)+"\",\"state\":\""+esc(p.artist.empty()?"Unknown Artist":p.artist)+"\",\"status_display_type\":1,\"instance\":false";
  q+=",\"assets\":{\"large_image\":\""+esc(discordCover)+"\",\"large_text\":\"Localify artwork\"}";
  if(end>0)q+=",\"timestamps\":{\"start\":"+std::to_string(start*1000)+",\"end\":"+std::to_string(end*1000)+"}";
  q+="}";
