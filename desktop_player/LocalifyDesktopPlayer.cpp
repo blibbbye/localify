@@ -87,14 +87,35 @@ static void loadDiscordClientId(){
  value.resize((size_t)bytes-1);
  DiscordClientId=value;
 }
-static bool looksLikeInvalidClientId(const std::string&payload){
- std::string lower=payload;
- std::transform(lower.begin(),lower.end(),lower.begin(),[](unsigned char c){return (char)std::tolower(c);});
- return lower.find("4000")!=std::string::npos ||
-        lower.find("4007")!=std::string::npos ||
-        lower.find("invalid client id")!=std::string::npos ||
+static std::string lowerAscii(std::string s){
+ std::transform(s.begin(),s.end(),s.begin(),[](unsigned char c){return (char)std::tolower(c);});
+ return s;
+}
+static int rpcCode(const std::string&payload){
+ double code=jn(payload,"code",-1);
+ return code>=0&&code<=100000?(int)code:-1;
+}
+static bool looksLikeInvalidClientId(const std::string&payload,bool isClose){
+ const std::string lower=lowerAscii(payload);
+ // Discord uses CLOSE code 4000 for an invalid client ID, but ERROR code
+ // 4000 means INVALID_PAYLOAD. Do not classify every 4000 response as an ID problem.
+ if(isClose&&rpcCode(payload)==4000)return true;
+ if(!isClose&&rpcCode(payload)==4007)return true;
+ return lower.find("invalid client id")!=std::string::npos ||
         lower.find("invalid client_id")!=std::string::npos ||
         lower.find("invalid client")!=std::string::npos;
+}
+static std::string describeDiscordResponse(const std::string&payload,const char*fallback){
+ const int code=rpcCode(payload);
+ const std::string message=js(payload,"message");
+ if(code>=0){
+  std::string out="Discord RPC error "+std::to_string(code);
+  if(!message.empty())out+=": "+message;
+  else if(code==4000)out+=": invalid payload (not an Application ID error)";
+  return out;
+ }
+ if(!message.empty())return "Discord: "+message;
+ return fallback;
 }
 
 static std::string encPath(const std::string&s){
@@ -341,12 +362,17 @@ static bool connectDiscord(){
     }
     if(opcode==2){
      OutputDebugStringA(("Localify Discord handshake CLOSE: "+response).c_str());
-     if(looksLikeInvalidClientId(response)){
-      setDiscordStatus(4,"Discord rejected the Application ID. Edit Localify Discord Player.ini");
+     if(looksLikeInvalidClientId(response,true)){
+      setDiscordStatus(4,"Discord IPC CLOSE 4000: invalid Client ID "+DiscordClientId);
       disconnectDiscord();
       return false;
      }
-     lastFailure=5;lastMessage="Discord closed the IPC handshake; check its Application ID and restart Discord";
+     const int code=rpcCode(response);
+     if(code==4001){lastFailure=5;lastMessage="Discord IPC CLOSE 4001: invalid origin";}
+     else if(code==4002){lastFailure=5;lastMessage="Discord IPC CLOSE 4002: rate limited; wait and retry";}
+     else if(code==4004){lastFailure=5;lastMessage="Discord IPC CLOSE 4004: invalid RPC version";}
+     else if(code==4005){lastFailure=5;lastMessage="Discord IPC CLOSE 4005: invalid encoding";}
+     else {lastFailure=5;lastMessage=describeDiscordResponse(response,"Discord closed the IPC handshake; restart Discord and retry");}
      break;
     }
     if(opcode!=1)continue;
@@ -356,12 +382,13 @@ static bool connectDiscord(){
     }
     if(response.find("\"evt\":\"ERROR\"")!=std::string::npos){
      OutputDebugStringA(("Localify Discord handshake ERROR: "+response).c_str());
-     if(looksLikeInvalidClientId(response)){
-      setDiscordStatus(4,"Discord rejected the Application ID. Edit Localify Discord Player.ini");
+     if(looksLikeInvalidClientId(response,false)){
+      setDiscordStatus(4,"Discord rejected Client ID "+DiscordClientId+" (RPC error "+std::to_string(rpcCode(response))+")");
       disconnectDiscord();
       return false;
      }
-     lastFailure=5;lastMessage="Discord returned an IPC error; restart Discord and retry";
+     lastFailure=5;
+     lastMessage=describeDiscordResponse(response,"Discord returned an IPC error; restart Discord and retry");
      break;
     }
    }
