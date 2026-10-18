@@ -736,11 +736,10 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   </style>
 <style id="localify-theme-polish">
   /* Theme polish: dark neutral surfaces, minimal outlines, consistent brand accent. */
-  .logo{position:relative;background:var(--theme-a)!important;background-image:none!important;box-shadow:0 7px 22px var(--theme-shadow)!important}
+  .logo{position:relative;background:var(--logo-background,#ffffff)!important;background-image:none!important;box-shadow:0 7px 22px var(--logo-shadow,rgba(255,255,255,.16))!important}
   body.theme-gradient .logo{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b))!important}
   .logo .logoMark{display:block;width:100%;height:100%;padding:3px}
-  .logoMarkCube{display:block!important;fill:none!important;stroke:rgba(255,255,255,.88)!important;stroke-width:1.7!important;stroke-linejoin:round!important}
-  .logoMarkL{fill:none!important;stroke:#08090b!important;stroke-width:4.1!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+  .logoMarkL{fill:#080a0d!important;stroke:none!important}
   .themeGrid{gap:10px!important}
   .themeChoice{min-height:70px!important;padding:10px!important;border:1px solid transparent!important;border-radius:13px!important;background:#111214!important;box-shadow:none!important;transform:none!important;transition:background .15s,border-color .15s!important}
   .themeChoice:hover{background:#17181b!important;border-color:#292c32!important;transform:translateY(-1px)!important}
