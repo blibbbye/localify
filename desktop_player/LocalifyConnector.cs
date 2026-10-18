@@ -639,7 +639,7 @@ namespace LocalifyDiscordConnector
                         if (opcode == 2)
                         {
                             lastReason = DescribeRpcError(payload);
-                            if (IsInvalidClientId(payload))
+                            if (IsInvalidClientId(payload, true))
                             {
                                 error = "Application ID rejected by Discord. Open Settings and paste the Application ID from your Discord Developer Portal.";
                                 pipe.Dispose();
@@ -660,7 +660,7 @@ namespace LocalifyDiscordConnector
                         if (evt == "ERROR")
                         {
                             lastReason = DescribeRpcError(payload);
-                            if (IsInvalidClientId(payload))
+                            if (IsInvalidClientId(payload, false))
                             {
                                 error = "Application ID rejected by Discord. Open Settings and paste the Application ID from your Discord Developer Portal.";
                                 pipe.Dispose();
@@ -848,7 +848,7 @@ namespace LocalifyDiscordConnector
             payload = "";
             if (pipe == null || !pipe.IsConnected) throw new IOException("Discord IPC pipe is disconnected.");
             DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-            uint available;
+            uint available = 0;
             while (DateTime.UtcNow < deadline)
             {
                 if (!PeekNamedPipe(pipe.SafePipeHandle, IntPtr.Zero, 0, IntPtr.Zero, out available, IntPtr.Zero))
@@ -918,11 +918,12 @@ namespace LocalifyDiscordConnector
             return "no response detail was provided";
         }
 
-        private static bool IsInvalidClientId(string payload)
+        private static bool IsInvalidClientId(string payload, bool isClose)
         {
             string lower = (payload ?? "").ToLowerInvariant();
             string detail = DescribeRpcError(payload).ToLowerInvariant();
-            if (lower.Contains("\"code\":4000") || lower.Contains("\"code\": 4000")) return true;
+            // CLOSE 4000 historically identifies a bad client ID; ERROR 4000 is generally an invalid payload.
+            if (isClose && (lower.Contains("\"code\":4000") || lower.Contains("\"code\": 4000"))) return true;
             if (lower.Contains("\"code\":4007") || lower.Contains("\"code\": 4007")) return true;
             return detail.Contains("invalid client id") || detail.Contains("invalid client_id");
         }
@@ -972,7 +973,7 @@ namespace LocalifyDiscordConnector
         private readonly Button play = new Button();
         private readonly Button shuffle = new Button();
         private readonly Button repeat = new Button();
-        private readonly Timer refreshTimer = new Timer();
+        private readonly System.Windows.Forms.Timer refreshTimer = new System.Windows.Forms.Timer();
         private string artworkKey = "";
         private bool changingControls;
         private bool seekDragging;
