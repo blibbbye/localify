@@ -82,7 +82,7 @@ static void loadDiscordClientId(){
  }
  int bytes=WideCharToMultiByte(CP_UTF8,0,id,-1,nullptr,0,nullptr,nullptr);
  if(bytes<=1){DiscordClientId.clear();setDiscordStatus(4,"Invalid Application ID in Localify Discord Player.ini");return;}
- std::string value((size_t)bytes,'\\0');
+ std::string value((size_t)bytes,0);
  WideCharToMultiByte(CP_UTF8,0,id,-1,value.data(),bytes,nullptr,nullptr);
  value.resize((size_t)bytes-1);
  DiscordClientId=value;
@@ -388,7 +388,7 @@ static bool sendRpcCommand(const std::string&json,const std::string&nonce){
   if(!readRpcPacket(Pipe,opcode,payload,std::min<DWORD>(remain,300)))continue;
   if(opcode==3){if(!pw(4,payload)){setDiscordStatus(5,"Could not answer Discord IPC ping");disconnectDiscord();return false;}continue;}
   if(opcode==2){setDiscordStatus(5,"Discord closed the RPC connection");disconnectDiscord();return false;}
-  if(opcode==1&&payload.find("\"evt\":\"ERROR\"")!=std::string::npos){OutputDebugStringA(payload.c_str());DiscordState=3;return false;}
+  if(opcode==1&&payload.find("\"evt\":\"ERROR\"")!=std::string::npos){OutputDebugStringA(payload.c_str());setDiscordStatus(5,"Discord rejected the RPC activity");disconnectDiscord();return false;}
   if(opcode!=1||payload.find(needle)==std::string::npos)continue;
   return true;
  }
