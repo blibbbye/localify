@@ -716,7 +716,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     aside{background:#0b0c0e!important}
     main{background:linear-gradient(180deg,#0c0d10 0%,#090a0c 44%,#08090b 100%)!important;transition:background-color .7s ease}
     .player{background:#0a0b0d!important;border-top-color:#26282d}
-    .logo{background:#15171b!important;box-shadow:0 8px 26px var(--theme-shadow)!important;transition:box-shadow .75s ease,background-color .75s ease}
+    .logo{background:var(--theme-a)!important;background-image:none!important;box-shadow:0 8px 26px var(--theme-shadow)!important;transition:box-shadow .25s ease,background-color .25s ease,background-image .25s ease}
     .logo img{filter:grayscale(1) brightness(0) invert(1);opacity:.98}
     #content{position:relative;isolation:isolate}
     #content::before{content:"";position:absolute;top:-28px;left:-28px;right:-28px;height:480px;pointer-events:none;z-index:-1;opacity:0;background:radial-gradient(ellipse at 52% 0%,var(--context-glow) 0%,transparent 69%);transition:opacity .78s cubic-bezier(.2,.75,.2,1)}
@@ -735,11 +735,42 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     @media(prefers-reduced-motion:reduce){#content::before,.logo{transition:none!important}}
 
   </style>
+<style id="localify-theme-polish">
+  /* Theme polish: dark neutral surfaces, minimal outlines, consistent brand accent. */
+  .logo{position:relative;background:var(--theme-a)!important;background-image:none!important;box-shadow:0 7px 22px var(--theme-shadow)!important}
+  body.theme-gradient .logo{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b))!important}
+  .logo .logoMark{display:block;width:100%;height:100%;padding:2px}
+  .logoMarkCube{display:none!important}
+  .logoMarkL{fill:none!important;stroke:#fff!important;stroke-width:4.2!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+  .themeGrid{gap:10px!important}
+  .themeChoice{min-height:70px!important;padding:10px!important;border:1px solid transparent!important;border-radius:13px!important;background:#111214!important;box-shadow:none!important;transform:none!important;transition:background .15s,border-color .15s!important}
+  .themeChoice:hover{background:#17181b!important;border-color:#292c32!important;transform:translateY(-1px)!important}
+  .themeChoice.active{background:#17181b!important;border-color:color-mix(in srgb,var(--accent) 48%,#272a30)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 12%,transparent)!important}
+  .themeSwatch{height:28px!important;border:0!important;border-radius:8px!important;box-shadow:none!important;margin-bottom:8px!important}
+  .themeChoice strong{font-size:12px!important}
+  .themeChoice span{font-size:10px!important;color:#7c828c!important}
+  .themeCustomPanel{border-top:1px solid #25272c!important}
+  .themeModeBtn{border-color:#292c32!important;background:#141518!important}
+  .themeModeBtn.active{border-color:color-mix(in srgb,var(--accent) 45%,#292c32)!important;box-shadow:none!important;background:color-mix(in srgb,var(--accent) 9%,#141518)!important}
+  .themeColorRow{border-color:#292c32!important;background:#101114!important}
+  /* Albums, playlists, folders and collection cards stay neutral; themes are accents only. */
+  .card,.folderCard,.denseCatalogItem,.tableWrap{background-color:#111214!important;border-color:#22252b!important;box-shadow:none!important}
+  .card:hover,.folderCard:hover,.denseCatalogItem:hover{background-color:#15171a!important;border-color:#30333a!important}
+  .settingsSection,.profilePanel,.profileStat,.profileRecapMain>div{background-color:#101114!important;border-color:#24272d!important;box-shadow:none!important}
+  .search input,.pill,.secondary,.themeChoice,.themeModeBtn,.libraryPathBox{border-color:#292c32!important}
+  .search input:focus{border-color:color-mix(in srgb,var(--accent) 38%,#292c32)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 9%,transparent)!important}
+  .profileMenu,.nowSidebar{border-color:#26292e!important}
+  .heroCard,.quickCard,.presetHero{border-color:#22252b!important}
+  .nav button.active{background:var(--theme-soft)!important;color:var(--accent)!important}
+  .primary,.rowPlay,.playOverlay{background:var(--theme-a)!important;box-shadow:0 7px 18px var(--theme-shadow)!important}
+  body.theme-gradient .primary,body.theme-gradient .rowPlay,body.theme-gradient .playOverlay{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b))!important}
+  .track-row.isPlaying{background:var(--theme-soft)!important}
+</style>
 </head>
 <body>
 <div class="app">
   <aside>
-    <div class="brand"><div class="logo"><svg class="logoMark" viewBox="0 0 36 36" aria-hidden="true"><path class="logoMarkCube" d="M18 3.5 31 10.8v14.4L18 32.5 5 25.2V10.8L18 3.5Z"/><path class="logoMarkCube" d="M5 10.8 18 18.2 31 10.8M18 18.2v14.3"/><path class="logoMarkL" d="M14 12.2v12h9"/></svg></div><span>LOCALIFY</span></div>
+    <div class="brand"><div class="logo"><svg class="logoMark" viewBox="0 0 36 36" aria-hidden="true"><path class="logoMarkCube" d="M18 3.5 31 10.8v14.4L18 32.5 5 25.2V10.8L18 3.5Z"/><path class="logoMarkCube" d="M5 10.8 18 18.2 31 10.8M18 18.2v14.3"/><path class="logoMarkL" d="M11 7v22h16"/></svg></div><span>LOCALIFY</span></div>
     <nav class="nav" id="nav">
       <button data-view="home" class="active"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg></span><span>Home</span></button>
       <button data-view="search"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span><span>Search</span></button>
@@ -900,23 +931,27 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     const root=document.documentElement,t=normalizeTheme(state.settings.theme);
     const a=t.color1,b=t.mode==="gradient"?t.color2:t.color1,blend=t.mode==="gradient"?mixHex(a,b,.5):a;
     state.settings.theme=t;
+
+    // Keep the app chrome truly dark. Themes control accents and brand colours,
+    // not the base surfaces or the artwork/cards in the library.
+    root.style.setProperty("--bg","#090a0c");
+    root.style.setProperty("--panel","#111214");
+    root.style.setProperty("--panel2","#17181b");
+    root.style.setProperty("--panel3","#202125");
+    root.style.setProperty("--line","#26282d");
+    root.style.setProperty("--theme-sidebar","#0b0c0e");
+    root.style.setProperty("--theme-hover","#17191d");
+    root.style.setProperty("--theme-border","#272a30");
     root.style.setProperty("--theme-a",a);
     root.style.setProperty("--theme-b",b);
     root.style.setProperty("--accent",a);
-    root.style.setProperty("--accent2",mixHex(a,"#ffffff",.20));
-    root.style.setProperty("--bg",mixHex("#090b0e",blend,.13));
-    root.style.setProperty("--panel",mixHex("#111419",blend,.13));
-    root.style.setProperty("--panel2",mixHex("#171a20",blend,.14));
-    root.style.setProperty("--panel3",mixHex("#20242c",blend,.15));
-    root.style.setProperty("--line",mixHex("#282d36",blend,.22));
-    root.style.setProperty("--theme-sidebar",mixHex("#0c0f13",blend,.12));
-    root.style.setProperty("--theme-hover",mixHex("#171b21",blend,.16));
-    root.style.setProperty("--theme-soft",themeRgba(a,.105));
-    root.style.setProperty("--theme-soft-2",themeRgba(b,.075));
-    root.style.setProperty("--theme-border",mixHex("#282d36",blend,.34));
-    root.style.setProperty("--theme-shadow",themeRgba(blend,.25));
-    root.style.setProperty("--theme-glow-a",themeRgba(a,.035));
-    root.style.setProperty("--theme-glow-b",themeRgba(b,.025));
+    root.style.setProperty("--accent2",mixHex(a,"#ffffff",.22));
+    root.style.setProperty("--theme-soft",themeRgba(a,.085));
+    root.style.setProperty("--theme-soft-2",themeRgba(b,.055));
+    root.style.setProperty("--theme-shadow",themeRgba(blend,.22));
+    root.style.setProperty("--theme-glow-a",themeRgba(a,.022));
+    root.style.setProperty("--theme-glow-b",themeRgba(b,.016));
+    root.style.setProperty("--context-glow",themeRgba(blend,.075));
     document.body.classList.toggle("theme-gradient",t.mode==="gradient");
     document.body.classList.toggle("theme-solid",t.mode!=="gradient");
     return t;
