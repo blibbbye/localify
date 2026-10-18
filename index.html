@@ -2301,11 +2301,14 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     if(state.settings.discordPresence===false){setDiscordUi("disabled","Discord Rich Presence is off");return}
     try{
       const r=await fetch("http://127.0.0.1:4219/health",{cache:"no-store",targetAddressSpace:"loopback"});
-      if(!r.ok){setDiscordUi("error","Localify Discord Player is not responding");return}
+      if(!r.ok){setDiscordUi("error","Localify Discord Connector is not responding");return}
       const m=await r.json();
-      if(!m?.desktopPlayer){setDiscordUi("error","Start Localify Discord Player");return}
+      if(!m?.desktopPlayer){setDiscordUi("error","Start Localify Discord Connector");return}
       if(m.discordConnected)setDiscordUi("connected","Discord connected");
-      else setDiscordUi("searching","Open Discord desktop to connect");
+      else if(m.discordState===4)setDiscordUi("error","Setup needed: add a Discord Application ID in connector Settings");
+      else if(m.discordState===2)setDiscordUi("searching","Open Discord Desktop, then press Reconnect");
+      else if(m.discordState===5||m.discordState===6)setDiscordUi("error",String(m.discordStatus||"Discord connection error").slice(0,70));
+      else setDiscordUi("searching",String(m.discordStatus||"Waiting for Discord Desktop…").slice(0,70));
       const t=trackById(state.currentId);
       if(t&&!audio.paused)sendDiscordPresence(true);
     }catch(e){
@@ -2351,7 +2354,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   async function connectDiscordBridge(){
     if(state.settings.discordPresence===false){setDiscordUi("disabled","Discord off");return}
     clearTimeout(discordReconnectTimer);
-    setDiscordUi("searching","Checking Localify Desktop Player…");
+    setDiscordUi("searching","Checking Localify Discord Connector…");
     await checkDesktopPlayer();
     const t=trackById(state.currentId);
     if(t&&!audio.paused)sendDiscordPresence(true);
@@ -2497,7 +2500,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     const currentLine=t?`${esc(displayTrackTitle(t,true)||"Unknown song")} <span class="muted">• ${esc(artistName(t)||"Unknown artist")}</span>`:"Nothing is playing right now.";
     setModal(`<div class="modalHead"><h2>Discord</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
       <div class="discordPanel">
-        <div class="discordConnectCard"><div class="discordConnectIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></div><div><div class="discordConnectTitle" id="discordModalStatus">Checking Localify Desktop Player…</div><div class="discordConnectSub">Localify Discord Player sends your current song and artist to Discord, shows locally saved album artwork in its mini player, and provides playback controls.</div></div></div>
+        <div class="discordConnectCard"><div class="discordConnectIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></div><div><div class="discordConnectTitle" id="discordModalStatus">Checking Localify Discord Connector…</div><div class="discordConnectSub">Localify Discord Connector shows your current song and artist, displays cover art, and includes playback, seeking, shuffle, repeat, and volume controls.</div></div></div>
         <div class="modalSection"><div class="modalSectionTitle">Listening status</div>
           <div style="display:flex;align-items:center;gap:10px;padding:7px 0"><input id="discordPresenceToggle" type="checkbox" ${enabled?"checked":""} style="width:18px;height:18px;accent-color:var(--accent)"><label for="discordPresenceToggle"><strong>Show what I am listening to on Discord</strong></label></div>
           <div class="help">If your browser asks to let Localify access your local network, choose Allow. This permission is needed for the website to talk to the desktop connector.</div>
@@ -2506,7 +2509,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
         <div class="modalSection"><div class="modalSectionTitle">Connect Localify to Discord</div>
           <div class="discordStep"><div class="discordStepNum">1</div><div><strong>Download the latest connector</strong><p>Use the Download EXE button below.</p></div></div>
           <div class="discordStep"><div class="discordStepNum">2</div><div><strong>Open Discord Desktop</strong><p>The desktop app must be running, not just Discord in a browser.</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Run <code>Localify Discord Player.exe</code></strong><p>Leave the connector open while listening.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Configure the connector once</strong><p>Open Settings, paste the Application ID from your Discord Developer Portal application, then choose Save & reconnect. Leave the connector running.</p></div></div>
           <div class="discordStep"><div class="discordStepNum">4</div><div><strong>Allow local-network access</strong><p>Accept your browser’s prompt for Localify if it appears, then press Reconnect.</p></div></div>
           <div class="discordStep"><div class="discordStepNum">5</div><div><strong>Play music in Localify</strong><p>Your current song and artist should appear on Discord.</p></div></div>
         </div>
