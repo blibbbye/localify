@@ -277,7 +277,19 @@ static void issue(const char*a,double v=0){std::lock_guard<std::mutex>l(M);++C.s
 static void http(SOCKET s){
  std::string r=req(s);size_t e=r.find("\r\n");if(e==std::string::npos){closesocket(s);return;}std::string line=r.substr(0,e);size_t a=line.find(' '),b=line.find(' ',a+1);if(a==std::string::npos||b==std::string::npos){closesocket(s);return;}std::string m=line.substr(0,a),t=line.substr(a+1,b-a-1);
  if(m=="OPTIONS"){reply(s,"204 No Content","text/plain","");closesocket(s);return;}
- if(m=="GET"&&t.rfind("/health",0)==0){std::wstring diagnostic;{std::lock_guard<std::mutex>lock(DiscordStatusMutex);diagnostic=DiscordDiagnostic;}std::string body="{\"ok\":true,\"desktopPlayer\":true,\"discordConnected":"+std::string(Discord.load()?"true":"false")+",\"serverListening\":"+std::string(Server.load()?"true":"false")+",\"discordState\":"+std::to_string(DiscordState.load())+",\"discordStatus\":\""+esc(UTF8(diagnostic))+"\",\"port\":4219,\"version\":\"5.1\"}";reply(s,"200 OK","application/json",body);closesocket(s);return;}
+ if(m=="GET"&&t.rfind("/health",0)==0){
+  std::wstring diagnostic;
+  {std::lock_guard<std::mutex>lock(DiscordStatusMutex);diagnostic=DiscordDiagnostic;}
+  std::string body="{\"ok\":true,\"desktopPlayer\":true";
+  body+=",\"discordConnected\":";
+  body+=Discord.load()?"true":"false";
+  body+=",\"serverListening\":";
+  body+=Server.load()?"true":"false";
+  body+=",\"discordState\":"+std::to_string(DiscordState.load());
+  body+=",\"discordStatus\":\""+esc(UTF8(diagnostic))+"\"";
+  body+=",\"port\":4219,\"version\":\"5.1\"}";
+  reply(s,"200 OK","application/json",body);closesocket(s);return;
+}
  if(m=="GET"&&t.rfind("/control",0)==0){uint64_t q=0;size_t p=t.find("since=");if(p!=std::string::npos)q=_strtoui64(t.c_str()+p+6,0,10);std::lock_guard<std::mutex>l(M);std::string z=C.seq>q?"{\"seq\":"+std::to_string(C.seq)+",\"action\":\""+esc(C.action)+"\",\"value\":"+std::to_string(C.value)+"}":"{\"seq\":"+std::to_string(q)+"}";reply(s,"200 OK","application/json",z);closesocket(s);return;}
  if(m=="POST"&&t=="/presence"){size_t p=r.find("\r\n\r\n");if(p==std::string::npos){reply(s,"400 Bad Request","text/plain","bad");closesocket(s);return;}std::string body=r.substr(p+4);Presence n;n.playing=jb(body,"playing",true);n.shuffle=jb(body,"shuffle",false);n.song=js(body,"song");n.artist=js(body,"artist");n.album=js(body,"album");n.cover=js(body,"coverUrl");n.localCoverData=js(body,"localCoverData");n.localCoverKey=js(body,"localCoverKey");n.repeat=js(body,"repeat");if(n.repeat!="all"&&n.repeat!="one")n.repeat="off";n.pos=std::max(0.0,jn(body,"currentTime"));n.dur=std::max(0.0,jn(body,"duration"));n.volume=std::clamp(jn(body,"volume",0.9),0.0,1.0);
   {std::lock_guard<std::mutex>l(M);
