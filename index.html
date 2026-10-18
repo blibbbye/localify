@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
-  <meta name="theme-color" content="#7dd3fc" />
+  <meta name="theme-color" content="#090a0c" />
   <meta name="localify-build" content="2026-10-18-discord-connector-fix-1" />
   <title>Localify — Your Music, Your Files</title>
   <meta name="description" content="Localify — your music, your files. A personal music library and player.">
@@ -644,6 +644,23 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
       .sectionHeadActions{gap:6px}
     }
   
+
+    /* Convert remaining legacy blue highlights into neutral/dynamic accents. */
+    .search input:focus{border-color:color-mix(in srgb,var(--accent) 30%,#343840);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 8%,transparent)}
+    .heroCard:after{background:radial-gradient(circle,color-mix(in srgb,var(--accent) 15%,transparent),transparent 65%);transition:background 750ms ease}
+    .dropzone.drag{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,transparent);color:#e7e8eb}
+    .track-row.isPlaying{background:color-mix(in srgb,var(--accent) 6%,transparent)!important}
+    .nowPanelToggle.liked{color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 8%,transparent)!important}
+    .chip.active{background:color-mix(in srgb,var(--accent) 8%,#111214)!important;border-color:color-mix(in srgb,var(--accent) 30%,#252a32)!important;color:var(--accent)!important}
+    .themeChoice.active{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 12%,transparent)}
+    .themeModeBtn.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+    .presetHero{background:radial-gradient(500px 180px at 15% 0%,color-mix(in srgb,var(--accent) 8%,transparent),transparent 65%),linear-gradient(145deg,#17191d,#101114)}
+    .presetHeroIcon,.sharePreviewIcon{background:color-mix(in srgb,var(--accent) 8%,#101114);border-color:color-mix(in srgb,var(--accent) 18%,#252a32);color:var(--accent)}
+    .collectionArt.likedArt{background:linear-gradient(145deg,#24262b,#151619 58%,#202126)!important;color:#d8dbe1!important}
+    .nowFallback{background:linear-gradient(145deg,#202226,#111215 60%,#25272c)!important;color:#d6d8dd!important}
+    .metaPill{border-color:color-mix(in srgb,var(--accent) 12%,#29303a)}
+    .profileArt,.viewBigArt{box-shadow:0 18px 55px rgba(0,0,0,.28)}
+
     /* Localify monochrome base with a restrained artwork-reactive accent. */
     :root{--bg:#090a0c;--panel:#111214;--panel2:#17181b;--panel3:#202125;--accent:#d1d5db;--accent2:#f3f4f6;--theme-a:#d1d5db;--theme-b:#f3f4f6;--theme-shadow:rgba(200,205,215,.12);--context-glow:rgba(150,155,165,.17)}
     body,html{background:#090a0c}
