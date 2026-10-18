@@ -1666,8 +1666,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     $("#folderEdit").onclick=()=>openFolderEditor(f.id);
     $("#folderAddItems").onclick=()=>openFolderItemPicker(f.id);
     bindAlbumCards();bindTrackTable();$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
+    applyContextArtworkTheme();
   }
-applyContextArtworkTheme();
   function renderHome(){
     const recent=state.recent.map(trackById).filter(Boolean).slice(0,8);
     const albums=albumList().slice(0,8);
@@ -1869,16 +1869,16 @@ applyContextArtworkTheme();
     const artistNames=artistNamesForAlbum(a);
     $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img src="${coverForAlbum(a,a.cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${esc(artistNames.join(", ")||"Unknown Artist")} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
     $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
+    applyContextArtworkTheme();
   }
-applyContextArtworkTheme();
 
   function showArtist(id,keepDetail=false){
     __prepareLocalifyDerived();
     const a=artistById(id);if(!a)return; state.detail={type:"artist",id}; const tracks=__localifyCatalog().byArtist.get(id)||[]; const albums=state.albums.filter(x=>artistIdsForAlbum(x).includes(id));
     $("#content").innerHTML=`<div class="profileHero"><div class="profileArt artist">${a.image?`<img src="${a.image}" alt="">`:fallbackArt("artist")}</div><div><h2 class="viewTitle">${esc(a.name)}</h2><div class="subtle">${tracks.length} songs • ${albums.length} albums</div><div class="metaLine">${(a.genres||[]).map(g=>`<span class="metaPill">${esc(g)}</span>`).join("")}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="artistPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="artistEdit" title="Edit artist" aria-label="Edit artist">${uiIcon("edit")}</button><button class="secondary iconOnlyAction" id="artistAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary" id="artistAlbum">${uiIcon("plus")} Create album</button></div></div></div>${a.bio?`<div class="subtle">${esc(a.bio)}</div>`:""}${a.website?`<div class="subtle" style="margin-top:7px">${esc(a.website)}</div>`:""}<div class="section"><div class="sectionHead"><h2>Albums</h2><span>${albums.length}</span></div>${albums.length?localifyPagedHtml(albums,albumCard,"artistAlbums:"+id,"grid"):empty("No albums yet","Create an album for this artist.")}</div><div class="section"><div class="sectionHead"><h2>Songs</h2><span>${tracks.length}</span></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("No songs yet","Add songs to this artist.")}</div>`;
     $("#artistPlay").onclick=()=>playQueue(tracks,0);$("#artistEdit").onclick=()=>editArtist(id);$("#artistAdd").onclick=()=>pickFiles({artistId:id});$("#artistAlbum").onclick=()=>editAlbum(null,{artistIds:[id]});bindTrackTable();bindAlbumCards();
+    applyContextArtworkTheme();
   }
-applyContextArtworkTheme();
 
   function showPlaylist(id,keepDetail=false){
     const p=playlistById(id);if(!p)return; state.detail={type:"playlist",id};
@@ -1886,8 +1886,8 @@ applyContextArtworkTheme();
     $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${p.cover?`<img src="${p.cover}" alt="">`:fallbackArt("playlist")}</div><div><h2 class="viewTitle">${esc(p.name)}</h2><div class="subtle">${tracks.length} songs • ${durationLabel(tracks)}</div><div class="entityActions"><button class="primary" id="plPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="plAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="plEdit" title="Edit playlist" aria-label="Edit playlist">${uiIcon("edit")}</button><button class="dangerBtn" id="plDelete">Delete playlist</button></div></div></div>${p.description?`<div class="subtle">${esc(p.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,false,"playlist:"+id,"title")}</div></div>`:empty("Playlist is empty","Add songs from your files or from a song menu.")}`;
     $("#plPlay").onclick=()=>playQueue(tracks,0);$("#plAdd").onclick=()=>pickFiles({playlistId:id});$("#plEdit").onclick=()=>editPlaylist(id);$("#plDelete").onclick=async()=>deletePlaylist(id);
     bindTrackTable();
+    applyContextArtworkTheme();
   }
-applyContextArtworkTheme();
   function playlistCompare(a,b,k){const dir=1;const av=k==='title'?a.title:k==='artist'?artistName(a):k==='album'?albumName(a):k==='duration'?a.duration:a.addedAt||0;const bv=k==='title'?b.title:k==='artist'?artistName(b):k==='album'?albumName(b):k==='duration'?b.duration:b.addedAt||0;return typeof av==='number'&&typeof bv==='number'?(av-bv)*dir:String(av).localeCompare(String(bv),undefined,{numeric:true})*dir}
   async function deletePlaylist(id){const p=playlistById(id);if(!p||!confirm(`Delete "${p.name}"?`))return;state.playlists=state.playlists.filter(x=>x.id!==id);if(state.detail?.id===id)state.detail=null;await save();setView("playlists");toast("Playlist deleted.")}
 
