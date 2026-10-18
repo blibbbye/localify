@@ -632,6 +632,20 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     .settingsToggleRow input[type=checkbox],.settingsRange,.trackCheck{accent-color:var(--accent)!important}
     @media(max-width:700px){.themeGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+  
+    .heroCard:after{background:radial-gradient(circle,var(--theme-glow-a),transparent 65%)!important}
+    .nowSidebar{background:linear-gradient(180deg,var(--panel2),var(--panel))!important;border-color:var(--theme-border)!important}
+    .player{background:var(--panel)!important;border-top-color:var(--theme-border)!important}
+    .presetHeroIcon,.sharePreviewIcon{background:var(--theme-soft)!important;border-color:var(--theme-border)!important;color:var(--accent)!important}
+    .chip.active,.nowPanelToggle.liked{background:var(--theme-soft)!important;border-color:var(--accent)!important;color:var(--accent)!important}
+    .folderPreview{background:var(--panel2)!important}
+    .folderPreviewItem{background:var(--panel3)!important}
+    .art .fallback,.nowFallback{background:linear-gradient(145deg,var(--panel3),var(--panel))!important;color:var(--accent)!important}
+    .collectionArt.likedArt{background:linear-gradient(145deg,var(--panel2),var(--panel))!important;color:var(--accent)!important}
+    .themeSwatch{background-clip:padding-box}
+    .themeColorRow input[type=color]{border:1px solid var(--theme-border)}
+    .tableWrap,.card,.folderCard,.profilePanel,.profileStat,.settingsSection{box-shadow:0 12px 36px rgba(0,0,0,.10)}
+
   </style>
 <style id="exportImageStyles">.exportImagePreview{max-height:68vh;overflow:auto;border:1px solid #252e38;border-radius:16px;background:#090d11;padding:10px}.exportImagePreview img{display:block;width:100%;height:auto;border-radius:10px}#downloadExportImage{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}</style>  <style id="localifyViewModes">
     .viewModeBar{display:flex;align-items:center;gap:4px;padding:4px;border:1px solid #252c35;border-radius:11px;background:#101419;flex:none}
