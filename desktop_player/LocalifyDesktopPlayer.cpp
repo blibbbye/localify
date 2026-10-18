@@ -269,7 +269,7 @@ static void issue(const char*a,double v=0){std::lock_guard<std::mutex>l(M);++C.s
 static void http(SOCKET s){
  std::string r=req(s);size_t e=r.find("\r\n");if(e==std::string::npos){closesocket(s);return;}std::string line=r.substr(0,e);size_t a=line.find(' '),b=line.find(' ',a+1);if(a==std::string::npos||b==std::string::npos){closesocket(s);return;}std::string m=line.substr(0,a),t=line.substr(a+1,b-a-1);
  if(m=="OPTIONS"){reply(s,"204 No Content","text/plain","");closesocket(s);return;}
- if(m=="GET"&&t.rfind("/health",0)==0){std::string body="{\"ok\":true,\"desktopPlayer\":true,\"discordConnected\":"+std::string(Discord.load()?"true":"false")+",\"serverListening\":"+std::string(Server.load()?"true":"false")+",\"port\":4219,\"version\":\"4.5\"}";reply(s,"200 OK","application/json",body);closesocket(s);return;}
+ if(m=="GET"&&t.rfind("/health",0)==0){std::string body="{\"ok\":true,\"desktopPlayer\":true,\"discordConnected\":"+std::string(Discord.load()?"true":"false")+",\"serverListening\":"+std::string(Server.load()?"true":"false")+",\"port\":4219,\"version\":\"5.0\"}";reply(s,"200 OK","application/json",body);closesocket(s);return;}
  if(m=="GET"&&t.rfind("/control",0)==0){uint64_t q=0;size_t p=t.find("since=");if(p!=std::string::npos)q=_strtoui64(t.c_str()+p+6,0,10);std::lock_guard<std::mutex>l(M);std::string z=C.seq>q?"{\"seq\":"+std::to_string(C.seq)+",\"action\":\""+esc(C.action)+"\",\"value\":"+std::to_string(C.value)+"}":"{\"seq\":"+std::to_string(q)+"}";reply(s,"200 OK","application/json",z);closesocket(s);return;}
  if(m=="POST"&&t=="/presence"){size_t p=r.find("\r\n\r\n");if(p==std::string::npos){reply(s,"400 Bad Request","text/plain","bad");closesocket(s);return;}std::string body=r.substr(p+4);Presence n;n.playing=jb(body,"playing",true);n.shuffle=jb(body,"shuffle",false);n.song=js(body,"song");n.artist=js(body,"artist");n.album=js(body,"album");n.cover=js(body,"coverUrl");n.localCoverData=js(body,"localCoverData");n.localCoverKey=js(body,"localCoverKey");n.repeat=js(body,"repeat");if(n.repeat!="all"&&n.repeat!="one")n.repeat="off";n.pos=std::max(0.0,jn(body,"currentTime"));n.dur=std::max(0.0,jn(body,"duration"));n.volume=std::clamp(jn(body,"volume",0.9),0.0,1.0);
   {std::lock_guard<std::mutex>l(M);
@@ -292,7 +292,16 @@ static void http(SOCKET s){
  reply(s,"404 Not Found","text/plain","");closesocket(s);
 }
 static void server(){
- SOCKET l=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);if(l==INVALID_SOCKET)return;sockaddr_in a{};a.sin_family=AF_INET;a.sin_addr.s_addr=htonl(INADDR_LOOPBACK);a.sin_port=htons(PORT);int yes=1;setsockopt(l,SOL_SOCKET,SO_REUSEADDR,(char*)&yes,sizeof(yes));if(bind(l,(sockaddr*)&a,sizeof(a))==SOCKET_ERROR||listen(l,8)==SOCKET_ERROR){closesocket(l);return;}Server=true;InvalidateRect(H,0,FALSE);while(Run){SOCKET s=accept(l,0,0);if(s!=INVALID_SOCKET)std::thread(http,s).detach();}closesocket(l);
+ SOCKET l=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+ if(l==INVALID_SOCKET){BridgeError=WSAGetLastError();InvalidateRect(H,nullptr,FALSE);return;}
+ sockaddr_in a{};a.sin_family=AF_INET;a.sin_addr.s_addr=htonl(INADDR_LOOPBACK);a.sin_port=htons(PORT);
+ int yes=1;setsockopt(l,SOL_SOCKET,SO_REUSEADDR,(char*)&yes,sizeof(yes));
+ if(bind(l,(sockaddr*)&a,sizeof(a))==SOCKET_ERROR||listen(l,8)==SOCKET_ERROR){
+  BridgeError=WSAGetLastError();closesocket(l);InvalidateRect(H,nullptr,FALSE);return;
+ }
+ BridgeError=0;Server=true;InvalidateRect(H,0,FALSE);
+ while(Run){SOCKET s=accept(l,0,0);if(s!=INVALID_SOCKET)std::thread(http,s).detach();}
+ closesocket(l);
 }
 static std::string pkt(uint32_t op,const std::string&j){std::string x(8+j.size(),'\0');uint32_t n=(uint32_t)j.size();memcpy(x.data(),&op,4);memcpy(x.data()+4,&n,4);memcpy(x.data()+8,j.data(),j.size());return x;}
 static bool pw(uint32_t op,const std::string&j){
@@ -500,118 +509,290 @@ static void rpcLoop(){
 static void fill(Graphics&g,float x,float y,float w,float h,float r,const Color&c){GraphicsPath p;p.AddArc(x,y,r,r,180,90);p.AddArc(x+w-r,y,r,r,270,90);p.AddArc(x+w-r,y+h-r,r,r,0,90);p.AddArc(x,y+h-r,r,r,90,90);p.CloseFigure();SolidBrush b(c);g.FillPath(&b,&p);}
 static void txt(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float size,const Color&c,bool bold=false){FontFamily ff(L"Segoe UI");Font f(&ff,size,bold?FontStyleBold:FontStyleRegular,UnitPixel);SolidBrush b(c);StringFormat sf;sf.SetFormatFlags(StringFormatFlagsNoWrap);sf.SetTrimming(StringTrimmingEllipsisCharacter);g.DrawString(s,-1,&f,RectF(x,y,w,h),&sf,&b);}
 static void center(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float size,const Color&c,bool bold=false){FontFamily ff(L"Segoe UI");Font f(&ff,size,bold?FontStyleBold:FontStyleRegular,UnitPixel);SolidBrush b(c);StringFormat sf;sf.SetAlignment(StringAlignmentCenter);sf.SetLineAlignment(StringAlignmentCenter);g.DrawString(s,-1,&f,RectF(x,y,w,h),&sf,&b);}
-static RECT closeR(){return{430,8,468,38};}static RECT minR(){return{400,8,430,38};}
-static RECT coverRectFor(int w,int h){
- int topPad=18, bottomPad=128;
- int size=std::max(96,std::min(220,std::min(w/3,std::max(96,h-topPad-bottomPad))));
- int y=topPad+20;
- return RECT{22,y,22+size,y+size};
+struct UiLayout{
+ RECT card{},footer{},cover{},seek{},previous{},play{},next{},shuffle{},repeat{},volume{},openDiscord{},reconnect{},settings{};
+};
+static RECT makeRect(int l,int t,int r,int b){return RECT{l,t,r,b};}
+static bool hit(RECT r,POINT p){return p.x>=r.left&&p.x<=r.right&&p.y>=r.top&&p.y<=r.bottom;}
+static UiLayout layoutFor(int w,int h){
+ UiLayout u;
+ const int footerTop=h-88;
+ const int cardTop=74,cardBottom=footerTop-14;
+ u.card=makeRect(20,cardTop,w-20,cardBottom);
+ u.footer=makeRect(20,footerTop,w-20,h-20);
+ int coverSize=std::max(150,std::min(230,std::min((cardBottom-cardTop)-58,w/3-20)));
+ u.cover=makeRect(36,cardTop+20,36+coverSize,cardTop+20+coverSize);
+ const int infoX=u.cover.right+22,right=w-38;
+ const int progressY=cardBottom-129;
+ u.seek=makeRect(infoX,progressY-4,right,progressY+14);
+ u.previous=makeRect(infoX,progressY+23,infoX+54,progressY+63);
+ u.play=makeRect(infoX+64,progressY+23,infoX+134,progressY+63);
+ u.next=makeRect(infoX+144,progressY+23,infoX+198,progressY+63);
+ const int optionY=cardBottom-39;
+ u.shuffle=makeRect(infoX,optionY,infoX+82,optionY+28);
+ u.repeat=makeRect(infoX+92,optionY,infoX+172,optionY+28);
+ u.volume=makeRect(infoX+215,optionY, right,optionY+28);
+ const int btnY=footerTop+17;
+ u.openDiscord=makeRect(w-345,btnY,w-239,btnY+34);
+ u.reconnect=makeRect(w-229,btnY,w-125,btnY+34);
+ u.settings=makeRect(w-115,btnY,w-22,btnY+34);
+ return u;
+}
+static std::wstring durationText(double secs){
+ int s=std::max(0,(int)std::floor(secs));
+ wchar_t b[32]{};
+ if(s>=3600)swprintf(b,32,L"%d:%02d:%02d",s/3600,(s/60)%60,s%60);
+ else swprintf(b,32,L"%d:%02d",s/60,s%60);
+ return b;
+}
+static void copyWideToClipboard(const std::wstring&text){
+ if(!OpenClipboard(H))return;
+ EmptyClipboard();
+ HGLOBAL mem=GlobalAlloc(GMEM_MOVEABLE,(text.size()+1)*sizeof(wchar_t));
+ if(mem){
+  void*p=GlobalLock(mem);
+  if(p){memcpy(p,text.c_str(),(text.size()+1)*sizeof(wchar_t));GlobalUnlock(mem);if(!SetClipboardData(CF_UNICODETEXT,mem))GlobalFree(mem);}
+  else GlobalFree(mem);
+ }
+ CloseClipboard();
+}
+static std::wstring connectionDetails(){
+ std::wstring d;
+ {std::lock_guard<std::mutex>lock(DiscordStatusMutex);d=DiscordDiagnostic;}
+ d=L"Localify Discord Connector\r\n\r\nStatus: "+(Discord.load()?std::wstring(L"Connected"):d);
+ d+=L"\r\nApplication ID: "+W(DiscordClientId);
+ d+=L"\r\nLast IPC pipe: "+W(LastIpcPipe);
+ if(LastPipeError)d+=L"\r\nLast pipe error: "+std::to_wstring(LastPipeError);
+ if(Server.load())d+=L"\r\nLocalify web bridge: online on 127.0.0.1:4219";
+ else if(BridgeError.load()==WSAEADDRINUSE)d+=L"\r\nLocalify web bridge: port 4219 is already in use; close any older connector copy.";
+ else d+=L"\r\nLocalify web bridge: not listening";
+ d+=L"\r\n\r\nIf Discord rejects the Application ID, set the correct one in Settings.";
+ return d;
+}
+static void openDiscordDesktop(){
+ setDiscordStatus(0,"Opening Discord Desktop...");
+ ShellExecuteW(nullptr,L"open",L"discord://",nullptr,nullptr,SW_SHOWNORMAL);
+}
+static bool saveClientId(const std::wstring&id){
+ if(!validClientId(id)){
+  MessageBoxW(SettingsWindow?SettingsWindow:H,L"Enter the numeric Application ID from your Discord Developer Portal. It should be 17–20 digits.",L"Invalid Application ID",MB_OK|MB_ICONWARNING);
+  return false;
+ }
+ if(!WritePrivateProfileStringW(L"Discord",L"ClientId",id.c_str(),discordIniPath().c_str())){
+  MessageBoxW(SettingsWindow?SettingsWindow:H,L"Could not save the connector settings file. Make sure this folder is writable.",L"Could not save settings",MB_OK|MB_ICONERROR);
+  return false;
+ }
+ int bytes=WideCharToMultiByte(CP_UTF8,0,id.c_str(),-1,nullptr,0,nullptr,nullptr);
+ if(bytes<=1)return false;
+ std::string utf8((size_t)bytes,'\0');
+ WideCharToMultiByte(CP_UTF8,0,id.c_str(),-1,utf8.data(),bytes,nullptr,nullptr);
+ utf8.resize((size_t)bytes-1);DiscordClientId=utf8;
+ setDiscordStatus(0,"Application ID saved; reconnecting...");
+ DiscordReconnectRequested=true;
+ return true;
+}
+static LRESULT CALLBACK settingsWndProc(HWND h,UINT msg,WPARAM w,LPARAM l){
+ switch(msg){
+  case WM_CREATE:{
+   CreateWindowExW(0,L"STATIC",L"Discord connection settings",WS_CHILD|WS_VISIBLE,22,18,500,28,h,nullptr,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"STATIC",L"Discord Application ID",WS_CHILD|WS_VISIBLE,24,65,490,20,h,nullptr,GetModuleHandleW(nullptr),nullptr);
+   std::wstring current=DiscordClientId.empty()?W(CLIENT_ID):W(DiscordClientId);
+   ClientIdEdit=CreateWindowExW(WS_EX_CLIENTEDGE,L"EDIT",current.c_str(),WS_CHILD|WS_VISIBLE|ES_AUTOHSCROLL,22,88,518,30,h,(HMENU)(INT_PTR)2100,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"STATIC",L"Used to authenticate Rich Presence with Discord. If the connector says the ID was rejected, paste the Application ID from Developer Portal > General Information.",WS_CHILD|WS_VISIBLE,24,126,515,52,h,nullptr,GetModuleHandleW(nullptr),nullptr);
+   KeepOnTopCheck=CreateWindowExW(0,L"BUTTON",L"Keep the connector above other windows",WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX,24,185,400,24,h,(HMENU)(INT_PTR)ID_SETTINGS_TOPMOST,GetModuleHandleW(nullptr),nullptr);
+   SendMessageW(KeepOnTopCheck,BM_SETCHECK,KeepOnTop?BST_CHECKED:BST_UNCHECKED,0);
+   CreateWindowExW(0,L"BUTTON",L"Open Discord",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,22,224,108,32,h,(HMENU)(INT_PTR)ID_SETTINGS_OPEN,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Copy details",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,138,224,108,32,h,(HMENU)(INT_PTR)ID_SETTINGS_COPY,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Use built-in ID",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,22,273,116,34,h,(HMENU)(INT_PTR)ID_SETTINGS_DEFAULT,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Cancel",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,358,273,78,34,h,(HMENU)(INT_PTR)ID_SETTINGS_CANCEL,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Save & reconnect",WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON,444,273,110,34,h,(HMENU)(INT_PTR)ID_SETTINGS_SAVE,GetModuleHandleW(nullptr),nullptr);
+   return 0;
+  }
+  case WM_COMMAND:{
+   const int id=LOWORD(w);
+   if(id==ID_SETTINGS_SAVE){
+    wchar_t idText[64]{};GetWindowTextW(ClientIdEdit,idText,64);
+    if(saveClientId(idText))DestroyWindow(h);
+    return 0;
+   }
+   if(id==ID_SETTINGS_DEFAULT){SetWindowTextW(ClientIdEdit,W(CLIENT_ID).c_str());return 0;}
+   if(id==ID_SETTINGS_CANCEL){DestroyWindow(h);return 0;}
+   if(id==ID_SETTINGS_OPEN){openDiscordDesktop();return 0;}
+   if(id==ID_SETTINGS_COPY){copyWideToClipboard(connectionDetails());MessageBoxW(h,L"Connection details copied to the clipboard.",L"Localify",MB_OK|MB_ICONINFORMATION);return 0;}
+   if(id==ID_SETTINGS_TOPMOST){
+    KeepOnTop=SendMessageW(KeepOnTopCheck,BM_GETCHECK,0,0)==BST_CHECKED;
+    if(H)SetWindowPos(H,KeepOnTop?HWND_TOPMOST:HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+    return 0;
+   }
+   break;
+  }
+  case WM_CLOSE:DestroyWindow(h);return 0;
+  case WM_DESTROY:
+   if(h==SettingsWindow){SettingsWindow=nullptr;ClientIdEdit=nullptr;KeepOnTopCheck=nullptr;if(H){EnableWindow(H,TRUE);SetForegroundWindow(H);}}
+   return 0;
+ }
+ return DefWindowProcW(h,msg,w,l);
+}
+static void openSettingsWindow(){
+ if(SettingsWindow&&IsWindow(SettingsWindow)){ShowWindow(SettingsWindow,SW_SHOWNORMAL);SetForegroundWindow(SettingsWindow);return;}
+ if(!H)return;
+ RECT owner{};GetWindowRect(H,&owner);const int ww=580,hh=355;
+ const int x=owner.left+((owner.right-owner.left)-ww)/2;
+ const int y=owner.top+((owner.bottom-owner.top)-hh)/2;
+ EnableWindow(H,FALSE);
+ SettingsWindow=CreateWindowExW(WS_EX_DLGMODALFRAME,L"LocalifyPlayerSettings",L"Localify Discord Connector — Settings",
+   WS_CAPTION|WS_SYSMENU|WS_POPUP,x,y,ww,hh,H,nullptr,GetModuleHandleW(nullptr),nullptr);
+ if(!SettingsWindow){EnableWindow(H,TRUE);return;}
+ BOOL dark=TRUE;DwmSetWindowAttribute(SettingsWindow,DWMWA_USE_IMMERSIVE_DARK_MODE,&dark,sizeof(dark));
+ ShowWindow(SettingsWindow,SW_SHOWNORMAL);UpdateWindow(SettingsWindow);SetForegroundWindow(SettingsWindow);
 }
 static void paint(HDC out){
- RECT rr{};GetClientRect(H,&rr);int w=rr.right,h=rr.bottom;
+ RECT rr{};GetClientRect(H,&rr);const int w=rr.right,h=rr.bottom;
  if(w<40||h<40)return;
  HDC m=CreateCompatibleDC(out);if(!m)return;
  HBITMAP bm=CreateCompatibleBitmap(out,w,h);if(!bm){DeleteDC(m);return;}
  HGDIOBJ old=SelectObject(m,bm);
  Graphics g(m);g.SetSmoothingMode(SmoothingModeAntiAlias);g.SetInterpolationMode(InterpolationModeHighQualityBicubic);
- g.Clear(Color(255,9,11,15));
- fill(g,8,8,(float)w-16,(float)h-16,18,Color(255,18,21,28));
- SolidBrush glow(Color(18,125,211,252));g.FillEllipse(&glow,-90,-100,340,180);
- txt(g,L"LOCALIFY",22,16,160,24,12,Color(255,125,211,252),true);
- Presence p;{
-   std::lock_guard<std::mutex> lock(M);p=P;
- }
- RECT cr=coverRectFor(w,h);int coverW=cr.right-cr.left,coverH=cr.bottom-cr.top;
- fill(g,(float)cr.left,(float)cr.top,(float)coverW,(float)coverH,16,Color(255,30,34,42));
+ g.Clear(Color(255,7,9,13));
+ fill(g,10,10,(float)w-20,(float)h-20,20,Color(255,13,16,22));
+ SolidBrush glow(Color(13,72,151,221));g.FillEllipse(&glow,-65,-95,360,220);
+ fill(g,24,18,37,31,10,Color(255,61,145,222));
+ center(g,L"L",24,18,37,31,18,Color(255,255,255,255),true);
+ txt(g,L"LOCALIFY",72,17,180,23,17,Color(255,244,247,252),true);
+ txt(g,L"DISCORD PLAYER",73,39,190,16,9,Color(255,122,136,155),true);
+ std::wstring bridge=Server.load()?L"WEB BRIDGE ONLINE":(BridgeError.load()==WSAEADDRINUSE?L"BRIDGE PORT IN USE":L"STARTING LOCAL BRIDGE");
+ const Color bridgeColor=Server.load()?Color(255,96,208,155):(BridgeError.load()?Color(255,255,151,124):Color(255,230,187,102));
+ fill(g,(float)w-214,23, (float)w-27,49,12,Color(255,21,27,35));
+ txt(g,bridge.c_str(),(float)w-203,30,168,14,8,bridgeColor,true);
+
+ Presence p;{std::lock_guard<std::mutex> lock(M);p=P;}
+ const UiLayout u=layoutFor(w,h);
+ fill(g,(float)u.card.left,(float)u.card.top,(float)(u.card.right-u.card.left),(float)(u.card.bottom-u.card.top),18,Color(255,17,21,29));
+ const int coverW=u.cover.right-u.cover.left,coverH=u.cover.bottom-u.cover.top;
+ fill(g,(float)u.cover.left,(float)u.cover.top,(float)coverW,(float)coverH,16,Color(255,27,33,43));
  {
-   std::lock_guard<std::mutex> lock(M);
-   if(Cover)g.DrawImage(Cover.get(),RectF((REAL)cr.left,(REAL)cr.top,(REAL)coverW,(REAL)coverH));
-   else center(g,L"♫",(float)cr.left,(float)cr.top,(float)coverW,(float)coverH,38,Color(255,125,211,252),true);
+  std::lock_guard<std::mutex> lock(M);
+  if(Cover)g.DrawImage(Cover.get(),RectF((REAL)u.cover.left,(REAL)u.cover.top,(REAL)coverW,(REAL)coverH));
+  else{
+   center(g,L"♫",(float)u.cover.left,(float)u.cover.top+8,(float)coverW,(float)coverH-18,44,Color(255,104,178,238),true);
+   center(g,L"ALBUM ART", (float)u.cover.left,(float)u.cover.bottom-28,(float)coverW,16,8,Color(255,114,128,148),true);
+  }
  }
- float infoX=(float)cr.right+18;
- float infoW=(float)std::max<int>(120,(int)w-cr.right-34);
- std::wstring song=W(p.song.empty()?(p.playing?"Unknown song":"Nothing playing"):p.song);
- std::wstring artist=W(p.artist.empty()?"Unknown Artist":p.artist);
- txt(g,song.c_str(),infoX,(float)cr.top+4,infoW,34,20,Color(255,247,248,250),true);
- txt(g,artist.c_str(),infoX,(float)cr.top+39,infoW,26,12,Color(255,157,165,179));
- txt(g,p.playing?L"PLAYING":L"PAUSED",infoX,(float)cr.top+69,110,18,9,
-     p.playing?Color(255,125,211,252):Color(255,145,153,168),true);
+ const float infoX=(float)u.cover.right+22;
+ const float infoW=(float)w-infoX-38;
+ std::wstring song=W(p.song.empty()?L"Nothing playing":p.song);
+ std::wstring artist=W(p.artist.empty()?"Play a song in Localify to show it here":p.artist);
+ std::wstring album=W(p.album.empty()?"Local library":p.album);
+ txt(g,L"NOW PLAYING",infoX,(float)u.card.top+26,170,16,9,Color(255,109,174,232),true);
+ txt(g,song.c_str(),infoX,(float)u.card.top+48,infoW,38,22,Color(255,246,248,252),true);
+ txt(g,artist.c_str(),infoX,(float)u.card.top+88,infoW,24,12,Color(255,178,187,201));
+ txt(g,album.c_str(),infoX,(float)u.card.top+115,infoW,21,10,Color(255,122,135,153));
+ const bool isPlaying=p.playing;
+ fill(g,infoX,(float)u.card.top+145,isPlaying?100:84,(float)u.card.top+171-((float)u.card.top+145),10,isPlaying?Color(255,20,54,47):Color(255,30,36,46));
+ center(g,isPlaying?L"●  PLAYING":L"Ⅱ  PAUSED",infoX,(float)u.card.top+145,isPlaying?100:84,26,9,isPlaying?Color(255,124,226,175):Color(255,161,174,192),true);
 
- float controlX=infoX;
- float controlW=(float)std::max<int>(150,(int)w-(int)controlX-22);
- int progressY=h-118;
- fill(g,controlX,(float)progressY,controlW,6,3,Color(255,43,48,58));
- double ratio=p.dur>0?std::clamp(p.pos/p.dur,0.0,1.0):0;
- if(ratio>0)fill(g,controlX,(float)progressY,controlW*(float)ratio,6,3,Color(255,125,211,252));
- float by=(float)progressY+13;
- fill(g,controlX,by,50,32,9,Color(255,30,35,44));center(g,L"PREV",controlX,by,50,32,9,Color(255,214,220,228),true);
- fill(g,controlX+58,by,62,32,9,Color(255,125,211,252));center(g,p.playing?L"Ⅱ":L"▶",controlX+58,by,62,32,15,Color(255,7,16,24),true);
- fill(g,controlX+128,by,50,32,9,Color(255,30,35,44));center(g,L"NEXT",controlX+128,by,50,32,9,Color(255,214,220,228),true);
+ const float barY=(float)u.seek.top+7;
+ fill(g,(float)u.seek.left,barY,(float)(u.seek.right-u.seek.left),5,3,Color(255,42,49,61));
+ const double ratio=p.dur>0?std::clamp(p.pos/p.dur,0.0,1.0):0.0;
+ if(ratio>0)fill(g,(float)u.seek.left,barY,(float)(u.seek.right-u.seek.left)*(float)ratio,5,3,Color(255,91,170,244));
+ const std::wstring elapsed=durationText(p.pos),duration=durationText(p.dur);
+ txt(g,elapsed.c_str(),(float)u.seek.left,(float)u.seek.top-17,70,14,8,Color(255,125,139,157));
+ txt(g,duration.c_str(),(float)u.seek.right-70,(float)u.seek.top-17,70,14,8,Color(255,125,139,157));
+ auto drawBtn=[&](RECT r,const wchar_t*label,bool active,bool accent,int size){
+  fill(g,(float)r.left,(float)r.top,(float)(r.right-r.left),(float)(r.bottom-r.top),9,accent?Color(255,83,159,231):(active?Color(255,31,54,67):Color(255,27,33,42)));
+  center(g,label,(float)r.left,(float)r.top,(float)(r.right-r.left),(float)(r.bottom-r.top),(float)size,accent?Color(255,8,17,28):(active?Color(255,130,195,245):Color(255,209,216,227)),true);
+ };
+ drawBtn(u.previous,L"PREV",false,false,9);
+ drawBtn(u.play,p.playing?L"Ⅱ  PAUSE":L"▶  PLAY",false,true,10);
+ drawBtn(u.next,L"NEXT",false,false,9);
+ drawBtn(u.shuffle,L"SHUFFLE",p.shuffle,false,8);
+ drawBtn(u.repeat,p.repeat=="one"?L"REPEAT 1":L"REPEAT",p.repeat!="off",false,8);
+ txt(g,L"VOL", (float)u.volume.left-33,(float)u.volume.top+6,28,15,8,Color(255,123,137,155),true);
+ fill(g,(float)u.volume.left,(float)u.volume.top+11,(float)(u.volume.right-u.volume.left),5,3,Color(255,42,49,61));
+ const double vol=std::clamp(p.volume,0.0,1.0);
+ if(vol>0)fill(g,(float)u.volume.left,(float)u.volume.top+11,(float)(u.volume.right-u.volume.left)*(float)vol,5,3,Color(255,91,170,244));
+ fill(g,(float)u.volume.left+(float)(u.volume.right-u.volume.left)*(float)vol-4,(float)u.volume.top+6,8,15,4,Color(255,227,240,255));
+ wchar_t volPct[16]{};swprintf(volPct,16,L"%d%%",(int)std::lround(vol*100));
+ txt(g,volPct,(float)u.volume.right-33,(float)u.volume.top-13,33,12,8,Color(255,140,153,171),true);
 
- float optionY=(float)h-59;
- fill(g,controlX,optionY,52,25,7,p.shuffle?Color(255,125,211,252):Color(255,30,35,44));
- center(g,L"SHUFFLE",controlX,optionY,52,25,8,p.shuffle?Color(255,7,16,24):Color(255,193,201,211),true);
- fill(g,controlX+58,optionY,54,25,7,p.repeat!="off"?Color(255,125,211,252):Color(255,30,35,44));
- center(g,p.repeat=="one"?L"REPEAT 1":L"REPEAT",controlX+58,optionY,54,25,8,p.repeat!="off"?Color(255,7,16,24):Color(255,193,201,211),true);
- float volLabelX=controlX+120;
- txt(g,L"VOL",volLabelX,optionY+5,24,15,8,Color(255,157,165,179),true);
- float volX=volLabelX+27,volW=std::max(26.0f,controlX+controlW-volX-3);
- fill(g,volX,optionY+10,volW,5,3,Color(255,43,48,58));
- float volRatio=(float)std::clamp(p.volume,0.0,1.0);
- if(volRatio>0)fill(g,volX,optionY+10,volW*volRatio,5,3,Color(255,125,211,252));
- fill(g,volX+volW*volRatio-4,optionY+5,8,15,4,Color(255,225,243,255));
-
- txt(g,L"Discord",22,(float)h-30,58,16,9,Server.load()?Color(255,130,240,160):Color(255,145,153,168),true);
+ fill(g,(float)u.footer.left,(float)u.footer.top,(float)(u.footer.right-u.footer.left),(float)(u.footer.bottom-u.footer.top),16,Color(255,17,21,29));
  const int ds=DiscordState.load();
- std::wstring discordLabel;
- {std::lock_guard<std::mutex> lock(DiscordStatusMutex);discordLabel=DiscordDiagnostic;}
- if(Discord.load())discordLabel=L"Connected — click to reconnect";
- if(discordLabel.empty())discordLabel=ds==2?L"Open Discord desktop app":L"Connecting to Discord...";
- txt(g,discordLabel.c_str(),(float)80,(float)h-30,(float)std::max(210,w-100),16,9,
-     Discord.load()?Color(255,135,230,164):((ds==4||ds==5||ds==6)?Color(255,255,155,120):Color(255,240,200,130)));
+ const Color dot=Discord.load()?Color(255,76,210,149):((ds==4||ds==5||ds==6)?Color(255,255,115,100):Color(255,234,185,93));
+ SolidBrush statusDot(dot);g.FillEllipse(&statusDot,36,(REAL)u.footer.top+17,9,9);
+ txt(g,L"DISCORD CONNECTION",53,(float)u.footer.top+11,170,15,9,Color(255,216,222,232),true);
+ std::wstring diagnostic;{std::lock_guard<std::mutex> lock(DiscordStatusMutex);diagnostic=DiscordDiagnostic;}
+ if(Discord.load())diagnostic=L"Connected — listening activity is ready";
+ else if(diagnostic.empty())diagnostic=L"Open Discord Desktop, then press Reconnect";
+ if(BridgeError.load()==WSAEADDRINUSE)diagnostic=L"Bridge port 4219 is busy. Close older connector copies.";
+ txt(g,diagnostic.c_str(),36,(float)u.footer.top+33,(float)u.openDiscord.left-48,17,9,dot);
+ drawBtn(u.openDiscord,L"OPEN DISCORD",false,false,8);
+ drawBtn(u.reconnect,L"RECONNECT",false,false,8);
+ drawBtn(u.settings,L"SETTINGS",false,false,8);
  BitBlt(out,0,0,w,h,m,0,0,SRCCOPY);
  SelectObject(m,old);DeleteObject(bm);DeleteDC(m);
 }
-
 static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
  switch(msg){
   case WM_ERASEBKGND:return 1;
+  case WM_GETMINMAXINFO:{
+   MINMAXINFO*mm=(MINMAXINFO*)l;mm->ptMinTrackSize.x=780;mm->ptMinTrackSize.y=500;return 0;
+  }
   case WM_SIZE:InvalidateRect(h,nullptr,FALSE);return 0;
   case WM_PAINT:{
-    PAINTSTRUCT ps;HDC dc=BeginPaint(h,&ps);paint(dc);EndPaint(h,&ps);return 0;
+   PAINTSTRUCT ps;HDC dc=BeginPaint(h,&ps);paint(dc);EndPaint(h,&ps);return 0;
   }
   case WM_LBUTTONDOWN:{
-    POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};
-    RECT rc{};GetClientRect(h,&rc);
-    if(p.y>=rc.bottom-34&&p.y<=rc.bottom-8&&p.x>=22&&p.x<=340){DiscordReconnectRequested=true;InvalidateRect(h,nullptr,FALSE);return 0;}
-    RECT cr=coverRectFor(rc.right,rc.bottom);
-    float infoX=(float)cr.right+18;
-    float controlW=(float)std::max<int>(150,rc.right-(int)infoX-22);
-    int progressY=rc.bottom-118;
-    if(p.y>=progressY-8&&p.y<=progressY+14&&p.x>=(int)infoX&&p.x<=(int)(infoX+controlW)){
-      double d;{std::lock_guard<std::mutex> lock(M);d=P.dur;}
-      if(d>0)issue("seek",std::clamp((p.x-infoX)/(double)controlW,0.0,1.0)*d);
-      return 0;
-    }
-    float by=(float)progressY+13;
-    if(p.y>=(int)by&&p.y<=(int)by+32){
-      if(p.x>=(int)infoX&&p.x<(int)infoX+50)issue("prev");
-      else if(p.x>=(int)infoX+58&&p.x<(int)infoX+120)issue("toggle");
-      else if(p.x>=(int)infoX+128&&p.x<(int)infoX+178)issue("next");
-      return 0;
-    }
-    float optionY=(float)rc.bottom-59;
-    if(p.y>=(int)optionY&&p.y<=(int)optionY+25){
-      if(p.x>=(int)infoX&&p.x<(int)infoX+52)issue("shuffle");
-      else if(p.x>=(int)infoX+58&&p.x<(int)infoX+112)issue("repeat");
-      else {
-        float volX=infoX+147.0f,volW=std::max(26.0f,infoX+controlW-volX-3);
-        if(p.x>=(int)volX&&p.x<=(int)(volX+volW))issue("volume",std::clamp((p.x-volX)/(double)volW,0.0,1.0));
-      }
-      return 0;
-    }
+   POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};RECT rc{};GetClientRect(h,&rc);const UiLayout u=layoutFor(rc.right,rc.bottom);
+   if(hit(u.openDiscord,p)){openDiscordDesktop();return 0;}
+   if(hit(u.reconnect,p)){setDiscordStatus(0,"Reconnect requested...");DiscordReconnectRequested=true;InvalidateRect(h,nullptr,FALSE);return 0;}
+   if(hit(u.settings,p)){openSettingsWindow();return 0;}
+   if(p.y>=u.footer.top&&p.y<=u.footer.bottom&&p.x<u.openDiscord.left-8){MessageBoxW(h,connectionDetails().c_str(),L"Discord connection details",MB_OK|MB_ICONINFORMATION);return 0;}
+   if(hit(u.previous,p)){issue("prev");return 0;}
+   if(hit(u.play,p)){issue("toggle");return 0;}
+   if(hit(u.next,p)){issue("next");return 0;}
+   if(hit(u.shuffle,p)){issue("shuffle");return 0;}
+   if(hit(u.repeat,p)){issue("repeat");return 0;}
+   if(hit(u.seek,p)){
+    DragSeeking=true;SetCapture(h);
+    double d;{std::lock_guard<std::mutex> lock(M);d=P.dur;}
+    if(d>0)issue("seek",std::clamp((p.x-u.seek.left)/(double)std::max(1,u.seek.right-u.seek.left),0.0,1.0)*d);
     return 0;
+   }
+   if(hit(u.volume,p)){
+    DragVolume=true;SetCapture(h);
+    issue("volume",std::clamp((p.x-u.volume.left)/(double)std::max(1,u.volume.right-u.volume.left),0.0,1.0));
+    return 0;
+   }
+   return 0;
   }
+  case WM_MOUSEMOVE:{
+   if(!DragSeeking&&!DragVolume)return 0;
+   POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};RECT rc{};GetClientRect(h,&rc);const UiLayout u=layoutFor(rc.right,rc.bottom);
+   if(DragSeeking){
+    double d;{std::lock_guard<std::mutex> lock(M);d=P.dur;}
+    if(d>0)issue("seek",std::clamp((p.x-u.seek.left)/(double)std::max(1,u.seek.right-u.seek.left),0.0,1.0)*d);
+   }else{
+    issue("volume",std::clamp((p.x-u.volume.left)/(double)std::max(1,u.volume.right-u.volume.left),0.0,1.0));
+   }
+   return 0;
+  }
+  case WM_LBUTTONUP:
+   if(DragSeeking||DragVolume){DragSeeking=false;DragVolume=false;ReleaseCapture();return 0;}return 0;
+  case WM_MOUSEWHEEL:{
+   RECT rc{};GetClientRect(h,&rc);const UiLayout u=layoutFor(rc.right,rc.bottom);
+   POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};ScreenToClient(h,&p);
+   if(hit(u.volume,p)){
+    double v;{std::lock_guard<std::mutex> lock(M);v=P.volume;}
+    v=std::clamp(v+(GET_WHEEL_DELTA_WPARAM(w)>0?0.05:-0.05),0.0,1.0);issue("volume",v);return 0;
+   }
+   break;
+  }
+  case WM_KEYDOWN:
+   if(w==VK_SPACE){issue("toggle");return 0;}
+   if(w==VK_LEFT){issue("prev");return 0;}
+   if(w==VK_RIGHT){issue("next");return 0;}
+   if(w==VK_F5){setDiscordStatus(0,"Reconnect requested...");DiscordReconnectRequested=true;return 0;}
+   break;
   case WM_TIMER:InvalidateRect(h,nullptr,FALSE);return 0;
   case WM_CLOSE:DestroyWindow(h);return 0;
   case WM_DESTROY:Run=false;PostQuitMessage(0);return 0;
@@ -619,13 +800,17 @@ static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
  return DefWindowProcW(h,msg,w,l);
 }
 int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
- GdiplusStartupInput gi;if(GdiplusStartup(&GP,&gi,0)!=Ok)return 1;loadDiscordClientId();WSADATA wd;WSAStartup(MAKEWORD(2,2),&wd);
- WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.hInstance=hi;wc.lpfnWndProc=wnd;wc.lpszClassName=L"LocalifyPlayer3";wc.hCursor=LoadCursor(0,IDC_ARROW);RegisterClassExW(&wc);
- H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer3",L"Localify Discord Player",
-  WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,640,390,0,0,hi,0);if(!H)return 1;
+ GdiplusStartupInput gi;if(GdiplusStartup(&GP,&gi,0)!=Ok)return 1;
+ loadDiscordClientId();WSADATA wd;WSAStartup(MAKEWORD(2,2),&wd);
+ WNDCLASSEXW sc{};sc.cbSize=sizeof(sc);sc.hInstance=hi;sc.lpfnWndProc=settingsWndProc;sc.lpszClassName=L"LocalifyPlayerSettings";sc.hCursor=LoadCursor(0,IDC_ARROW);sc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);RegisterClassExW(&sc);
+ WNDCLASSEXW wc{};wc.cbSize=sizeof(wc);wc.hInstance=hi;wc.lpfnWndProc=wnd;wc.lpszClassName=L"LocalifyPlayer5";wc.hCursor=LoadCursor(0,IDC_ARROW);wc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);RegisterClassExW(&wc);
+ H=CreateWindowExW(WS_EX_APPWINDOW,L"LocalifyPlayer5",L"Localify — Discord Player",
+  WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,CW_USEDEFAULT,CW_USEDEFAULT,900,560,0,0,hi,0);
+ if(!H)return 1;
  BOOL dark=TRUE;DwmSetWindowAttribute(H,DWMWA_USE_IMMERSIVE_DARK_MODE,&dark,sizeof(dark));
- SetWindowPos(H,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE|SWP_SHOWWINDOW);
- ShowWindow(H,show);UpdateWindow(H);SetTimer(H,1,500,0);
- std::thread(server).detach();std::thread(rpcLoop).detach();MSG msg;while(GetMessageW(&msg,0,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}Run=false;disconnectDiscord();WSACleanup();GdiplusShutdown(GP);return 0;
+ ShowWindow(H,show);UpdateWindow(H);SetTimer(H,1,350,0);
+ std::thread(server).detach();std::thread(rpcLoop).detach();
+ MSG msg;while(GetMessageW(&msg,0,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}
+ Run=false;disconnectDiscord();WSACleanup();GdiplusShutdown(GP);return 0;
 }
-// Clean rebuild trigger: stable, resizable Windows desktop player 4.4 without asset tooltip text.
+// Localify Discord Player 5.0 — redesigned player, settings and resilient IPC handshake.
