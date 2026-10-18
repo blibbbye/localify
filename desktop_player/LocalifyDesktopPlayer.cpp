@@ -34,7 +34,7 @@ struct Presence{bool playing=false,shuffle=false;std::string song,artist,album,c
 struct Cmd{uint64_t seq=0;std::string action;double value=0;};
 static HWND H=nullptr;static ULONG_PTR GP=0;static std::mutex M;
 static Presence P;static Cmd C;static std::unique_ptr<Bitmap> Cover;static std::string CoverUrl;
-static uint64_t CoverToken=0;static std::atomic<bool> Run{true},Server{false},Discord{false};static HANDLE Pipe=INVALID_HANDLE_VALUE;
+static uint64_t CoverToken=0;static std::atomic<bool> Run{true},Server{false},Discord{false};static std::atomic<int> DiscordState{0};static std::atomic<bool> DiscordReconnectRequested{false};static HANDLE Pipe=INVALID_HANDLE_VALUE;
 
 static std::wstring W(const std::string&s){if(s.empty())return L"";int n=MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),0,0);if(n<=0)return L"";std::wstring r(n,L'\0');MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),r.data(),n);return r;}
 static std::string esc(const std::string&s){std::string r;for(unsigned char c:s){switch(c){case '"':r+="\\\"";break;case '\\':r+="\\\\";break;case '\n':r+="\\n";break;case '\r':r+="\\r";break;default:r.push_back((char)c);}}return r;}
@@ -194,9 +194,16 @@ static void http(SOCKET s){
    if(n.localCoverKey.empty()&&n.song==P.song&&n.album==P.album){n.localCoverKey=P.localCoverKey;n.localCoverData=P.localCoverData;}
    else if(n.localCoverData.empty()&&!n.localCoverKey.empty()&&n.localCoverKey==P.localCoverKey)n.localCoverData=P.localCoverData;
   }
-  std::string displayCover=n.localCoverData;if(displayCover.rfind("data:image/jpeg;base64,",0)!=0||displayCover.size()>500000)displayCover=n.cover;if(displayCover.rfind("https://",0)!=0||displayCover.size()>300){displayCover=registryCoverUrl(n.album);}if(displayCover.rfind("https://",0)!=0||displayCover.size()>300)displayCover=DEFAULT_COVER_URL;
-  bool nc=false;uint64_t tok=0;{std::lock_guard<std::mutex>l(M);
-   n.version=P.version+1;P=n;if(CoverUrl!=displayCover){CoverUrl=displayCover;++CoverToken;tok=CoverToken;}}
+  std::string displayCover=n.localCoverData;
+  bool localDataCover=displayCover.rfind("data:image/",0)==0&&displayCover.find(";base64,")!=std::string::npos&&displayCover.size()<=11*1024*1024;
+  if(!localDataCover)displayCover=n.cover;
+  if(!localDataCover&&(displayCover.rfind("https://",0)!=0||displayCover.size()>300))displayCover=registryCoverUrl(n.album);
+  if(!localDataCover&&(displayCover.rfind("https://",0)!=0||displayCover.size()>300))displayCover=DEFAULT_COVER_URL;
+  bool nc=false;uint64_t tok=0;{
+   std::lock_guard<std::mutex>l(M);
+   n.version=P.version+1;P=n;
+   if(CoverUrl!=displayCover){CoverUrl=displayCover;++CoverToken;tok=CoverToken;nc=true;}
+  }
   if(nc){{std::lock_guard<std::mutex>l(M);Cover.reset();}InvalidateRect(H,nullptr,FALSE);coverLoad(displayCover,tok);}
   else InvalidateRect(H,nullptr,FALSE);
   reply(s,"204 No Content","text/plain","");closesocket(s);return;}
@@ -243,36 +250,68 @@ static void disconnectDiscord(){
 static bool connectDiscord(){
  if(Pipe!=INVALID_HANDLE_VALUE&&Discord.load())return true;
  if(Pipe!=INVALID_HANDLE_VALUE)disconnectDiscord();
+ DiscordState=0;
+ bool pipeOpened=false;
+ const std::string hello="{\"v\":1,\"client_id\":\""+std::string(CLIENT_ID)+"\"}";
  for(int i=0;i<10&&Run;i++){
-  wchar_t name[64];swprintf(name,64,L"\\\\?\\pipe\\discord-ipc-%d",i);
-  HANDLE h=CreateFileW(name,GENERIC_READ|GENERIC_WRITE,0,nullptr,OPEN_EXISTING,0,nullptr);
-  if(h==INVALID_HANDLE_VALUE)continue;
-  Pipe=h;
-  const std::string hello="{\"v\":1,\"client_id\":\""+std::string(CLIENT_ID)+"\"}";
-  uint32_t opcode=0;std::string response;
-  if(pw(0,hello)&&readRpcPacket(Pipe,opcode,response,4000)&&opcode==1&&response.find("\"READY\"")!=std::string::npos){
-    Discord=true;InvalidateRect(H,nullptr,FALSE);return true;
+  for(int style=0;style<2&&Run;style++){
+   wchar_t name[96];
+   if(style==0)swprintf(name,96,L"\\\\?\\pipe\\discord-ipc-%d",i);
+   else swprintf(name,96,L"\\\\.\\pipe\\discord-ipc-%d",i);
+   HANDLE h=CreateFileW(name,GENERIC_READ|GENERIC_WRITE,0,nullptr,OPEN_EXISTING,0,nullptr);
+   if(h==INVALID_HANDLE_VALUE)continue;
+   pipeOpened=true;
+   Pipe=h;
+   if(!pw(0,hello)){disconnectDiscord();continue;}
+   // Discord may send a ping before READY. Process protocol packets until
+   // READY arrives rather than assuming the first packet is the handshake reply.
+   const ULONGLONG deadline=GetTickCount64()+3500;
+   while(Run&&Pipe!=INVALID_HANDLE_VALUE&&GetTickCount64()<deadline){
+    uint32_t opcode=0;std::string response;
+    DWORD remain=(DWORD)std::max<ULONGLONG>(1,deadline-GetTickCount64());
+    if(!readRpcPacket(Pipe,opcode,response,std::min<DWORD>(remain,3500)))break;
+    if(opcode==3){
+     if(!pw(4,response))break;
+     continue;
+    }
+    if(opcode==2)break;
+    if(opcode!=1)continue;
+    if(response.find("\"evt\":\"READY\"")!=std::string::npos){
+     Discord=true;DiscordState=1;InvalidateRect(H,nullptr,FALSE);return true;
+    }
+    if(response.find("\"evt\":\"ERROR\"")!=std::string::npos){
+     OutputDebugStringA(response.c_str());
+     DiscordState=3;
+     break;
+    }
+   }
+   disconnectDiscord();
   }
-  disconnectDiscord();
  }
- Discord=false;InvalidateRect(H,nullptr,FALSE);return false;
+ Discord=false;
+ DiscordState=pipeOpened?3:2;
+ InvalidateRect(H,nullptr,FALSE);
+ return false;
 }
+
 static bool sendRpcCommand(const std::string&json,const std::string&nonce){
- if(!connectDiscord()||!pw(1,json)){disconnectDiscord();return false;}
+ if(!connectDiscord()||!pw(1,json)){DiscordState=3;disconnectDiscord();return false;}
  const std::string needle="\"nonce\":\""+nonce+"\"";
  const ULONGLONG deadline=GetTickCount64()+1800;
  while(Run&&GetTickCount64()<deadline){
   uint32_t opcode=0;std::string payload;
   DWORD remain=(DWORD)std::max<ULONGLONG>(1,deadline-GetTickCount64());
   if(!readRpcPacket(Pipe,opcode,payload,std::min<DWORD>(remain,300)))continue;
-  if(opcode==3){if(!pw(4,payload)){disconnectDiscord();return false;}continue;}
-  if(opcode==2){disconnectDiscord();return false;}
+  if(opcode==3){if(!pw(4,payload)){DiscordState=3;disconnectDiscord();return false;}continue;}
+  if(opcode==2){DiscordState=3;disconnectDiscord();return false;}
+  if(opcode==1&&payload.find("\"evt\":\"ERROR\"")!=std::string::npos){OutputDebugStringA(payload.c_str());DiscordState=3;return false;}
   if(opcode!=1||payload.find(needle)==std::string::npos)continue;
-  if(payload.find("\"evt\":\"ERROR\"")!=std::string::npos){OutputDebugStringA(payload.c_str());return false;}
   return true;
  }
+ DiscordState=3;
  return false;
 }
+
 static bool activity(const Presence&p){
  if(!connectDiscord())return false;
  std::string discordCover=p.cover;
@@ -291,6 +330,7 @@ static bool activity(const Presence&p){
 static void rpcLoop(){
  uint64_t sent=0;bool active=false;
  while(Run){
+  if(DiscordReconnectRequested.exchange(false)){disconnectDiscord();DiscordState=0;sent=0;active=false;}
   Presence p;{std::lock_guard<std::mutex>l(M);p=P;}
   if(p.playing){
    if(p.version!=sent||!Discord.load()){
@@ -308,6 +348,7 @@ static void rpcLoop(){
   Sleep(1000);
  }
 }
+
 static void fill(Graphics&g,float x,float y,float w,float h,float r,const Color&c){GraphicsPath p;p.AddArc(x,y,r,r,180,90);p.AddArc(x+w-r,y,r,r,270,90);p.AddArc(x+w-r,y+h-r,r,r,0,90);p.AddArc(x,y+h-r,r,r,90,90);p.CloseFigure();SolidBrush b(c);g.FillPath(&b,&p);}
 static void txt(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float size,const Color&c,bool bold=false){FontFamily ff(L"Segoe UI");Font f(&ff,size,bold?FontStyleBold:FontStyleRegular,UnitPixel);SolidBrush b(c);StringFormat sf;sf.SetFormatFlags(StringFormatFlagsNoWrap);sf.SetTrimming(StringTrimmingEllipsisCharacter);g.DrawString(s,-1,&f,RectF(x,y,w,h),&sf,&b);}
 static void center(Graphics&g,const wchar_t*s,float x,float y,float w,float h,float size,const Color&c,bool bold=false){FontFamily ff(L"Segoe UI");Font f(&ff,size,bold?FontStyleBold:FontStyleRegular,UnitPixel);SolidBrush b(c);StringFormat sf;sf.SetAlignment(StringAlignmentCenter);sf.SetLineAlignment(StringAlignmentCenter);g.DrawString(s,-1,&f,RectF(x,y,w,h),&sf,&b);}
@@ -373,8 +414,10 @@ static void paint(HDC out){
  fill(g,volX+volW*volRatio-4,optionY+5,8,15,4,Color(255,225,243,255));
 
  txt(g,L"Discord",22,(float)h-30,58,16,9,Server.load()?Color(255,130,240,160):Color(255,145,153,168),true);
- txt(g,Discord.load()?L"Connected":L"Waiting for Discord",(float)80,(float)h-30,210,16,9,
-     Discord.load()?Color(255,135,230,164):Color(255,145,153,168));
+ const int ds=DiscordState.load();
+ const wchar_t* discordLabel=Discord.load()?L"Connected — click to reconnect":(ds==2?L"Open Discord desktop app":(ds==3?L"Handshake failed — click to retry":L"Connecting… click to retry"));
+ txt(g,discordLabel,(float)80,(float)h-30,250,16,9,
+     Discord.load()?Color(255,135,230,164):(ds==3?Color(255,255,155,120):Color(255,240,200,130)));
  BitBlt(out,0,0,w,h,m,0,0,SRCCOPY);
  SelectObject(m,old);DeleteObject(bm);DeleteDC(m);
 }
@@ -388,7 +431,9 @@ static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
   }
   case WM_LBUTTONDOWN:{
     POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};
-    RECT rc{};GetClientRect(h,&rc);RECT cr=coverRectFor(rc.right,rc.bottom);
+    RECT rc{};GetClientRect(h,&rc);
+    if(p.y>=rc.bottom-34&&p.y<=rc.bottom-8&&p.x>=22&&p.x<=340){DiscordReconnectRequested=true;InvalidateRect(h,nullptr,FALSE);return 0;}
+    RECT cr=coverRectFor(rc.right,rc.bottom);
     float infoX=(float)cr.right+18;
     float controlW=(float)std::max<int>(150,rc.right-(int)infoX-22);
     int progressY=rc.bottom-118;
