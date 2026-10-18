@@ -718,7 +718,7 @@ static void paint(HDC out){
  fill(g,(float)u.footer.left,(float)u.footer.top,(float)(u.footer.right-u.footer.left),(float)(u.footer.bottom-u.footer.top),16,Color(255,17,21,29));
  const int ds=DiscordState.load();
  const Color dot=Discord.load()?Color(255,76,210,149):((ds==4||ds==5||ds==6)?Color(255,255,115,100):Color(255,234,185,93));
- SolidBrush statusDot(dot);g.FillEllipse(&statusDot,36,(REAL)u.footer.top+17,9,9);
+ SolidBrush statusDot(dot);g.FillEllipse(&statusDot,36.0f,(REAL)u.footer.top+17.0f,9.0f,9.0f);
  txt(g,L"DISCORD CONNECTION",53,(float)u.footer.top+11,170,15,9,Color(255,216,222,232),true);
  std::wstring diagnostic;{std::lock_guard<std::mutex> lock(DiscordStatusMutex);diagnostic=DiscordDiagnostic;}
  if(Discord.load())diagnostic=L"Connected — listening activity is ready";
@@ -755,12 +755,12 @@ static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
    if(hit(u.seek,p)){
     DragSeeking=true;SetCapture(h);
     double d;{std::lock_guard<std::mutex> lock(M);d=P.dur;}
-    if(d>0)issue("seek",std::clamp((p.x-u.seek.left)/(double)std::max(1,u.seek.right-u.seek.left),0.0,1.0)*d);
+    if(d>0)issue("seek",std::clamp((p.x-u.seek.left)/(double)std::max(1.0,(double)(u.seek.right-u.seek.left)),0.0,1.0)*d);
     return 0;
    }
    if(hit(u.volume,p)){
     DragVolume=true;SetCapture(h);
-    issue("volume",std::clamp((p.x-u.volume.left)/(double)std::max(1,u.volume.right-u.volume.left),0.0,1.0));
+    issue("volume",std::clamp((p.x-u.volume.left)/(double)std::max(1.0,(double)(u.volume.right-u.volume.left)),0.0,1.0));
     return 0;
    }
    return 0;
@@ -770,9 +770,9 @@ static LRESULT CALLBACK wnd(HWND h,UINT msg,WPARAM w,LPARAM l){
    POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};RECT rc{};GetClientRect(h,&rc);const UiLayout u=layoutFor(rc.right,rc.bottom);
    if(DragSeeking){
     double d;{std::lock_guard<std::mutex> lock(M);d=P.dur;}
-    if(d>0)issue("seek",std::clamp((p.x-u.seek.left)/(double)std::max(1,u.seek.right-u.seek.left),0.0,1.0)*d);
+    if(d>0)issue("seek",std::clamp((p.x-u.seek.left)/(double)std::max(1.0,(double)(u.seek.right-u.seek.left)),0.0,1.0)*d);
    }else{
-    issue("volume",std::clamp((p.x-u.volume.left)/(double)std::max(1,u.volume.right-u.volume.left),0.0,1.0));
+    issue("volume",std::clamp((p.x-u.volume.left)/(double)std::max(1.0,(double)(u.volume.right-u.volume.left)),0.0,1.0));
    }
    return 0;
   }
