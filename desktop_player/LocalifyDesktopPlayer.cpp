@@ -7,6 +7,7 @@
 #include <gdiplus.h>
 #include <dwmapi.h>
 #include <windowsx.h>
+#include <shellapi.h>
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -38,6 +39,12 @@ static uint64_t CoverToken=0;static std::atomic<bool> Run{true},Server{false},Di
 static std::string DiscordClientId=CLIENT_ID;
 static std::wstring DiscordDiagnostic=L"Connecting to Discord...";
 static std::mutex DiscordStatusMutex;
+static std::atomic<int> BridgeError{0};
+static std::string LastIpcPipe="not connected";
+static DWORD LastPipeError=0;
+static HWND SettingsWindow=nullptr, ClientIdEdit=nullptr, KeepOnTopCheck=nullptr;
+static bool KeepOnTop=false, DragSeeking=false, DragVolume=false;
+static const int ID_SETTINGS_SAVE=2101, ID_SETTINGS_DEFAULT=2102, ID_SETTINGS_CANCEL=2103, ID_SETTINGS_OPEN=2104, ID_SETTINGS_COPY=2105, ID_SETTINGS_TOPMOST=2106;
 
 static std::wstring W(const std::string&s){if(s.empty())return L"";int n=MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),0,0);if(n<=0)return L"";std::wstring r(n,L'\0');MultiByteToWideChar(CP_UTF8,0,s.data(),(int)s.size(),r.data(),n);return r;}
 static std::string esc(const std::string&s){std::string r;for(unsigned char c:s){switch(c){case '"':r+="\\\"";break;case '\\':r+="\\\\";break;case '\n':r+="\\n";break;case '\r':r+="\\r";break;default:r.push_back((char)c);}}return r;}
@@ -153,7 +160,7 @@ static std::string jsonStringForKey(const std::string&j,const std::string&key){
 static std::string registryCoverUrl(const std::string&album){
  static std::mutex lock;static std::string registry;static bool loaded=false;
  std::lock_guard<std::mutex>g(lock);
- if(!loaded){registry=httpText("https://raw.githubusercontent.com/blibbbye/Localify/main/covers.json");loaded=true;}
+ if(!loaded||registry.empty()){registry=httpText("https://raw.githubusercontent.com/blibbbye/Localify/main/covers.json");loaded=!registry.empty();}
  if(registry.empty()||album.empty())return"";
  std::string file=jsonStringForKey(registry,album);if(file.empty())return"";
  if(file.rfind("http://",0)==0||file.rfind("https://",0)==0)return file;
@@ -290,9 +297,16 @@ static void server(){
 static std::string pkt(uint32_t op,const std::string&j){std::string x(8+j.size(),'\0');uint32_t n=(uint32_t)j.size();memcpy(x.data(),&op,4);memcpy(x.data()+4,&n,4);memcpy(x.data()+8,j.data(),j.size());return x;}
 static bool pw(uint32_t op,const std::string&j){
  if(Pipe==INVALID_HANDLE_VALUE)return false;
- std::string x=pkt(op,j);DWORD w=0;
- if(!WriteFile(Pipe,x.data(),(DWORD)x.size(),&w,0)||w!=x.size()){
-  CloseHandle(Pipe);Pipe=INVALID_HANDLE_VALUE;Discord=false;return false;
+ const std::string x=pkt(op,j);
+ size_t sent=0;
+ while(sent<x.size()){
+  DWORD w=0;
+  if(!WriteFile(Pipe,x.data()+sent,(DWORD)(x.size()-sent),&w,nullptr)||!w){
+   LastPipeError=GetLastError();
+   if(Pipe!=INVALID_HANDLE_VALUE){CloseHandle(Pipe);Pipe=INVALID_HANDLE_VALUE;}
+   Discord=false;return false;
+  }
+  sent+=w;
  }
  return true;
 }
@@ -300,21 +314,25 @@ static bool readExactPipe(HANDLE pipe,char*dst,DWORD need,DWORD timeoutMs){
  DWORD have=0;ULONGLONG deadline=GetTickCount64()+timeoutMs;
  while(have<need&&Run&&GetTickCount64()<deadline){
   DWORD available=0;
-  if(!PeekNamedPipe(pipe,nullptr,0,nullptr,&available,nullptr))return false;
-  if(!available){Sleep(8);continue;}
+  if(!PeekNamedPipe(pipe,nullptr,0,nullptr,&available,nullptr)){
+   LastPipeError=GetLastError();return false;
+  }
+  if(!available){Sleep(5);continue;}
   DWORD take=std::min<DWORD>(available,need-have),got=0;
-  if(!ReadFile(pipe,dst+have,take,&got,nullptr)||!got)return false;
+  if(!ReadFile(pipe,dst+have,take,&got,nullptr)||!got){
+   LastPipeError=GetLastError();return false;
+  }
   have+=got;
-  // Once a frame has started arriving, allow fragmented named-pipe writes to finish.
-  deadline=GetTickCount64()+std::max<DWORD>(timeoutMs,1000);
+  deadline=GetTickCount64()+std::max<DWORD>(timeoutMs,1200);
  }
+ if(have!=need)LastPipeError=WAIT_TIMEOUT;
  return have==need;
 }
 static bool readRpcPacket(HANDLE pipe,uint32_t&opcode,std::string&payload,DWORD timeoutMs){
  uint32_t header[2]={0,0};
  if(!readExactPipe(pipe,(char*)header,sizeof(header),timeoutMs))return false;
  opcode=header[0];uint32_t length=header[1];
- if(length>2*1024*1024)return false;
+ if(length>2*1024*1024){LastPipeError=ERROR_INVALID_DATA;return false;}
  payload.assign(length,'\0');
  return length==0||readExactPipe(pipe,payload.data(),length,timeoutMs);
 }
@@ -326,79 +344,87 @@ static bool connectDiscord(){
  if(Pipe!=INVALID_HANDLE_VALUE&&Discord.load())return true;
  if(Pipe!=INVALID_HANDLE_VALUE)disconnectDiscord();
  if(DiscordClientId.empty()){
-  setDiscordStatus(4,"Enter a valid Application ID in Localify Discord Player.ini");
+  setDiscordStatus(4,"Enter a valid Discord Application ID in Settings");
   return false;
  }
+ if(DiscordState.load()==4)return false;
  setDiscordStatus(0,"Looking for Discord desktop...");
  bool pipeOpened=false;
  int lastFailure=0;
  std::string lastMessage;
  const std::string hello="{\"v\":1,\"client_id\":\""+DiscordClientId+"\"}";
  for(int i=0;i<10&&Run;i++){
-  for(int style=0;style<2&&Run;style++){
-   wchar_t name[96];
-   if(style==0)swprintf(name,96,L"\\\\?\\pipe\\discord-ipc-%d",i);
-   else swprintf(name,96,L"\\\\.\\pipe\\discord-ipc-%d",i);
-   HANDLE h=CreateFileW(name,GENERIC_READ|GENERIC_WRITE,0,nullptr,OPEN_EXISTING,0,nullptr);
-   if(h==INVALID_HANDLE_VALUE)continue;
-   pipeOpened=true;
-   Pipe=h;
-   setDiscordStatus(0,"Discord IPC found; checking handshake...");
-   if(!pw(0,hello)){
-    lastFailure=6;lastMessage="Discord closed the IPC connection during handshake";
-    disconnectDiscord();continue;
-   }
-   const ULONGLONG deadline=GetTickCount64()+1800;
-   while(Run&&Pipe!=INVALID_HANDLE_VALUE&&GetTickCount64()<deadline){
-    uint32_t opcode=0;std::string response;
-    DWORD remain=(DWORD)std::max<ULONGLONG>(1,deadline-GetTickCount64());
-    if(!readRpcPacket(Pipe,opcode,response,std::min<DWORD>(remain,1800))){
-     lastFailure=6;lastMessage="Discord IPC closed or timed out before READY; check the Application ID";
-     break;
-    }
-    if(opcode==3){
-     if(!pw(4,response)){lastFailure=6;lastMessage="Could not answer Discord IPC ping";break;}
-     continue;
-    }
-    if(opcode==2){
-     OutputDebugStringA(("Localify Discord handshake CLOSE: "+response).c_str());
-     if(looksLikeInvalidClientId(response,true)){
-      setDiscordStatus(4,"Discord IPC CLOSE 4000: invalid Client ID "+DiscordClientId);
-      disconnectDiscord();
-      return false;
-     }
-     const int code=rpcCode(response);
-     if(code==4001){lastFailure=5;lastMessage="Discord IPC CLOSE 4001: invalid origin";}
-     else if(code==4002){lastFailure=5;lastMessage="Discord IPC CLOSE 4002: rate limited; wait and retry";}
-     else if(code==4004){lastFailure=5;lastMessage="Discord IPC CLOSE 4004: invalid RPC version";}
-     else if(code==4005){lastFailure=5;lastMessage="Discord IPC CLOSE 4005: invalid encoding";}
-     else {lastFailure=5;lastMessage=describeDiscordResponse(response,"Discord closed the IPC handshake; restart Discord and retry");}
-     break;
-    }
-    if(opcode!=1)continue;
-    if(response.find("\"evt\":\"READY\"")!=std::string::npos){
-     Discord=true;setDiscordStatus(1,"Connected to Discord");
-     InvalidateRect(H,nullptr,FALSE);return true;
-    }
-    if(response.find("\"evt\":\"ERROR\"")!=std::string::npos){
-     OutputDebugStringA(("Localify Discord handshake ERROR: "+response).c_str());
-     if(looksLikeInvalidClientId(response,false)){
-      setDiscordStatus(4,"Discord rejected Client ID "+DiscordClientId+" (RPC error "+std::to_string(rpcCode(response))+")");
-      disconnectDiscord();
-      return false;
-     }
-     lastFailure=5;
-     lastMessage=describeDiscordResponse(response,"Discord returned an IPC error; restart Discord and retry");
-     break;
-    }
-   }
-   if(Pipe!=INVALID_HANDLE_VALUE)disconnectDiscord();
+  wchar_t name[96];
+  swprintf(name,96,L"\\\\?\\pipe\\discord-ipc-%d",i);
+  LastIpcPipe="discord-ipc-"+std::to_string(i);
+  HANDLE h=INVALID_HANDLE_VALUE;
+  for(int attempt=0;attempt<2&&Run;attempt++){
+   h=CreateFileW(name,GENERIC_READ|GENERIC_WRITE,0,nullptr,OPEN_EXISTING,0,nullptr);
+   if(h!=INVALID_HANDLE_VALUE)break;
+   DWORD err=GetLastError();
+   if(err!=ERROR_PIPE_BUSY)break;
+   WaitNamedPipeW(name,350);
   }
+  if(h==INVALID_HANDLE_VALUE)continue;
+  pipeOpened=true;Pipe=h;
+  DWORD mode=PIPE_READMODE_BYTE;
+  SetNamedPipeHandleState(Pipe,&mode,nullptr,nullptr);
+  setDiscordStatus(0,"Discord IPC found; waiting for READY...");
+  LastPipeError=0;
+  if(!pw(0,hello)){
+   lastFailure=6;lastMessage="Could not send the Discord IPC handshake (Win32 error "+std::to_string(LastPipeError)+").";
+   disconnectDiscord();continue;
+  }
+  const ULONGLONG deadline=GetTickCount64()+5000;
+  while(Run&&Pipe!=INVALID_HANDLE_VALUE&&GetTickCount64()<deadline){
+   uint32_t opcode=0;std::string response;
+   DWORD remain=(DWORD)std::max<ULONGLONG>(1,deadline-GetTickCount64());
+   if(!readRpcPacket(Pipe,opcode,response,std::min<DWORD>(remain,1200))){
+    const DWORD err=LastPipeError;
+    lastFailure=6;
+    lastMessage="No READY reply from "+LastIpcPipe+". Check that Discord Desktop is open and the Application ID is valid";
+    if(err&&err!=WAIT_TIMEOUT)lastMessage+=" (pipe error "+std::to_string(err)+")";
+    break;
+   }
+   if(opcode==3){
+    if(!pw(4,response)){lastFailure=6;lastMessage="Could not answer Discord's IPC ping.";break;}
+    continue;
+   }
+   if(opcode==2){
+    OutputDebugStringA(("Localify Discord handshake CLOSE: "+response).c_str());
+    if(looksLikeInvalidClientId(response,true)){
+     setDiscordStatus(4,"Discord rejected this Application ID. Open Settings and enter a valid ID.");
+     disconnectDiscord();InvalidateRect(H,nullptr,FALSE);return false;
+    }
+    const int code=rpcCode(response);
+    if(code==4001){lastFailure=5;lastMessage="Discord IPC CLOSE 4001: invalid origin.";}
+    else if(code==4002){lastFailure=5;lastMessage="Discord IPC CLOSE 4002: rate limited; wait and retry.";}
+    else if(code==4004){lastFailure=5;lastMessage="Discord IPC CLOSE 4004: invalid RPC version.";}
+    else if(code==4005){lastFailure=5;lastMessage="Discord IPC CLOSE 4005: invalid encoding.";}
+    else {lastFailure=5;lastMessage=describeDiscordResponse(response,"Discord closed the IPC handshake. Restart Discord and retry.");}
+    break;
+   }
+   if(opcode!=1)continue;
+   const std::string evt=js(response,"evt");
+   if(evt=="READY"){
+    Discord=true;setDiscordStatus(1,"Connected to Discord");
+    InvalidateRect(H,nullptr,FALSE);return true;
+   }
+   if(evt=="ERROR"){
+    OutputDebugStringA(("Localify Discord handshake ERROR: "+response).c_str());
+    if(looksLikeInvalidClientId(response,false)){
+     setDiscordStatus(4,"Discord rejected this Application ID. Open Settings and enter a valid ID.");
+     disconnectDiscord();InvalidateRect(H,nullptr,FALSE);return false;
+    }
+    lastFailure=5;lastMessage=describeDiscordResponse(response,"Discord returned an IPC error during handshake.");break;
+   }
+  }
+  if(Pipe!=INVALID_HANDLE_VALUE)disconnectDiscord();
  }
  Discord=false;
  if(lastFailure==0){
-  if(pipeOpened){lastFailure=6;lastMessage="Discord pipe opened but no READY reply arrived; check the Application ID";}
-  else {lastFailure=2;lastMessage="Discord desktop app was not found; open the Discord desktop app";}
+  if(pipeOpened){lastFailure=6;lastMessage="Discord's IPC pipe opened, but no READY reply arrived. Use Settings to verify the Application ID.";}
+  else {lastFailure=2;lastMessage="Discord desktop app not found. Open Discord Desktop, then choose Reconnect.";}
  }
  setDiscordStatus(lastFailure,lastMessage);
  InvalidateRect(H,nullptr,FALSE);
@@ -406,20 +432,31 @@ static bool connectDiscord(){
 }
 
 static bool sendRpcCommand(const std::string&json,const std::string&nonce){
- if(!connectDiscord()||!pw(1,json)){setDiscordStatus(5,"Discord RPC command failed; reconnect the connector");disconnectDiscord();return false;}
- const std::string needle="\"nonce\":\""+nonce+"\"";
- const ULONGLONG deadline=GetTickCount64()+1800;
+ if(!connectDiscord()||!pw(1,json)){
+  if(DiscordState.load()!=4)setDiscordStatus(5,"Discord RPC command could not be sent; reconnect the connector.");
+  disconnectDiscord();return false;
+ }
+ const ULONGLONG deadline=GetTickCount64()+2500;
  while(Run&&GetTickCount64()<deadline){
   uint32_t opcode=0;std::string payload;
   DWORD remain=(DWORD)std::max<ULONGLONG>(1,deadline-GetTickCount64());
-  if(!readRpcPacket(Pipe,opcode,payload,std::min<DWORD>(remain,300)))continue;
-  if(opcode==3){if(!pw(4,payload)){setDiscordStatus(5,"Could not answer Discord IPC ping");disconnectDiscord();return false;}continue;}
-  if(opcode==2){setDiscordStatus(5,"Discord closed the RPC connection");disconnectDiscord();return false;}
-  if(opcode==1&&payload.find("\"evt\":\"ERROR\"")!=std::string::npos){OutputDebugStringA(payload.c_str());setDiscordStatus(5,"Discord rejected the RPC activity");disconnectDiscord();return false;}
-  if(opcode!=1||payload.find(needle)==std::string::npos)continue;
+  if(!readRpcPacket(Pipe,opcode,payload,std::min<DWORD>(remain,400)))continue;
+  if(opcode==3){if(!pw(4,payload)){setDiscordStatus(5,"Could not answer Discord's IPC ping.");disconnectDiscord();return false;}continue;}
+  if(opcode==2){
+   setDiscordStatus(5,describeDiscordResponse(payload,"Discord closed the RPC connection."));
+   disconnectDiscord();return false;
+  }
+  if(opcode!=1)continue;
+  if(js(payload,"nonce")!=nonce)continue;
+  if(js(payload,"evt")=="ERROR"){
+   const int code=rpcCode(payload);
+   setDiscordStatus(5,describeDiscordResponse(payload,("Discord rejected the activity (RPC error "+std::to_string(code)+").").c_str()));
+   disconnectDiscord();return false;
+  }
   return true;
  }
- setDiscordStatus(6,"Discord RPC response timed out");
+ setDiscordStatus(6,"Discord did not confirm the activity update in time.");
+ disconnectDiscord();
  return false;
 }
 
