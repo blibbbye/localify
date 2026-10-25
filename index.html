@@ -2046,6 +2046,8 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     else if(state.currentView==="playlists")renderPlaylists();
     else if(state.currentView==="liked")renderLiked();
     else if(state.currentView==="recent")renderRecent();
+    else if(state.currentView==="listeningStats")showListeningStats();
+    else if(state.currentView==="accountSettings")showAccountSettings();
     renderPlayer();
     applyContextArtworkTheme();
   }
@@ -3128,10 +3130,21 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   }
   function toggleProfileMenu(){const m=$("#profileMenu");if(!m)return;m.classList.contains("open")?closeProfileMenu():openProfileMenu()}
   function profileMenuSettingsCapture(e){
-    const item=e.target.closest?.("#profileMenuSettings");
-    if(!item)return;
+    const statsItem=e.target.closest?.("#profileMenuStats");
+    const settingsItem=e.target.closest?.("#profileMenuSettings");
+    const profileItem=e.target.closest?.("#profileMenuProfile");
+    if(!statsItem&&!settingsItem&&!profileItem)return;
     e.preventDefault();e.stopPropagation();
-    closeProfileMenu();showAccountSettings();
+    closeProfileMenu();
+    try{
+      if(statsItem)setView("listeningStats");
+      else if(settingsItem)setView("accountSettings");
+      else setView("profile");
+    }catch(error){
+      console.error("Localify profile menu navigation failed",error);
+      const content=$("#content");
+      if(content)content.innerHTML='<div class="profilePanel"><h3>Could not open this page</h3><div class="profileEmpty">Localify hit an error while opening this section. Refresh the page and try again.</div><button type="button" class="secondary" onclick="location.reload()">Refresh Localify</button></div>';
+    }
   }
 
   function renderProfileTopButton(){
@@ -3202,12 +3215,141 @@ function showListeningStats(){
     const topArtistRows=topArtists.length?topArtists.map((x,i)=>statsRow(i+1,artistThumb(x.artist),x.name,"Most played artist",x.count+" plays")).join(""):noStats;
     const topAlbumRows=topAlbums.length?topAlbums.map((x,i)=>statsRow(i+1,albumThumb(x.album),x.album.title||"Untitled album",artistNamesForAlbum(x.album).filter(n=>n!==NONE_LABEL).join(", ")||"Album",x.count+" plays")).join(""):'<div class="profileEmpty">Play songs from your albums to build this ranking.</div>';
     const recentRows=recent.length?recent.map((t,i)=>statsRow(i+1,trackThumb(t),displayTrackTitle(t,true),artistName(t)+" • "+albumName(t),"Recently")).join(""):'<div class="profileEmpty">Nothing has been played yet.</div>';
-    $("#content").innerHTML='<div class="profilePage"><div class="profilePanel statsPageIntro" style="margin-bottom:20px"><div class="profileName">Listening stats</div><div class="profileSub">Your listening activity, weekly recap, top music and recently played tracks.</div></div>'+
+    $("#content").innerHTML='<div class="profilePage"><div class="profilePanel statsPageIntro" style="margin-bottom:20px"><div class="profileName">Listening stats</div><div class="profileSub">Your listening activity, weekly recap, top music and recently played tracks.</div><div style="margin-top:12px"><button type="button" class="secondary" id="downloadStatsImage">↓ Download stats image</button></div></div>'+
       '<div class="profileStatsGrid"><div class="profileStat"><div class="profileStatLabel">Listening time</div><div class="profileStatValue">'+formatHours(total)+'</div></div><div class="profileStat"><div class="profileStatLabel">Total plays</div><div class="profileStatValue">'+totalPlays.toLocaleString()+'</div></div><div class="profileStat"><div class="profileStatLabel">This week</div><div class="profileStatValue">'+Math.floor(weekly.seconds/60).toLocaleString()+' min</div></div><div class="profileStat"><div class="profileStatLabel">Songs played</div><div class="profileStatValue">'+Object.keys(state.analytics.plays||{}).filter(id=>trackById(id)).length.toLocaleString()+'</div></div></div>'+
       '<div class="profileGrid statsPrimaryGrid"><div class="profilePanel"><h3>Weekly recap · top songs</h3><div class="profileList">'+weeklySongRows+'</div></div><div class="profilePanel"><h3>Weekly recap · top artists</h3><div class="profileList">'+weeklyArtistRows+'</div></div></div>'+
       '<div class="profileGrid statsPrimaryGrid"><div class="profilePanel"><h3>Top songs all time</h3><div class="profileList">'+topSongRows+'</div></div><div class="profilePanel"><h3>Top artists all time</h3><div class="profileList">'+topArtistRows+'</div></div></div>'+
       '<div class="profilePanel" style="margin-bottom:14px"><h3>Top 3 albums</h3><div class="profileList">'+topAlbumRows+'</div></div>'+
       '<div class="profilePanel"><h3>Recently played</h3><div class="profileList">'+recentRows+'</div></div></div>';
+    const downloadStatsButton=$("#downloadStatsImage");
+    if(downloadStatsButton)downloadStatsButton.onclick=downloadListeningStatsImage;
+  }
+
+  function downloadListeningStatsImage(){
+    try{
+      ensureAnalytics();
+      const canvas=document.createElement("canvas");
+      canvas.width=1200;canvas.height=1580;
+      const ctx=canvas.getContext("2d");
+      if(!ctx){toast("Could not create the stats image.");return}
+      const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#7dd3fc";
+      const accent2=getComputedStyle(document.documentElement).getPropertyValue("--accent2").trim()||accent;
+      const W=canvas.width,H=canvas.height;
+      const bg=ctx.createLinearGradient(0,0,W,H);
+      bg.addColorStop(0,"#0a0c10");bg.addColorStop(1,"#10151c");
+      ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+      const glow=ctx.createRadialGradient(980,45,10,980,45,520);
+      glow.addColorStop(0,accent+"28");glow.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=glow;ctx.fillRect(0,0,W,520);
+      const rounded=(x,y,w,h,r,color,stroke)=>{
+        ctx.beginPath();
+        if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);
+        else ctx.rect(x,y,w,h);
+        ctx.fillStyle=color;ctx.fill();
+        if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}
+      };
+      const fit=(value,maxWidth,font)=>{
+        let s=String(value??"");ctx.font=font;
+        if(ctx.measureText(s).width<=maxWidth)return s;
+        while(s.length>1&&ctx.measureText(s+"…").width>maxWidth)s=s.slice(0,-1);
+        return s+"…";
+      };
+      const label=(str,x,y,size=15,color="#8d97a5",weight=600)=>{
+        ctx.font=weight+" "+size+"px Inter, Segoe UI, Arial, sans-serif";
+        ctx.fillStyle=color;ctx.fillText(String(str),x,y);
+      };
+      const title=(str,x,y,size=28,color="#f4f6f8",weight=800)=>{
+        ctx.font=weight+" "+size+"px Inter, Segoe UI, Arial, sans-serif";
+        ctx.fillStyle=color;ctx.fillText(String(str),x,y);
+      };
+      const row=(x,y,w,rank,main,sub,right)=>{
+        rounded(x,y,w,48,12,"rgba(255,255,255,.035)");
+        rounded(x+10,y+9,30,30,9,"rgba(255,255,255,.055)");
+        label(rank,x+20,y+29,13,accent,800);
+        label(fit(main,w-145,"700 16px Inter, Segoe UI, Arial, sans-serif"),x+52,y+20,16,"#f0f3f6",700);
+        label(fit(sub||"",w-165,"500 12px Inter, Segoe UI, Arial, sans-serif"),x+52,y+37,12,"#8b95a2",500);
+        if(right)label(fit(right,65,"700 12px Inter, Segoe UI, Arial, sans-serif"),x+w-77,y+28,12,"#b5bfca",700);
+      };
+      const totalSeconds=Number(state.analytics.totalSeconds)||0;
+      const totalPlays=Object.values(state.analytics.plays||{}).reduce((n,v)=>n+(Number(v)||0),0);
+      const weekly=profileWeeklyData();
+      const played=Object.entries(state.analytics.plays||{}).map(([id,count])=>({t:trackById(id),count:Number(count)||0,seconds:Number(state.analytics.trackSeconds?.[id])||0})).filter(x=>x.t);
+      const artistCounts=new Map(),albumCounts=new Map();
+      for(const item of played){
+        const t=item.t;
+        let names=artistNamesForTrack(t).filter(n=>n&&n!==NONE_LABEL);
+        for(const name of new Set(names)){
+          const key=String(name).toLocaleLowerCase();
+          artistCounts.set(key,{name,count:(artistCounts.get(key)?.count||0)+item.count});
+        }
+        const a=albumById(t.albumId)||state.albums.find(a=>String(a.title||"").trim().toLocaleLowerCase()===String(t.album||"").trim().toLocaleLowerCase());
+        if(a){
+          const key=String(a.id||a.title||"").toLocaleLowerCase();
+          const itemAlbum=albumCounts.get(key)||{album:a,count:0};
+          itemAlbum.count+=item.count;albumCounts.set(key,itemAlbum);
+        }
+      }
+      const topSongs=profileTopSongs(5);
+      const topArtists=[...artistCounts.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,undefined,{sensitivity:"base"})).slice(0,5);
+      const topAlbums=[...albumCounts.values()].sort((a,b)=>b.count-a.count).slice(0,5);
+      const recent=state.recent.map(trackById).filter(Boolean).slice(0,5);
+      const date=new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+      rounded(46,42,W-92,156,24,"rgba(18,24,32,.94)","rgba(255,255,255,.08)");
+      rounded(70,67,10,98,5,accent);
+      title("LOCALIFY",100,88,16,accent,900);
+      title("Your listening stats",100,133,34,"#f5f7fa",850);
+      label("Personal listening recap  ·  "+date,100,166,15,"#9ba5b3",500);
+      const cards=[
+        ["LISTENING TIME",formatHours(totalSeconds)],
+        ["TOTAL PLAYS",totalPlays.toLocaleString()],
+        ["THIS WEEK",Math.floor(weekly.seconds/60).toLocaleString()+" min"],
+        ["SONGS PLAYED",Object.keys(state.analytics.plays||{}).filter(id=>trackById(id)).length.toLocaleString()]
+      ];
+      const cardY=226,cardGap=14,cardW=(W-92-cardGap*3)/4;
+      cards.forEach((item,i)=>{
+        const x=46+i*(cardW+cardGap);
+        rounded(x,cardY,cardW,116,18,"rgba(18,24,32,.94)","rgba(255,255,255,.07)");
+        label(item[0],x+17,cardY+31,11,"#8e99a7",800);
+        title(fit(item[1],cardW-34,"800 25px Inter, Segoe UI, Arial, sans-serif"),x+17,cardY+74,25,"#f3f5f7",800);
+        rounded(x+17,cardY+94,cardW-34,3,2,"rgba(255,255,255,.07)");
+        rounded(x+17,cardY+94,(cardW-34)*([.78,.65,.48,.56][i]),3,2,accent);
+      });
+      const section=(x,y,w,h,heading,sub,items,emptyText,mode)=>{
+        rounded(x,y,w,h,20,"rgba(16,21,28,.94)","rgba(255,255,255,.075)");
+        title(heading,x+20,y+35,19,"#f2f5f8",800);
+        label(sub,x+20,y+57,11,"#7f8a98",500);
+        if(!items.length){label(emptyText,x+20,y+92,13,"#8c97a4",500);return}
+        items.slice(0,5).forEach((item,i)=>{
+          let main="",detail="",right="";
+          if(mode==="song"){main=displayTrackTitle(item.t,true)||"Unknown song";detail=artistName(item.t);right=item.count+" plays"}
+          else if(mode==="artist"){main=item.name;detail="Top artist";right=item.count+" plays"}
+          else if(mode==="album"){main=item.album?.title||"Untitled album";detail=artistNamesForAlbum(item.album).join(", ")||"Album";right=item.count+" plays"}
+          else {main=displayTrackTitle(item,true)||"Unknown song";detail=artistName(item)+" · "+albumName(item);right="Recent"}
+          row(x+14,y+72,w-28,i+1,main,detail,right);
+        });
+      };
+      const leftX=46,rightX=610,colW=544;
+      section(leftX,370,colW,370,"Top songs","All time",topSongs,"Play music to build this list.","song");
+      section(rightX,370,colW,370,"Top artists","All time",topArtists,"Play music to build this list.","artist");
+      section(leftX,760,colW,370,"Top albums","Ranked by plays",topAlbums,"Play songs from albums to build this list.","album");
+      section(rightX,760,colW,370,"Recently played","Your latest tracks",recent,"Nothing has been played yet.","recent");
+      rounded(46,1160,W-92,100,18,"rgba(18,24,32,.94)","rgba(255,255,255,.07)");
+      title("Weekly recap",68,1200,17,"#f3f5f7",800);
+      label(Math.floor(weekly.seconds/60).toLocaleString()+" minutes listened this week",68,1231,14,"#abb5c1",600);
+      label(weekly.plays.toLocaleString()+" recorded plays this week",68,1253,14,"#abb5c1",600);
+      rounded(46,1290,W-92,1,1,"rgba(255,255,255,.08)");
+      label("Generated by Localify  ·  This image contains your on-device listening stats",46,1330,12,"#74808e",500);
+      title("LISTEN LOCAL.",46,1377,13,accent,900);
+      label("Your music. Your files.",46,1403,12,"#74808e",500);
+      const link=document.createElement("a");
+      link.download="localify-listening-stats-"+new Date().toISOString().slice(0,10)+".png";
+      link.href=canvas.toDataURL("image/png");
+      link.style.display="none";document.body.appendChild(link);link.click();link.remove();
+      toast("Listening stats image downloaded.");
+    }catch(error){
+      console.error("Localify stats image export failed",error);
+      toast("Could not export the stats image. Try again.");
+    }
   }
 
 function editLocalProfile(){
