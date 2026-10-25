@@ -18,7 +18,7 @@ jobs:
           python - <<'PY'
           import pathlib, re, subprocess, tempfile
           html = pathlib.Path("index.html").read_text(encoding="utf-8")
-          blocks = re.findall(r"<script\\b[^>]*>([\\s\\S]*?)</script\\s*>", html, flags=re.I)
+          blocks = re.findall(r"<script\b[^>]*>([\s\S]*?)</script\s*>", html, flags=re.I)
           if not blocks:
               raise SystemExit("No inline script blocks found")
           checked = 0
