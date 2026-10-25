@@ -1693,7 +1693,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     return restored;
   }
 
-  function setView(v){state.currentView=v;state.selected=[];state.detail=null;localifyClearPages();if(v==="profile"){showProfile();$("#main").scrollTop=0;return}if(v==="listeningStats"){showListeningStats();$("#main").scrollTop=0;return}render();$("#main").scrollTop=0}
+  function setView(v){state.currentView=v;state.selected=[];state.detail=null;localifyClearPages();if(v==="profile"){showProfile();$("#main").scrollTop=0;return}if(v==="listeningStats"){showListeningStats();$("#main").scrollTop=0;return}if(v==="accountSettings"){showAccountSettings();$("#main").scrollTop=0;return}render();$("#main").scrollTop=0}
   function empty(title,desc){return `<div class="empty"><h3>${esc(title)}</h3><div>${esc(desc)}</div></div>`}
   function renderNav(){
     $$("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===state.currentView));
@@ -3129,23 +3129,6 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     $("#profileMenuSettings").onclick=e=>{stop(e);closeProfileMenu();showAccountSettings()};
   }
   function toggleProfileMenu(){const m=$("#profileMenu");if(!m)return;m.classList.contains("open")?closeProfileMenu():openProfileMenu()}
-  function profileMenuSettingsCapture(e){
-    const statsItem=e.target.closest?.("#profileMenuStats");
-    const settingsItem=e.target.closest?.("#profileMenuSettings");
-    const profileItem=e.target.closest?.("#profileMenuProfile");
-    if(!statsItem&&!settingsItem&&!profileItem)return;
-    e.preventDefault();e.stopPropagation();
-    closeProfileMenu();
-    try{
-      if(statsItem)setView("listeningStats");
-      else if(settingsItem)setView("accountSettings");
-      else setView("profile");
-    }catch(error){
-      console.error("Localify profile menu navigation failed",error);
-      const content=$("#content");
-      if(content)content.innerHTML='<div class="profilePanel"><h3>Could not open this page</h3><div class="profileEmpty">Localify hit an error while opening this section. Refresh the page and try again.</div><button type="button" class="secondary" onclick="location.reload()">Refresh Localify</button></div>';
-    }
-  }
 
   function renderProfileTopButton(){
     const b=$("#profileBtn"),g=$("#profileGlyph");
@@ -3365,55 +3348,75 @@ function editLocalProfile(){
 
   function showAccountSettings(){
     closeProfileMenu();
-    state.currentView="accountSettings";state.detail=null;state.selected=[];localifyClearPages();renderNav();
-    const currentTheme=normalizeTheme(state.settings.theme);
-    const themeChoices=Object.entries(DEFAULT_LOCALIFY_THEMES).map(([id,item])=>{
-      const preview=item.mode==="gradient"?"linear-gradient(135deg,"+item.color1+","+item.color2+")":item.color1;
-      return '<button type="button" class="themeChoice '+(currentTheme.preset===id?'active':'')+'" data-theme-preset="'+id+'" aria-label="Use '+esc(item.name)+' theme" title="'+esc(item.name)+'"><div class="themeSwatch" style="background:'+preview+'"></div><strong>'+esc(item.name)+'</strong><span>'+(item.mode==="gradient"?"Colour blend":"Solid colour")+'</span></button>';
-    }).join("");
-    const themeSection=
-      '<section class="settingsSection themeSettingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Appearance & themes</div><div class="settingsSectionSub">Choose a colour palette. The interface stays dark and takes on a subtle tint of your theme.</div></div></div>'+
-      '<div class="themeGrid">'+themeChoices+'</div>'+
-      '<div class="themeCustomPanel"><div class="settingsSectionTitle" style="font-size:13px;margin-bottom:9px">Create your own</div>'+
-      '<div class="themeModeRow"><button type="button" class="themeModeBtn '+(currentTheme.mode==="solid"?"active":"")+'" id="themeSolidBtn">One colour</button><button type="button" class="themeModeBtn '+(currentTheme.mode==="gradient"?"active":"")+'" id="themeGradientBtn">Blend two colours</button></div>'+
-      '<div class="customThemeControls"><div class="themeColorField"><label for="themeColor1">Main colour</label><div class="themeColorRow"><input id="themeColor1" type="color" value="'+esc(currentTheme.color1)+'"><span class="themeColorValue" id="themeColor1Value">'+esc(currentTheme.color1.toUpperCase())+'</span></div></div>'+
-      '<div class="themeColorField"><label for="themeColor2">Blend colour</label><div class="themeColorRow"><input id="themeColor2" type="color" value="'+esc(currentTheme.color2)+'"><span class="themeColorValue" id="themeColor2Value">'+esc(currentTheme.color2.toUpperCase())+'</span></div></div></div>'+
-      '<div class="settingsSectionSub" style="margin-top:9px">Colours apply immediately and save with your Localify settings.</div></div></section>';
+    state.currentView="accountSettings";
+    state.detail=null;
+    state.selected=[];
+    localifyClearPages();
+    try{renderNav()}catch(e){console.warn("Could not refresh Localify navigation",e)}
+    const enabled=state.settings.discordPresence!==false;
+    const volume=Number.isFinite(Number(state.settings.volume))?Math.max(0,Math.min(1,Number(state.settings.volume))):0.9;
     $("#content").innerHTML=
-      '<div class="section settingsPage" style="margin-top:0"><div class="sectionHead"><div><h2 style="font-size:30px;letter-spacing:-1px;margin:0">Account settings</h2><span>Personalize Localify and manage playback.</span></div><div class="sectionHeadActions"><button class="secondary" id="accountSettingsBack" type="button">Back to profile</button></div></div>'+
-      '<div class="settingsGrid">'+themeSection+
-        '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Playback & app</div><div class="settingsSectionSub">These preferences are saved with your Localify library metadata.</div></div></div>'+
-          '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Shuffle</strong><span>Randomize the current queue when enabled.</span></div><input type="checkbox" id="accountShuffle" '+(state.settings.shuffle?"checked":"")+'></div>'+
-          '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Discord Rich Presence</strong><span>Show your current song and artist on Discord.</span></div><input type="checkbox" id="accountDiscord" '+(state.settings.discordPresence!==false?"checked":"")+'></div>'+
-          '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Now Playing panel</strong><span>Show or hide the side panel.</span></div><input type="checkbox" id="accountNowPanel" '+(!state.settings.nowSidebarHidden?"checked":"")+'></div>'+
-          '<div style="padding-top:13px"><div class="settingsSectionSub" style="margin-bottom:7px">Volume</div><input class="settingsRange" id="accountVolume" type="range" min="0" max="1" step="0.01" value="'+esc(state.settings.volume??.9)+'"></div>'+
-        '</section>'+
-        '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Album artwork URLs</div><div class="settingsSectionSub">Use one public HTTPS image address as the album artwork for Localify and Discord.</div></div></div><button class="secondary" type="button" id="accountDiscordHelp">How Discord artwork works</button></section>'+
-      '</div></div>';
-
-    const commitTheme=next=>{state.settings.theme=normalizeTheme(next);applyTheme();autoSave();showAccountSettings()};
-    $$("[data-theme-preset]").forEach(btn=>btn.onclick=()=>{
-      const p=DEFAULT_LOCALIFY_THEMES[btn.dataset.themePreset];if(p)commitTheme({preset:btn.dataset.themePreset,mode:p.mode,color1:p.color1,color2:p.color2});
-    });
-    $("#themeSolidBtn").onclick=()=>commitTheme({...normalizeTheme(state.settings.theme),preset:"custom",mode:"solid"});
-    $("#themeGradientBtn").onclick=()=>commitTheme({...normalizeTheme(state.settings.theme),preset:"custom",mode:"gradient"});
-    const updateCustomTheme=()=>{
-      const c1=$("#themeColor1"),c2=$("#themeColor2");if(!c1||!c2)return;
-      state.settings.theme={preset:"custom",mode:state.settings.theme?.mode==="gradient"?"gradient":"solid",color1:c1.value,color2:c2.value};
-      $("#themeColor1Value").textContent=c1.value.toUpperCase();$("#themeColor2Value").textContent=c2.value.toUpperCase();
-      applyTheme();autoSave();
+      '<div class="section settingsPage" style="margin-top:0">'+
+        '<div class="sectionHead"><div><h2 style="font-size:30px;letter-spacing:-1px;margin:0">Account settings</h2><span>Playback, Discord and library preferences.</span></div><div class="sectionHeadActions"><button type="button" class="secondary" id="accountSettingsBack">Back to profile</button></div></div>'+
+        '<div class="settingsGrid">'+
+          '<section class="settingsSection">'+
+            '<div class="settingsSectionHead"><div><div class="settingsSectionTitle">Discord Rich Presence</div><div class="settingsSectionSub">Connect the Localify Discord Player and control what appears in Discord.</div></div></div>'+
+            '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Show listening status</strong><span>Show your current song and artist while music is playing.</span></div><input type="checkbox" id="accountDiscord" '+(enabled?'checked':'')+'></div>'+
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="primary" id="accountOpenDiscord">Discord connector controls</button><button type="button" class="secondary" id="accountReconnectDiscord">Reconnect</button></div>'+
+            '<div class="settingsSectionSub" id="accountDiscordNote" style="margin-top:10px">The Windows Discord desktop app and Localify Discord Player must both be running.</div>'+
+          '</section>'+
+          '<section class="settingsSection">'+
+            '<div class="settingsSectionHead"><div><div class="settingsSectionTitle">Playback</div><div class="settingsSectionSub">Set defaults for playback controls.</div></div></div>'+
+            '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Shuffle</strong><span>Randomize the current queue when enabled.</span></div><input type="checkbox" id="accountShuffle" '+(state.settings.shuffle?'checked':'')+'></div>'+
+            '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Now Playing panel</strong><span>Show or hide the side panel with track information.</span></div><input type="checkbox" id="accountNowPanel" '+(!state.settings.nowSidebarHidden?'checked':'')+'></div>'+
+            '<div style="padding-top:13px"><div class="settingsSectionSub" style="margin-bottom:7px">Default volume</div><input class="settingsRange" id="accountVolume" type="range" min="0" max="1" step="0.01" value="'+volume+'"><div class="settingsSectionSub" id="accountVolumeValue" style="margin-top:5px">'+Math.round(volume*100)+'%</div></div>'+
+          '</section>'+
+          '<section class="settingsSection">'+
+            '<div class="settingsSectionHead"><div><div class="settingsSectionTitle">Library & storage</div><div class="settingsSectionSub">Back up or import your Localify library and check persistent storage access.</div></div></div>'+
+            '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="secondary" id="accountSettingsPresets">Open library presets</button><button type="button" class="secondary" id="accountSettingsStorage">Check storage</button></div>'+
+          '</section>'+
+        '</div>'+
+      '</div>';
+    const back=$("#accountSettingsBack");
+    if(back)back.onclick=()=>showProfile();
+    const discord=$("#accountDiscord");
+    if(discord)discord.onchange=async e=>{
+      state.settings.discordPresence=!!e.target.checked;
+      await save();
+      if(!state.settings.discordPresence){clearDiscordPresence();setDiscordUi("disabled","Discord Rich Presence is off")}
+      else{await connectDiscordBridge();await sendDiscordPresence(true)}
+      const note=$("#accountDiscordNote");
+      if(note)note.textContent=state.settings.discordPresence?"Discord Rich Presence is enabled. Play a song to update your status.":"Discord Rich Presence is disabled.";
     };
-    $("#themeColor1").oninput=updateCustomTheme;$("#themeColor2").oninput=updateCustomTheme;
-    $("#accountSettingsBack").onclick=()=>showProfile();
-    $("#accountDiscordHelp").onclick=()=>{
-      setModal('<div class="modalHead"><h2>Discord artwork</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="help">Open an album and choose Edit album. Enter a public HTTPS image address in Album artwork URL. The same image is used for album cover and Discord artwork.</div><div class="modalFoot"><button class="primary" id="discordHelpDone">Done</button></div>');
-      $("#closeModal").onclick=()=>closeModal(true);$("#discordHelpDone").onclick=()=>closeModal(true);
+    const openDiscord=$("#accountOpenDiscord");
+    if(openDiscord)openDiscord.onclick=()=>openDiscordSetup();
+    const reconnect=$("#accountReconnectDiscord");
+    if(reconnect)reconnect.onclick=async()=>{
+      if(!state.settings.discordPresence){state.settings.discordPresence=true;if(discord)discord.checked=true;await save()}
+      await connectDiscordBridge();
+      await sendDiscordPresence(true);
+      const note=$("#accountDiscordNote");
+      if(note)note.textContent="Reconnect requested. Check the Discord connector window for its connection status.";
     };
-    $("#accountShuffle").onchange=async e=>{state.settings.shuffle=e.target.checked;await save();renderPlayer()};
-    $("#accountDiscord").onchange=async e=>{state.settings.discordPresence=e.target.checked;await save();e.target.checked?connectDiscordBridge():clearDiscordPresence()};
-    $("#accountNowPanel").onchange=()=>setNowSidebar($("#accountNowPanel").checked);
-    $("#accountVolume").oninput=e=>{const v=+e.target.value;state.settings.volume=v;audio.volume=v;autoSave();renderPlayer()};
-
+    const shuffle=$("#accountShuffle");
+    if(shuffle)shuffle.onchange=async e=>{state.settings.shuffle=!!e.target.checked;await save();renderPlayer()};
+    const nowPanel=$("#accountNowPanel");
+    if(nowPanel)nowPanel.onchange=()=>setNowSidebar(!!nowPanel.checked);
+    const vol=$("#accountVolume");
+    if(vol)vol.oninput=e=>{
+      const value=Math.max(0,Math.min(1,Number(e.target.value)||0));
+      state.settings.volume=value;audio.volume=value;autoSave();renderPlayer();
+      const label=$("#accountVolumeValue");if(label)label.textContent=Math.round(value*100)+"%";
+    };
+    const presets=$("#accountSettingsPresets");
+    if(presets)presets.onclick=()=>openPresetsMenu();
+    const storage=$("#accountSettingsStorage");
+    if(storage)storage.onclick=async()=>{
+      try{
+        if(navigator.storage?.persist)await navigator.storage.persist();
+        await unlockPersistentStorage();
+      }catch(e){console.warn("Localify storage check failed",e);toast("Could not check persistent storage in this browser.");}
+    };
   }
 
   function openSettingsPanel(){showAccountSettings()}
@@ -5078,7 +5081,6 @@ function submitGlobalSearch(){
   window.addEventListener("pagehide",()=>{creditListeningTime();flushSave(false)});
   setInterval(()=>{if(dirtySave && !saveInFlight) flushSave(false)},2000);
   window.addEventListener("beforeunload",()=>{clearDiscordPresence();if(storageBlocked||!storageReady){try{writeMetaFallback()}catch{}}});
-document.addEventListener("click",profileMenuSettingsCapture,true);
   // Do not close modals by clicking/dragging the dark edge. This prevents accidental loss of edits.
   $("#modal").addEventListener("input",markDirty);
   document.addEventListener("click",e=>{
