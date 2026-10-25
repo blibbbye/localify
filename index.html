@@ -3308,7 +3308,7 @@ function showListeningStats(){
           else if(mode==="artist"){main=item.name;detail="Top artist";right=item.count+" plays"}
           else if(mode==="album"){main=item.album?.title||"Untitled album";detail=artistNamesForAlbum(item.album).join(", ")||"Album";right=item.count+" plays"}
           else {main=displayTrackTitle(item,true)||"Unknown song";detail=artistName(item)+" · "+albumName(item);right="Recent"}
-          row(x+14,y+72,w-28,i+1,main,detail,right);
+          row(x+14,y+72+i*58,w-28,i+1,main,detail,right);
         });
       };
       const leftX=46,rightX=610,colW=544;
