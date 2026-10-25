@@ -3187,8 +3187,8 @@ function showListeningStats(){
     }
     const topArtists=[...artistStats.values()].sort((a,b)=>b.count-a.count||b.seconds-a.seconds||a.name.localeCompare(b.name,undefined,{sensitivity:"base"})).slice(0,5);
     const statsThumb=(url,kind)=>url?'<img class="profileStatsThumb'+(kind==="artist"?' artist':'')+'" src="'+esc(url)+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">':'<div class="profileStatsThumb fallback'+(kind==="artist"?' artist':'')+'">'+uiIcon(kind==="artist"?"artist":kind==="album"?"album":"music")+'</div>';
-    const artistThumb=a=>statsThumb(coverOf(a)||a?.image||a?.picture||a?.avatar,"artist");
-    const albumThumb=a=>statsThumb(coverOf(a)||knownCoverUrlForAlbum(a?.title||""),"album");
+    const artistThumb=a=>statsThumb(String(a?.cover||a?.image||a?.picture||a?.avatar||""),"artist");
+    const albumThumb=a=>statsThumb(String(a?.cover||a?.image||a?.picture||"")||knownCoverUrlForAlbum(a?.title||""),"album");
     const trackThumb=t=>coverHtml(t,"profileStatsThumb");
     const statsRow=(rank,art,title,sub,count)=>'<div class="profileListRow profileArtRow"><div class="profileRank">'+rank+'</div>'+art+'<div style="min-width:0"><div class="profileTrackTitle">'+esc(title)+'</div><div class="profileTrackSub">'+esc(sub||"")+'</div></div><div class="profileCount">'+esc(String(count||""))+'</div></div>';
     const noStats='<div class="profileEmpty">Play some music to build your stats.</div>';
