@@ -1,5 +1,5 @@
-const CACHE="localify-shell-v8-20261018-discordfix";
-const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./mobile/index.html","./sw.js"];
+const CACHE="localify-shell-v9-20261025-logo-cleanup";
+const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg?v=20261025","./favicon.png?v=20261025","./mobile/index.html","./sw.js"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
 });

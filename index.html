@@ -4,20 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
   <meta name="theme-color" content="#090a0c" />
-  <meta name="localify-build" content="2026-10-18-discord-connector-fix-1" />
+  <meta name="localify-build" content="2026-10-25-original-logo-cleanup-1" />
   <title>Localify — Your Music, Your Files</title>
   <meta name="description" content="Localify — your music, your files. A personal music library and player.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Localify">
   <meta property="og:description" content="Your music, your files.">
   <meta property="og:url" content="https://blibbbye.github.io/localify/">
-  <meta property="og:image" content="https://blibbbye.github.io/localify/favicon.png">
+  <meta property="og:image" content="https://blibbbye.github.io/localify/favicon.png?v=20261025">
   <meta property="og:image:alt" content="Localify">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Localify">
   <meta name="twitter:description" content="Your music, your files.">
-  <meta name="twitter:image" content="https://blibbbye.github.io/localify/favicon.png">
-  <link rel="icon" type="image/png" href="favicon.png">
+  <meta name="twitter:image" content="https://blibbbye.github.io/localify/favicon.png?v=20261025">
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=20261025"><link rel="icon" type="image/png" href="favicon.png?v=20261025">
   <style>
     :root{
       --bg:#090b0e; --panel:#111419; --panel2:#171a20; --panel3:#20242c;
@@ -778,12 +778,16 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
     opacity:1!important;
     mix-blend-mode:normal!important;
   }
+
+    /* Keep the supplied brand artwork exact; theme colours must not recolour the logo. */
+.logo{background:transparent!important;background-image:none!important;box-shadow:none!important;overflow:hidden}
+.logo .logoMarkImage{display:block;width:100%;height:100%;padding:0;object-fit:contain;mix-blend-mode:normal;filter:none}
 </style>
 </head>
 <body>
 <div class="app">
   <aside>
-    <div class="brand"><div class="logo"><svg class="logoMark" viewBox="0 0 36 36" aria-hidden="true"><path class="logoMarkL" d="M10 6h5v18h15v5H10z" transform="rotate(90 18 18)"/></svg></div><span>LOCALIFY</span></div>
+    <div class="brand"><div class="logo"><img class="logoMarkImage" src="favicon.png?v=20261025" width="34" height="34" alt=""></div><span>LOCALIFY</span></div>
     <nav class="nav" id="nav">
       <button data-view="home" class="active"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg></span><span>Home</span></button>
       <button data-view="search"><span class="icon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span><span>Search</span></button>
@@ -878,15 +882,6 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
   const audio = $("#audio");
-  const LASTFM_BRIDGE_STORAGE_KEY = "localify-lastfm-bridge-token-v1";
-  const LASTFM_BRIDGE_URL_KEY = "localify-lastfm-bridge-url-v1";
-  let lastFmBridgeToken = "";
-  let lastFmBridgeBase = "http://127.0.0.1:4220";
-  try {
-    lastFmBridgeToken = localStorage.getItem(LASTFM_BRIDGE_STORAGE_KEY) || "";
-    lastFmBridgeBase = localifyLastFmNormalizeBase(localStorage.getItem(LASTFM_BRIDGE_URL_KEY) || lastFmBridgeBase);
-  } catch {}
-
   const state = {
     version: 12, tracks: [], albums: [], artists: [], playlists: [], folders: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null, libraryFolderHandle: null,
@@ -2113,7 +2108,7 @@ body.theme-gradient .primary,body.theme-gradient .logo,body.theme-gradient .nav 
   // URLs make the same cover work in the website, Google Sites embeds, and Discord.
   const LOCALIFY_GITHUB_RAW_BASE="https://raw.githubusercontent.com/blibbbye/Localify/main/";
   const LOCALIFY_COVER_DIRECTORY=LOCALIFY_GITHUB_RAW_BASE+"covers/";
-  const LOCALIFY_DEFAULT_ART_URL=LOCALIFY_GITHUB_RAW_BASE+"favicon.png";
+  const LOCALIFY_DEFAULT_ART_URL=LOCALIFY_GITHUB_RAW_BASE+"favicon.png?v=20261025";
   const LOCALIFY_COVER_MAP_URL=LOCALIFY_GITHUB_RAW_BASE+"covers.json";
   const LOCALIFY_COVER_EXTENSIONS=[".jpg",".jpeg",".png",".webp",".gif",".avif"];
   const LOCALIFY_COVER_LOAD_TIMEOUT=3500;
@@ -3251,11 +3246,6 @@ function editLocalProfile(){
           '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Now Playing panel</strong><span>Show or hide the side panel.</span></div><input type="checkbox" id="accountNowPanel" '+(!state.settings.nowSidebarHidden?"checked":"")+'></div>'+
           '<div style="padding-top:13px"><div class="settingsSectionSub" style="margin-bottom:7px">Volume</div><input class="settingsRange" id="accountVolume" type="range" min="0" max="1" step="0.01" value="'+esc(state.settings.volume??.9)+'"></div>'+
         '</section>'+
-        '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Last.fm scrobbling</div><div class="settingsSectionSub">Send Localify playback to your linked Last.fm profile using ModBot’s local bridge.</div></div></div>'+
-          '<div class="field"><label for="accountLastFmToken">Localify connection key</label><input type="password" id="accountLastFmToken" autocomplete="off" spellcheck="false" value="'+esc(lastFmBridgeToken)+'" placeholder="Generate with /fm localify in Discord"></div>'+
-          '<div class="field"><label for="accountLastFmBridgeUrl">Local bridge address</label><input type="url" id="accountLastFmBridgeUrl" autocomplete="off" spellcheck="false" value="'+esc(lastFmBridgeBase)+'" placeholder="http://127.0.0.1:4220"></div>'+
-          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="primary" type="button" id="accountLastFmSave">Save & test connection</button><button class="secondary" type="button" id="accountLastFmDisconnect">Disconnect</button></div>'+
-          '<div class="help" id="accountLastFmStatus" style="margin-top:8px">Generate a key with /fm localify. ModBot must be running on this same computer.</div></section>'+
         '<section class="settingsSection"><div class="settingsSectionHead"><div><div class="settingsSectionTitle">Album artwork URLs</div><div class="settingsSectionSub">Use one public HTTPS image address as the album artwork for Localify and Discord.</div></div></div><button class="secondary" type="button" id="accountDiscordHelp">How Discord artwork works</button></section>'+
       '</div></div>';
 
@@ -3281,109 +3271,11 @@ function editLocalProfile(){
     $("#accountDiscord").onchange=async e=>{state.settings.discordPresence=e.target.checked;await save();e.target.checked?connectDiscordBridge():clearDiscordPresence()};
     $("#accountNowPanel").onchange=()=>setNowSidebar($("#accountNowPanel").checked);
     $("#accountVolume").oninput=e=>{const v=+e.target.value;state.settings.volume=v;audio.volume=v;autoSave();renderPlayer()};
-    $("#accountLastFmSave").onclick=async()=>{
-      const token=$("#accountLastFmToken").value.trim();
-      const base=localifyLastFmNormalizeBase($("#accountLastFmBridgeUrl").value.trim());
-      const status=$("#accountLastFmStatus");
-      lastFmBridgeToken=token;lastFmBridgeBase=base;
-      try{if(token)localStorage.setItem(LASTFM_BRIDGE_STORAGE_KEY,token);else localStorage.removeItem(LASTFM_BRIDGE_STORAGE_KEY);localStorage.setItem(LASTFM_BRIDGE_URL_KEY,base)}catch{}
-      if(!token){status.textContent="Localify Last.fm connection removed.";return}
-      status.textContent="Checking ModBot’s local bridge…";
-      try{
-        const result=await localifyLastFmRequest("/verify",{token},base);
-        status.textContent="Connected to Last.fm as "+result.username+". Localify scrobbles will be sent when tracks meet Last.fm’s play-time rules.";
-        localifyLastFmStart(trackById(state.currentId),true);
-      }catch(error){
-        status.textContent="Key saved, but connection failed: "+String(error?.message||"ModBot bridge is unavailable")+" — make sure ModBot is running on this computer.";
-      }
-    };
-    $("#accountLastFmDisconnect").onclick=()=>{
-      lastFmBridgeToken="";try{localStorage.removeItem(LASTFM_BRIDGE_STORAGE_KEY)}catch{}
-      $("#accountLastFmToken").value="";$("#accountLastFmStatus").textContent="Disconnected from Localify. Your Last.fm listening history is unchanged.";
-    };
+
   }
 
   function openSettingsPanel(){showAccountSettings()}
   function openGoogleLoginInfo(){setModal(`<div class="modalHead"><h2>Google account sync</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close"><svg class="svgIcon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="help">The profile and listening stats are ready locally. Real Google login and cross-device sync still need a Google OAuth client ID. Google supports web-app OAuth clients and the Drive appDataFolder can store per-app data for the signed-in user.</div><div class="modalFoot"><button class="primary" id="googleInfoDone">Done</button></div>`);$("#closeModal").onclick=()=>closeModal(true);$("#googleInfoDone").onclick=()=>closeModal(true)}
-
-  let localifyLastFmTrackId=null;
-  let localifyLastFmStartedAt=0;
-  let localifyLastFmListened=0;
-  let localifyLastFmLastPosition=null;
-  let localifyLastFmScrobbleSent=false;
-  let localifyLastFmNowPlayingTrackId=null;
-
-  function localifyLastFmNormalizeBase(value){
-    try{
-      const url=new URL(value||"http://127.0.0.1:4220");
-      if(url.protocol!=="http:"||!(url.hostname==="127.0.0.1"||url.hostname==="localhost"))return "http://127.0.0.1:4220";
-      return url.origin;
-    }catch{return "http://127.0.0.1:4220"}
-  }
-  async function localifyLastFmRequest(path,payload={},base=lastFmBridgeBase){
-    const url=localifyLastFmNormalizeBase(base)+path;
-    const response=await fetch(url,{
-      method:payload&&Object.keys(payload).length?"POST":"GET",
-      headers:payload&&Object.keys(payload).length?{"content-type":"application/json"}:{},
-      body:payload&&Object.keys(payload).length?JSON.stringify(payload):undefined,
-      cache:"no-store",
-      targetAddressSpace:"loopback"
-    });
-    let result={};
-    try{result=await response.json()}catch{}
-    if(!response.ok||result.ok===false)throw new Error(result.error||"Local bridge returned HTTP "+response.status);
-    return result;
-  }
-  function localifyLastFmStart(t,force=false){
-    if(!t)return;
-    if(localifyLastFmTrackId!==t.id){
-      localifyLastFmTrackId=t.id;
-      localifyLastFmStartedAt=Math.floor(Date.now()/1000)-Math.floor(Number(audio.currentTime)||0);
-      localifyLastFmListened=0;
-      localifyLastFmLastPosition=null;
-      localifyLastFmScrobbleSent=false;
-      localifyLastFmNowPlayingTrackId=null;
-    }
-    if(!lastFmBridgeToken||audio.paused)return;
-    if(force||localifyLastFmNowPlayingTrackId!==t.id){
-      localifyLastFmNowPlayingTrackId=t.id;
-      const duration=Math.floor(Number(audio.duration)||0);
-      const artists=typeof artistNamesForTrack==="function"?artistNamesForTrack(t):[];
-      const artist=artists.join(", ")||artistName(t)||"Unknown Artist";
-      const payload={token:lastFmBridgeToken,track:displayTrackTitle(t,true)||t.title||"Unknown track",artist,album:albumName(t)||"",duration};
-      localifyLastFmRequest("/now-playing",payload).catch(error=>console.warn("Localify Last.fm now-playing failed:",error.message));
-    }
-  }
-  function localifyLastFmTick(force=false){
-    const t=trackById(state.currentId);
-    if(!t)return;
-    localifyLastFmStart(t);
-    if(!lastFmBridgeToken)return;
-    if(audio.paused&&!force){localifyLastFmLastPosition=null;return}
-    const position=Number(audio.currentTime)||0;
-    if(localifyLastFmLastPosition!==null){
-      const delta=position-localifyLastFmLastPosition;
-      if(delta>0&&delta<=5)localifyLastFmListened+=delta;
-    }
-    localifyLastFmLastPosition=position;
-    const duration=Number(audio.duration)||0;
-    const threshold=Math.min(duration/2,240);
-    if(!localifyLastFmScrobbleSent&&duration>30&&localifyLastFmListened>=threshold){
-      localifyLastFmScrobbleSent=true;
-      const artists=typeof artistNamesForTrack==="function"?artistNamesForTrack(t):[];
-      const artist=artists.join(", ")||artistName(t)||"Unknown Artist";
-      const payload={token:lastFmBridgeToken,track:displayTrackTitle(t,true)||t.title||"Unknown track",artist,album:albumName(t)||"",duration:Math.floor(duration),timestamp:localifyLastFmStartedAt};
-      localifyLastFmRequest("/scrobble",payload).catch(error=>console.warn("Localify Last.fm scrobble failed:",error.message));
-    }
-  }
-  function localifyLastFmResetTrack(){
-    localifyLastFmTrackId=null;
-    localifyLastFmStartedAt=0;
-    localifyLastFmListened=0;
-    localifyLastFmLastPosition=null;
-    localifyLastFmScrobbleSent=false;
-    localifyLastFmNowPlayingTrackId=null;
-  }
 
   function pushRecent(id){state.recent=[id,...state.recent.filter(x=>x!==id)].slice(0,50)}
 
@@ -5024,16 +4916,16 @@ function submitGlobalSearch(){
   };$("#repeat").onclick=async()=>{state.settings.repeat=state.settings.repeat==="off"?"all":state.settings.repeat==="all"?"one":"off";await save();renderPlayer()};$("#likeNow").onclick=()=>{if(state.currentId)toggleLike(state.currentId)};$("#volume").oninput=async e=>{audio.volume=+e.target.value;state.settings.volume=+e.target.value;await save()};$("#progress").oninput=e=>{if(audio.duration)audio.currentTime=(+e.target.value/1000)*audio.duration};$("#lyricsBtn").onclick=()=>{if(state.currentId)showLyrics(state.currentId)};$("#eqBtn").onclick=openEQ;$("#queueBtn").onclick=()=>{const names=state.queue.map(trackById).filter(Boolean).map(t=>`${t.title} — ${artistName(t)}`).join("\n");alert(names?`Queue:\n\n${names}`:"Queue is empty.")};
   setInterval(pollDesktopControl,350);
   setInterval(checkDesktopPlayer,4000);
-  audio.addEventListener("timeupdate",()=>{updatePlayerTime();creditListeningTime();localifyLastFmTick();sendDiscordPresence(false)});
-  audio.addEventListener("play",()=>{if(audio.dataset.localifyTrackId===state.currentId)loadingTrackId=null;localifyLastFmStart(trackById(state.currentId),true);renderPlayer();renderCurrentViewWithoutScroll();sendDiscordPresence(true)});
-  audio.addEventListener("pause",()=>{if(!audio.paused)return;localifyLastFmLastPosition=null;creditListeningTime();autoSave();renderPlayer();renderCurrentViewWithoutScroll();clearDiscordPresence()});
-  audio.addEventListener("loadedmetadata",()=>{updatePlayerTime();localifyLastFmStart(trackById(state.currentId),true);sendDiscordPresence(true)});
+  audio.addEventListener("timeupdate",()=>{updatePlayerTime();creditListeningTime();sendDiscordPresence(false)});
+  audio.addEventListener("play",()=>{if(audio.dataset.localifyTrackId===state.currentId)loadingTrackId=null;renderPlayer();renderCurrentViewWithoutScroll();sendDiscordPresence(true)});
+  audio.addEventListener("pause",()=>{creditListeningTime();autoSave();renderPlayer();renderCurrentViewWithoutScroll();clearDiscordPresence()});
+  audio.addEventListener("loadedmetadata",()=>{updatePlayerTime();sendDiscordPresence(true)});
   audio.addEventListener("seeking",()=>sendDiscordPresence(true));
-  audio.addEventListener("seeked",()=>{localifyLastFmLastPosition=Number(audio.currentTime)||0;sendDiscordPresence(true)});
+  audio.addEventListener("seeked",()=>sendDiscordPresence(true));
   audio.addEventListener("error",()=>{
     if(audio.error?.code===audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED)toast("This browser cannot play this audio format.");
   });
-  audio.addEventListener("ended",()=>{localifyLastFmTick(true);localifyLastFmResetTrack();creditListeningTime();autoSave();
+  audio.addEventListener("ended",()=>{creditListeningTime();autoSave();
     if(state.settings.repeat==="one"){
       try{audio.currentTime=0;const p=audio.play();if(p?.catch)p.catch(()=>{})}catch{}
     }else next();

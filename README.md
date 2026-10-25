@@ -1,1 +1,1 @@
-Localio — local music player for your own files.
+Localify — local music player for your own files.

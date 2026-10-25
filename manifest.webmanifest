@@ -7,5 +7,5 @@
   "background_color":"#090b0e",
   "theme_color":"#090b0e",
   "description":"Local music player for your own files.",
-  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+  "icons":[{"src":"icon.svg?v=20261025","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
 }
