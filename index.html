@@ -3292,7 +3292,7 @@ function editLocalProfile(){
       try{
         const result=await localifyLastFmRequest("/verify",{token},base);
         status.textContent="Connected to Last.fm as "+result.username+". Localify scrobbles will be sent when tracks meet Last.fm’s play-time rules.";
-        localifyLastFmBegin(trackById(state.currentId),true);
+        localifyLastFmStart(trackById(state.currentId),true);
       }catch(error){
         status.textContent="Key saved, but connection failed: "+String(error?.message||"ModBot bridge is unavailable")+" — make sure ModBot is running on this computer.";
       }
