@@ -3229,7 +3229,7 @@ function showListeningStats(){
     try{
       ensureAnalytics();
       const canvas=document.createElement("canvas");
-      canvas.width=1200;canvas.height=1580;
+      canvas.width=1200;canvas.height=1450;
       const ctx=canvas.getContext("2d");
       if(!ctx){toast("Could not create the stats image.");return}
       const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#7dd3fc";
