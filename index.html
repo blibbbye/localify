@@ -638,13 +638,13 @@ main{min-width:0;min-height:0}
       linear-gradient(180deg,var(--bg) 0%,var(--bg) 100%)!important}
     .topbar{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-color:var(--theme-border)!important}
     .logo{position:relative;background:var(--logo-background,#ffffff)!important;background-image:none!important;box-shadow:0 8px 25px var(--logo-shadow,rgba(255,255,255,.16))!important}
-    body.theme-gradient .logo{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b))!important}
+    
     .logo .logoMark{display:block;width:100%;height:100%;padding:4px}
     .logoMarkL{fill:#080a0d;stroke:none}
     .nav button.active{background:var(--theme-soft)!important;color:var(--accent)!important}
     .nav button:hover,.sideAction:hover{background:var(--theme-hover)!important}
     .primary,.rowPlay,.playOverlay{background:var(--theme-a)!important;color:#07090b!important;box-shadow:0 8px 22px var(--theme-shadow)!important}
-    body.theme-gradient .primary,body.theme-gradient .rowPlay,body.theme-gradient .playOverlay{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b))!important}
+    
     .primary:hover,.rowPlay:hover,.playOverlay:hover{filter:brightness(1.08)}
     .search input,.pill,.discordTopBtn,.secondary,.card,.folderCard,.tableWrap,.settingsSection,.profilePanel,.profileStat,.profileRecapMain>div,.denseCatalogItem,.libraryPathBox,.themeChoice,.themeColorRow,.themeModeBtn,.nowSidebar,.player{background-color:var(--panel)!important;border-color:var(--theme-border)!important}
     .quickCard,.heroCard,.presetHero{background:linear-gradient(145deg,var(--panel2),var(--panel))!important;border-color:var(--theme-border)!important}
@@ -768,7 +768,7 @@ main{min-width:0;min-height:0}
 <style id="localify-theme-polish">
   /* Theme polish: dark neutral surfaces, minimal outlines, consistent brand accent. */
   .logo{position:relative;background:var(--logo-background,#ffffff)!important;background-image:none!important;box-shadow:0 7px 22px var(--logo-shadow,rgba(255,255,255,.16))!important}
-  body.theme-gradient .logo{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b))!important}
+  
   .logo .logoMark{display:block;width:100%;height:100%;padding:3px}
   .logoMarkL{fill:#080a0d!important;stroke:none!important}
   .themeGrid{gap:10px!important}
@@ -792,7 +792,7 @@ main{min-width:0;min-height:0}
   .heroCard,.quickCard,.presetHero{border-color:#22252b!important}
   .nav button.active{background:var(--theme-soft)!important;color:var(--accent)!important}
   .primary,.rowPlay,.playOverlay{background:var(--theme-a)!important;box-shadow:0 7px 18px var(--theme-shadow)!important}
-  body.theme-gradient .primary,body.theme-gradient .rowPlay,body.theme-gradient .playOverlay{background-image:linear-gradient(135deg,var(--theme-a),var(--theme-b))!important}
+  
   .track-row.isPlaying{background:var(--theme-soft)!important}
 
   /* Album artwork stays original; theme palettes never tint or restyle album covers/cards. */
@@ -923,70 +923,19 @@ main{min-width:0;min-height:0}
     selected:[], detail:null, viewModes:{albums:"large",artists:"large",playlists:"large",songs:"list",folders:"large"}, catalogSorts:{albums:"asc",artists:"asc",playlists:"asc",folders:"asc"}, playlistSort:{}, trackSorts:{}
   };
 
-  const DEFAULT_LOCALIFY_THEMES={
-    white:{name:"White",mode:"solid",color1:"#ffffff",color2:"#ffffff"},
-    cyan:{name:"Cyan",mode:"solid",color1:"#38bdf8",color2:"#38bdf8"},
-    blue:{name:"Blue",mode:"solid",color1:"#3b82f6",color2:"#3b82f6"},
-    royal:{name:"Royal blue",mode:"solid",color1:"#2563eb",color2:"#2563eb"},
-    indigo:{name:"Indigo",mode:"solid",color1:"#6366f1",color2:"#6366f1"},
-    purple:{name:"Purple",mode:"solid",color1:"#8b5cf6",color2:"#8b5cf6"},
-    lavender:{name:"Lavender",mode:"solid",color1:"#a78bfa",color2:"#a78bfa"},
-    pink:{name:"Pink",mode:"solid",color1:"#ec4899",color2:"#ec4899"},
-    rose:{name:"Rose",mode:"solid",color1:"#f43f5e",color2:"#f43f5e"},
-    red:{name:"Red",mode:"solid",color1:"#ef4444",color2:"#ef4444"},
-    crimson:{name:"Crimson",mode:"solid",color1:"#be123c",color2:"#be123c"},
-    orange:{name:"Orange",mode:"solid",color1:"#f97316",color2:"#f97316"},
-    amber:{name:"Amber",mode:"solid",color1:"#f59e0b",color2:"#f59e0b"},
-    yellow:{name:"Yellow",mode:"solid",color1:"#eab308",color2:"#eab308"},
-    lime:{name:"Lime",mode:"solid",color1:"#84cc16",color2:"#84cc16"},
-    green:{name:"Green",mode:"solid",color1:"#22c55e",color2:"#22c55e"},
-    emerald:{name:"Emerald",mode:"solid",color1:"#10b981",color2:"#10b981"},
-    mint:{name:"Mint",mode:"solid",color1:"#34d399",color2:"#34d399"},
-    teal:{name:"Teal",mode:"solid",color1:"#14b8a6",color2:"#14b8a6"},
-    aqua:{name:"Aqua",mode:"solid",color1:"#06b6d4",color2:"#06b6d4"},
-    ice:{name:"Ice",mode:"gradient",color1:"#60a5fa",color2:"#dbeafe"},
-    sunset:{name:"Sunset",mode:"gradient",color1:"#ef4444",color2:"#f97316"},
-    ocean:{name:"Ocean",mode:"gradient",color1:"#2563eb",color2:"#06b6d4"},
-    aurora:{name:"Aurora",mode:"gradient",color1:"#06b6d4",color2:"#8b5cf6"},
-    forest:{name:"Forest",mode:"gradient",color1:"#22c55e",color2:"#14b8a6"},
-    berry:{name:"Berry",mode:"gradient",color1:"#ec4899",color2:"#8b5cf6"},
-    fire:{name:"Fire",mode:"gradient",color1:"#f97316",color2:"#ef4444"},
-    grape:{name:"Grape soda",mode:"gradient",color1:"#7c3aed",color2:"#db2777"},
-    matrix:{name:"Matrix",mode:"gradient",color1:"#16a34a",color2:"#65a30d"},
-    twilight:{name:"Twilight",mode:"gradient",color1:"#334155",color2:"#6366f1"},
-    peach:{name:"Peach",mode:"gradient",color1:"#fb7185",color2:"#fbbf24"}
-  };
-  function hexToRgb(hex){
-    const raw=String(hex||"").replace("#",""),full=raw.length===3?raw.split("").map(v=>v+v).join(""):raw,n=parseInt(full,16);
-    if(!Number.isFinite(n))return [56,189,248];
-    return [(n>>16)&255,(n>>8)&255,n&255];
-  }
-  function mixHex(a,b,amount=.25){
-    const A=hexToRgb(a),B=hexToRgb(b),m=Math.max(0,Math.min(1,amount));
-    return "#"+A.map((v,i)=>Math.round(v+(B[i]-v)*m).toString(16).padStart(2,"0")).join("");
-  }
-  function themeRgba(hex,alpha){const [r,g,b]=hexToRgb(hex);return "rgba("+r+","+g+","+b+","+alpha+")"}
-  function normalizeTheme(theme){
-    const raw=theme&&typeof theme==="object"?theme:{};
-    const preset=DEFAULT_LOCALIFY_THEMES[raw.preset]?raw.preset:(raw.preset==="custom"?"custom":"white");
-    const base=DEFAULT_LOCALIFY_THEMES[preset]||DEFAULT_LOCALIFY_THEMES.cyan;
-    const legacyMono=raw.preset==="mono";
-    const mode=raw.mode==="gradient"?"gradient":raw.mode==="solid"?"solid":base.mode;
-    const valid=v=>typeof v==="string"&&/^#[0-9a-f]{6}$/i.test(v);
-    return {preset,mode,color1:!legacyMono&&valid(raw.color1)?raw.color1:base.color1,color2:!legacyMono&&valid(raw.color2)?raw.color2:base.color2};
-  }
   function applyTheme(){
     const root=document.documentElement;
-    root.style.setProperty("--logo-background","#7dd3fc");
-    root.style.setProperty("--logo-shadow","rgba(125,211,252,.24)");
-    root.style.setProperty("--theme-shadow","rgba(125,211,252,.18)");
-    root.style.setProperty("--theme-glow-a","rgba(125,211,252,.022)");
-    root.style.setProperty("--theme-glow-b","rgba(125,211,252,.016)");
-    root.style.setProperty("--context-glow","rgba(125,211,252,.075)");
-    root.style.setProperty("--accent","#7dd3fc");
-    root.style.setProperty("--accent2","#bae6fd");
+    const vars={
+      "--bg":"#090a0c","--panel":"#111214","--panel2":"#17181b","--panel3":"#202125","--line":"#26282d",
+      "--theme-sidebar":"#0b0c0e","--theme-border":"#272a30","--theme-hover":"#17191d",
+      "--theme-a":"#7dd3fc","--theme-b":"#bae6fd","--accent":"#7dd3fc","--accent2":"#bae6fd",
+      "--theme-soft":"rgba(125,211,252,.085)","--theme-soft-2":"rgba(125,211,252,.055)",
+      "--theme-shadow":"rgba(125,211,252,.22)","--theme-glow-a":"rgba(125,211,252,.022)",
+      "--theme-glow-b":"rgba(125,211,252,.016)","--context-glow":"rgba(125,211,252,.075)",
+      "--logo-background":"#7dd3fc","--logo-shadow":"rgba(125,211,252,.24)"
+    };
+    for(const [key,value] of Object.entries(vars))root.style.setProperty(key,value);
     document.body.classList.remove("theme-gradient","theme-solid");
-    return null;
   }
 
   let queueBase=[];
@@ -1694,7 +1643,7 @@ main{min-width:0;min-height:0}
     state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},state.settings.eq||{});
     state.viewModes=Object.assign({albums:"large",artists:"large",playlists:"large",songs:"list",folders:"large"},state.viewModes||{});
     state.catalogSorts=Object.assign({albums:"asc",artists:"asc",playlists:"asc",folders:"asc",songs:"asc"},state.catalogSorts||{});
-    state.settings.theme=normalizeTheme(state.settings.theme);applyTheme();
+    applyTheme();
     if(!Array.isArray(state.selected))state.selected=[]; if(!Array.isArray(state.recent))state.recent=[];
     for(const t of state.tracks){if(!isBlobLike(t.blob))t.blob=null;t._blobDirty=false}
     $("#volume").value=state.settings.volume??.9;audio.volume=state.settings.volume??.9;
@@ -3753,15 +3702,40 @@ function editLocalProfile(){
   }
   function markDirty(){modalDirty=true}
   function openQueueMenu(){
-    const current=trackById(state.currentId),start=Math.max(0,Number(state.queueIndex)||0);
-    const upcoming=(state.queue||[]).map((id,index)=>({track:trackById(id),index})).filter(x=>x.track&&(x.index>start||x.index===start&&x.track.id!==current?.id));
-    const currentHtml=current?'<div class="queueCurrent"><div class="queueCurrentArt">'+coverHtml(current)+'</div><div style="min-width:0;flex:1"><div class="queueLabel">Now playing</div><div class="queueCurrentTitle">'+esc(displayTrackTitle(current,true))+'</div><div class="queueCurrentArtist">'+artistLinksForTrackHtml(current)+'</div></div></div>':'';
-    const rows=upcoming.map(x=>{const t=x.track;return '<div class="queueTrack '+(t.id===state.currentId?"current":"")+'"><div class="queueTrackNo">'+(x.index+1)+'</div><div class="queueTrackArt">'+coverHtml(t)+'</div><button type="button" class="queueTrackInfo" data-queue-play="'+x.index+'" style="background:transparent;text-align:left;min-width:0"><div class="queueTrackTitle">'+esc(displayTrackTitle(t,true))+'</div><div class="queueTrackArtist">'+artistLinksForTrackHtml(t)+'</div></button><button type="button" class="queueRemove" data-queue-remove="'+x.index+'" title="Remove from queue" aria-label="Remove from queue">×</button></div>'}).join("");
-    setModal('<div class="modalHead"><div><h2>Queue</h2><div class="settingsSectionSub">'+upcoming.length+' '+(upcoming.length===1?"track":"tracks")+' in the queue, including the current song.</div></div><button type="button" class="circle iconOnly" id="closeQueue" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="queuePanel">'+currentHtml+'<div class="queueLabel">Up next</div><div class="queueTrackList">'+(rows||'<div class="profileEmpty">There are no tracks queued up next.</div>')+'</div><div class="queueFoot"><span class="settingsSectionSub">Choose a song to play it next.</span><button type="button" class="secondary small" id="queueClear">Clear queue</button></div></div>',{large:true});
+    const current=trackById(state.currentId);
+    const currentIndex=Number.isInteger(state.queueIndex)?state.queueIndex:-1;
+    const upcoming=(state.queue||[])
+      .map((id,index)=>({track:trackById(id),index}))
+      .filter(x=>x.track&&x.index>currentIndex&&x.track.id!==current?.id);
+    const currentHtml=current
+      ?'<div class="queueCurrent"><div class="queueCurrentArt">'+coverHtml(current)+'</div><div style="min-width:0;flex:1"><div class="queueLabel">Now playing</div><div class="queueCurrentTitle">'+esc(displayTrackTitle(current,true))+'</div><div class="queueCurrentArtist">'+artistLinksForTrackHtml(current)+'</div></div></div>'
+      :'';
+    const rows=upcoming.map(x=>{
+      const t=x.track;
+      return '<div class="queueTrack"><div class="queueTrackNo">'+(x.index+1)+'</div><div class="queueTrackArt">'+coverHtml(t)+'</div><button type="button" class="queueTrackInfo" data-queue-play="'+x.index+'" style="background:transparent;text-align:left;min-width:0"><div class="queueTrackTitle">'+esc(displayTrackTitle(t,true))+'</div><div class="queueTrackArtist">'+artistLinksForTrackHtml(t)+'</div></button><button type="button" class="queueRemove" data-queue-remove="'+x.index+'" title="Remove from queue" aria-label="Remove from queue">×</button></div>';
+    }).join("");
+    setModal('<div class="modalHead"><div><h2>Queue</h2><div class="settingsSectionSub">'+upcoming.length+' '+(upcoming.length===1?"track":"tracks")+' up next.</div></div><button type="button" class="circle iconOnly" id="closeQueue" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="queuePanel">'+currentHtml+'<div class="queueLabel">Up next</div><div class="queueTrackList">'+(rows||'<div class="profileEmpty">There are no tracks queued up next.</div>')+'</div><div class="queueFoot"><span class="settingsSectionSub">Choose a song to play it next.</span><button type="button" class="secondary small" id="queueClear">Clear queue</button></div></div>',{large:true});
     $("#closeQueue").onclick=()=>closeModal(true);
-    $("#queueClear").onclick=async()=>{const keep=current&&state.queue.includes(current.id)?current.id:null;state.queue=keep?[keep]:[];state.queueIndex=keep?0:-1;queueBase=[...state.queue];await save();renderPlayer();openQueueMenu()};
-    $("[data-queue-play]").forEach(b=>b.onclick=()=>{const index=Number(b.getAttribute("data-queue-play"));if(!Number.isInteger(index)||!trackById(state.queue[index]))return;state.queueIndex=index;playCurrent();openQueueMenu()});
-    $("[data-queue-remove]").forEach(b=>b.onclick=async()=>{const index=Number(b.getAttribute("data-queue-remove"));if(!Number.isInteger(index)||index<0||index>=state.queue.length)return;const removingCurrent=index===state.queueIndex;state.queue.splice(index,1);if(!state.queue.length){state.queueIndex=-1;queueBase=[]}else if(index<state.queueIndex)state.queueIndex--;else if(removingCurrent){state.queueIndex=Math.min(index,state.queue.length-1);playCurrent()}await save();renderPlayer();openQueueMenu()});
+    $("#queueClear").onclick=async()=>{
+      const keep=current&&state.queue.includes(current.id)?current.id:null;
+      state.queue=keep?[keep]:[];
+      state.queueIndex=keep?0:-1;
+      queueBase=[...state.queue];
+      await save();renderPlayer();openQueueMenu();
+    };
+    $$("[data-queue-play]").forEach(b=>b.onclick=()=>{
+      const index=Number(b.getAttribute("data-queue-play"));
+      if(!Number.isInteger(index)||!trackById(state.queue[index]))return;
+      state.queueIndex=index;playCurrent();openQueueMenu();
+    });
+    $$("[data-queue-remove]").forEach(b=>b.onclick=async()=>{
+      const index=Number(b.getAttribute("data-queue-remove"));
+      if(!Number.isInteger(index)||index<0||index>=state.queue.length)return;
+      state.queue.splice(index,1);
+      if(!state.queue.length){state.queueIndex=-1;queueBase=[]}
+      else if(index<state.queueIndex)state.queueIndex--;
+      await save();renderPlayer();openQueueMenu();
+    });
   }
   function bindModalDirty(){
     $$("#modal input,#modal textarea,#modal select").forEach(el=>el.addEventListener("input",markDirty));
