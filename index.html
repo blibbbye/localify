@@ -280,12 +280,12 @@
     .ctrl:hover{color:#fff;background:#181c22}
     .ctrl.big{width:42px;height:42px;background:#fff;color:#0a0b0e;font-size:17px}
     .progressLine{display:grid;grid-template-columns:37px minmax(80px,1fr) 37px;align-items:center;gap:8px;color:#7e8793;font-size:10px}
-    .waveformSeek{position:relative;width:100%;height:34px;min-width:0;cursor:pointer;touch-action:pan-y;outline:none;user-select:none}
-    .waveformSeek:focus-visible{border-radius:7px;outline:1px solid rgba(167,119,241,.75);outline-offset:3px}
-    .waveformLayer{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;gap:2px;overflow:hidden;pointer-events:none}
-    .waveformBar{display:block;flex:1 1 0;min-width:1px;max-width:4px;height:var(--wave-h,35%);border-radius:3px;background:#43394f;opacity:.92}
+    .waveformSeek{position:relative;width:100%;height:34px;min-width:0;cursor:pointer;touch-action:pan-y;outline:none;user-select:none;overflow:hidden}
+    .waveformSeek:focus-visible{border-radius:7px;outline:1px solid rgba(125,211,252,.75);outline-offset:3px}
+    .waveformLayer{position:absolute;inset:4px 6px;display:flex;align-items:center;justify-content:space-between;gap:clamp(1px,.18vw,2px);overflow:hidden;pointer-events:none}
+    .waveformBar{display:block;flex:0 0 2px;width:2px;min-width:1px;max-width:2px;height:var(--wave-h,35%);border-radius:2px;background:#46515f;opacity:.86}
     .waveformPlayed{clip-path:inset(0 calc(100% - var(--wave-progress,0%)) 0 0)}
-    .waveformPlayed .waveformBar{background:#b17aff;opacity:1}
+    .waveformPlayed .waveformBar{background:var(--accent);opacity:1}
     #progress{display:none!important}
     .entityInlineLink{display:inline;padding:0;background:transparent;border:0;color:inherit;font:inherit;cursor:pointer;text-decoration:none;vertical-align:baseline}
     .entityInlineLink:hover{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
@@ -676,6 +676,47 @@ main{min-width:0;min-height:0}
     .themeColorRow input[type=color]{border:1px solid var(--theme-border)}
     .tableWrap,.card,.folderCard,.profilePanel,.profileStat,.settingsSection{box-shadow:0 12px 36px rgba(0,0,0,.10)}
 
+   
+/* Responsive player and waveform refinement */
+.player{
+  grid-template-columns:minmax(0,.92fr) minmax(0,1.22fr) minmax(0,.96fr);
+  gap:clamp(6px,1vw,14px);
+  padding-left:clamp(8px,1.2vw,18px);
+  padding-right:clamp(8px,1.2vw,18px);
+}
+.player .now,.playerCenter,.playerRight{min-width:0}
+.playerCenter{width:100%}
+.controls{gap:clamp(2px,.55vw,10px);min-width:0}
+.progressLine{grid-template-columns:clamp(28px,3vw,37px) minmax(0,1fr) clamp(28px,3vw,37px);gap:clamp(4px,.6vw,8px);min-width:0}
+.playerRight{gap:clamp(3px,.5vw,8px);min-width:0;overflow:hidden;flex-wrap:nowrap}
+.playerRight .ctrl{width:clamp(28px,2.5vw,34px);height:clamp(28px,2.5vw,34px);flex:0 0 clamp(28px,2.5vw,34px)}
+.playerRight>span{flex:none}
+.playerRight .volume{width:clamp(48px,7vw,130px);min-width:42px;max-width:130px;flex:1 1 72px}
+@media (min-width:1181px){
+  .player{grid-template-columns:minmax(170px,.92fr) minmax(260px,1.22fr) minmax(190px,.96fr)}
+  .playerRight{display:flex!important}
+}
+@media (min-width:781px) and (max-width:1180px){
+  .player{grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);gap:clamp(6px,1vw,12px)}
+  .playerRight{display:none!important}
+  .playerCenter{min-width:0}
+  .controls{gap:clamp(1px,.4vw,6px)}
+}
+@media (min-width:781px) and (max-width:930px){
+  .player{padding-left:8px;padding-right:8px}
+  .now{gap:7px}
+  .nowArt{width:44px;height:44px}
+  .nowTitle{font-size:12px}
+  .nowArtist{font-size:10px}
+  .controls .ctrl{width:30px;height:30px}
+  .controls .ctrl.big{width:38px;height:38px}
+}
+@media (max-width:780px){
+  .waveformLayer{inset:3px 5px}
+  .waveformBar{flex-basis:2px;width:2px;max-width:2px}
+  .player{width:100%;max-width:100vw;box-sizing:border-box}
+}
+
   </style>
 <style id="exportImageStyles">.exportImagePreview{max-height:68vh;overflow:auto;border:1px solid #252e38;border-radius:16px;background:#090d11;padding:10px}.exportImagePreview img{display:block;width:100%;height:auto;border-radius:10px}#downloadExportImage{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}</style>  <style id="localifyViewModes">
     .viewModeBar{display:flex;align-items:center;gap:4px;padding:4px;border:1px solid #252c35;border-radius:11px;background:#101419;flex:none}
@@ -882,7 +923,7 @@ main{min-width:0;min-height:0}
       <div class="progressLine"><span id="curTime">0:00</span><div id="waveformSeek" class="waveformSeek" role="slider" tabindex="0" aria-label="Seek through track" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0"><div id="waveformBase" class="waveformLayer waveformBase"></div><div id="waveformPlayed" class="waveformLayer waveformPlayed"></div></div><input id="progress" type="range" min="0" max="1000" value="0" tabindex="-1" aria-hidden="true"><span id="durTime">0:00</span></div>
     </div>
     <div class="playerRight">
-      <button class="ctrl iconOnly" id="lyricsBtn" title="Lyrics" aria-label="Lyrics"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg></button>
+      <button class="ctrl iconOnly" id="lyricsBtn" title="Lyrics" aria-label="Lyrics"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.1 3.7a3.4 3.4 0 0 1 4.8 4.8l-7.7 7.7a3.4 3.4 0 0 1-4.8-4.8z"/><path d="m13 6 4.9 4.9M10.7 8.3l4.9 4.9"/><path d="m7.4 13.6-2.2 2.2a4.2 4.2 0 0 0 5.9 5.9l2.2-2.2M6.9 17.1l3 3"/></svg></button>
       <button class="ctrl iconOnly" id="queueBtn" title="Queue" aria-label="Queue"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7"/><path d="m17 15 3 2.5-3 2.5z"/></svg></button><button class="ctrl iconOnly nowPanelToggle" id="nowPanelToggle" title="Now Playing" aria-label="Show Now Playing panel" aria-pressed="false"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 10v6M12 7h.01"/></svg></button><button class="ctrl iconOnly" id="eqBtn" title="Sound filters" aria-label="Sound filters"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 17h14M9 7v4M15 13v4"/></svg></button>
       <span style="color:#7e8793;display:inline-flex"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path d="M17 9.5a4 4 0 0 1 0 5M19.5 7a7 7 0 0 1 0 10"/></svg></span><input class="volume" id="volume" type="range" min="0" max="1" step=".01" value=".9">
     </div>
@@ -2753,24 +2794,41 @@ main{min-width:0;min-height:0}
     panel.dataset.trackId=String(t.id);$("#closeNowSidebar").onclick=()=>setNowSidebar(false);
   }
 
-  function waveformBarsHtml(seedText){
+  function waveformBarsHtml(seedText,count=88){
     let seed=2166136261;
     for(const ch of String(seedText||"localify")){seed^=ch.charCodeAt(0);seed=Math.imul(seed,16777619)}
     let html="";
-    for(let i=0;i<88;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;html+='<span class="waveformBar" style="--wave-h:'+(14+(seed%83))+'%"></span>'}
+    for(let i=0;i<count;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;html+='<span class="waveformBar" style="--wave-h:'+(12+(seed%60))+'%"></span>'}
     return html;
   }
   function ensureWaveformForTrack(t){
     const wave=$("#waveformSeek"),base=$("#waveformBase"),played=$("#waveformPlayed");if(!wave||!base||!played)return;
     const key=t?String(t.id):"empty";
-    if(wave.dataset.trackId!==key){wave.dataset.trackId=key;const bars=waveformBarsHtml(key);base.innerHTML=bars;played.innerHTML=bars;wave.style.setProperty("--wave-progress","0%");wave.setAttribute("aria-valuenow","0")}
+    const width=Math.max(140,wave.clientWidth||440);
+    const count=Math.max(28,Math.min(220,Math.floor((width-12)/5)));
+    if(wave.dataset.trackId!==key||wave.dataset.waveCount!==String(count)){
+      wave.dataset.trackId=key;wave.dataset.waveCount=String(count);
+      const bars=waveformBarsHtml(key,count);base.innerHTML=bars;played.innerHTML=bars;
+      wave.style.setProperty("--wave-progress","0%");wave.setAttribute("aria-valuenow","0");
+    }
   }
+  let waveformResizeObserver=null;
   function bindWaveformSeek(){
     const wave=$("#waveformSeek");if(!wave||wave.dataset.bound==="1")return;wave.dataset.bound="1";
-    const seek=e=>{if(!audio.duration||!Number.isFinite(audio.duration))return;const rect=wave.getBoundingClientRect();const ratio=Math.max(0,Math.min(1,(e.clientX-rect.left)/Math.max(1,rect.width)));audio.currentTime=ratio*audio.duration;updatePlayerTime();sendDiscordPresence(true)};
+    const seek=e=>{
+      if(!audio.duration||!Number.isFinite(audio.duration))return;
+      const rect=wave.getBoundingClientRect(),inset=Math.min(6,rect.width*.04);
+      const usable=Math.max(1,rect.width-inset*2);
+      const ratio=Math.max(0,Math.min(1,(e.clientX-rect.left-inset)/usable));
+      audio.currentTime=ratio*audio.duration;updatePlayerTime();sendDiscordPresence(true);
+    };
     wave.addEventListener("pointerdown",e=>{if(e.button!==undefined&&e.button!==0)return;wave.setPointerCapture?.(e.pointerId);seek(e)});
     wave.addEventListener("pointermove",e=>{if(wave.hasPointerCapture?.(e.pointerId))seek(e)});
     wave.addEventListener("keydown",e=>{if(!audio.duration)return;let ratio=audio.currentTime/audio.duration;if(e.key==="ArrowLeft")ratio-=.02;else if(e.key==="ArrowRight")ratio+=.02;else if(e.key==="Home")ratio=0;else if(e.key==="End")ratio=1;else return;e.preventDefault();audio.currentTime=Math.max(0,Math.min(1,ratio))*audio.duration;updatePlayerTime();sendDiscordPresence(true)});
+    if(typeof ResizeObserver!=="undefined"&&!waveformResizeObserver){
+      waveformResizeObserver=new ResizeObserver(()=>ensureWaveformForTrack(trackById(state.currentId)));
+      waveformResizeObserver.observe(wave);
+    }
   }
   function updatePlayerTime(){
     const t=trackById(state.currentId),waiting=!!state.currentId&&loadingTrackId===state.currentId;
