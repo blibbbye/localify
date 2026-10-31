@@ -1829,14 +1829,27 @@ main{min-width:0;min-height:0}
     $("#newFolder").onclick=()=>openFolderEditor();
     $$(".folderCard").forEach(el=>el.onclick=()=>showFolder(el.dataset.folderId));
   }
+  async function deleteFolder(id){
+    const f=folderById(id);if(!f)return;
+    if(!confirm(`Delete folder "${f.name}"? The albums, songs, artists and playlists inside it will stay in your library.`))return;
+    state.folders=(state.folders||[]).filter(x=>x.id!==id);
+    if(state.detail?.type==="folder"&&state.detail.id===id)state.detail=null;
+    await save(true);
+    closeModal(true);
+    setView("folders");
+    toast("Folder deleted. Its contents were kept in your library.");
+  }
+
   function openFolderEditor(id){
     const f=id?folderById(id):null;
-    setModal('<div class="modalHead"><h2>'+(f?"Edit folder":"Create folder")+'</h2><button class="circle iconOnly" id="closeFolderEditor" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="field"><label>Folder name</label><input id="folderNameInput" maxlength="80" value="'+esc(f?.name||"")+'" placeholder="e.g. Ye unreleased"></div><div class="modalFoot"><button class="secondary" id="cancelFolderEditor">Cancel</button><button class="primary" id="saveFolderEditor">Save</button></div>');
+    setModal('<div class="modalHead"><h2>'+(f?"Edit folder":"Create folder")+'</h2><button class="circle iconOnly" id="closeFolderEditor" title="Close" aria-label="Close">'+uiIcon("close")+'</button></div><div class="field"><label>Folder name</label><input id="folderNameInput" maxlength="80" value="'+esc(f?.name||"")+'" placeholder="e.g. Ye unreleased"></div><div class="modalFoot">'+(f?'<button class="dangerBtn" id="deleteFolderFromEditor">'+uiIcon("trash")+' Delete folder</button>':'')+'<button class="secondary" id="cancelFolderEditor">Cancel</button><button class="primary" id="saveFolderEditor">Save</button></div>');
     $("#closeFolderEditor").onclick=()=>closeModal(true);
     $("#cancelFolderEditor").onclick=()=>closeModal(true);
-    $("#saveFolderEditor").onclick=async()=>{const n=$("#folderNameInput").value.trim();if(!n){toast("Give the folder a name first.");return}if(f)f.name=n;else state.folders.push({id:uid(),name:n,items:[],createdAt:Date.now()});await save();closeModal(true);render()};
+    if(f)$("#deleteFolderFromEditor").onclick=()=>deleteFolder(f.id);
+    $("#saveFolderEditor").onclick=async()=>{const n=$("#folderNameInput").value.trim();if(!n){toast("Give the folder a name first.");return}if(f)f.name=n;else state.folders.push({id:uid(),name:n,items:[],createdAt:Date.now()});await save();closeModal(true);if(f)showFolder(f.id);else render()};
     $("#folderNameInput").focus();
   }
+
   function openFolderItemPicker(folderId){
     const f=folderById(folderId);if(!f)return;
     const chosen=new Set(folderItems(f).map(x=>folderItemKey(x.type,x.id)));
@@ -1855,7 +1868,7 @@ main{min-width:0;min-height:0}
     const f=folderById(id);if(!f)return;
     state.currentView="folders";state.detail={type:"folder",id};state.selected=[];renderNav();
     const items=folderItems(f),albums=items.filter(x=>x.type==="album"),songs=items.filter(x=>x.type==="song"),artists=items.filter(x=>x.type==="artist"),playlists=items.filter(x=>x.type==="playlist");
-    let html='<div class="sectionHead"><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+items.length+' items</div></div><div class="sectionHeadActions"><button class="secondary" id="folderEdit">'+uiIcon("edit")+' Edit</button><button class="primary" id="folderAddItems">'+uiIcon("plus")+' Add items</button></div></div>';
+    let html='<div class="sectionHead"><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+items.length+' items</div></div><div class="sectionHeadActions"><button class="secondary" id="folderDownload">'+uiIcon("download")+' Download folder</button><button class="secondary" id="folderEdit">'+uiIcon("edit")+' Edit</button><button class="dangerBtn" id="folderDelete">'+uiIcon("trash")+' Delete folder</button><button class="primary" id="folderAddItems">'+uiIcon("plus")+' Add items</button></div></div>';
     if(albums.length)html+='<div class="section"><div class="sectionHead"><h2>Albums</h2><span>'+albums.length+'</span></div><div class="grid">'+albums.map(x=>albumCard(albumById(x.id))).join("")+'</div></div>';
     if(songs.length)html+='<div class="section"><div class="sectionHead"><h2>Songs</h2><span>'+songs.length+'</span></div><div class="tableWrap">'+trackTable(songs.map(x=>trackById(x.id)).filter(Boolean),false,"folder:"+id)+'</div></div>';
     if(artists.length)html+='<div class="section"><div class="sectionHead"><h2>Artists</h2><span>'+artists.length+'</span></div><div class="viewGrid">'+artists.map(x=>artistCard(artistById(x.id))).join("")+'</div></div>';
@@ -1863,10 +1876,13 @@ main{min-width:0;min-height:0}
     if(!items.length)html+=empty("Folder is empty","Add albums, songs, artists or playlists to this folder.");
     $("#content").innerHTML=html;
     $("#folderEdit").onclick=()=>openFolderEditor(f.id);
+    $("#folderDownload").onclick=()=>downloadFolderArchive(f.id);
+    $("#folderDelete").onclick=()=>deleteFolder(f.id);
     $("#folderAddItems").onclick=()=>openFolderItemPicker(f.id);
     bindAlbumCards();bindTrackTable();$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
     applyContextArtworkTheme();
   }
+
   function renderHome(){
     const recent=state.recent.map(trackById).filter(Boolean).slice(0,8);
     const albums=albumList().slice(0,8);
@@ -2068,8 +2084,14 @@ main{min-width:0;min-height:0}
     const a=albumById(id);if(!a)return; state.detail={type:"album",id};
     const tracks=sortAlbumTracks(__localifyCatalog().byAlbum.get(id)||[]);
     const artistNames=artistNamesForAlbum(a);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img class="localifyCoverImage" src="${esc(coverForAlbum(a,a.cover))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${artistLinksForAlbumHtml(a)||"Unknown Artist"} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
-    $("#albumPlay").onclick=()=>playQueue(tracks,0);$("#albumAdd").onclick=()=>pickFiles({albumId:id});$("#albumEdit").onclick=()=>editAlbum(id);$("#albumInfo").onclick=()=>showCredits(id);bindTrackTable();
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img class="localifyCoverImage" src="${esc(coverForAlbum(a,a.cover))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${artistLinksForAlbumHtml(a)||"Unknown Artist"} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="secondary" id="albumDownload">${uiIcon("download")} Download album</button><button class="dangerBtn" id="albumDelete">${uiIcon("trash")} Delete album</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
+    $("#albumPlay").onclick=()=>playQueue(tracks,0);
+    $("#albumAdd").onclick=()=>pickFiles({albumId:id});
+    $("#albumEdit").onclick=()=>editAlbum(id);
+    $("#albumDownload").onclick=()=>downloadAlbumArchive(id);
+    $("#albumDelete").onclick=()=>deleteAlbum(id);
+    $("#albumInfo").onclick=()=>showCredits(id);
+    bindTrackTable();
     applyContextArtworkTheme();
   }
 
@@ -3943,7 +3965,26 @@ function editLocalProfile(){
   function editAlbum(id,opts={}){
     const a=id?albumById(id):null;let cover=a?.cover||null;setModal(albumModalHtml(a,{...opts,artistId:a?.artistId||opts.artistId||""}),{large:true});bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`;markDirty()});$("#entityNewArtist").onclick=()=>editArtist(null,{returnTo:{type:"album",id:id,selectAfter:true}});
     $("#saveEntity").onclick=async()=>{const artistIds=readArtistPicker("entityArtists");if(!$("#entityTitle").value.trim()){toast("Give the album a title.");return}let target=a;if(!target){target={id:uid(),title:"",artistIds:[...artistIds],artistId:artistIds[0]||null,cover:null,year:"",genre:"",label:"",description:"",credits:{}};state.albums.push(target)}const previousAlbumCover=target.cover||null;target.title=$("#entityTitle").value.trim();applyArtistIds(target,artistIds);const imageUrl=String($("#entityDiscordCover")?.value||"").trim();target.discordCoverUrl=imageUrl;target.cover=imageUrl||cover||null;target.year=$("#entityYear").value;target.genre=$("#entityGenre").value;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.credits=normalizeCredits({producer:$("#entityProducer").value,songwriter:$("#entitySongwriter").value,composer:$("#entityComposer").value,publisher:$("#entityPublisher").value,label:$("#entityLabel").value,copyright:$("#entityCopyright").value});for(const t of state.tracks.filter(t=>t.albumId===target.id)){t.album=target.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;applyAlbumArtistIds(t,artistIds);t.albumArtist=namesOfIds(artistIds).join(", ")||NONE_LABEL;if(!t.coverOverride&&(target.cover|| (previousAlbumCover&&t.cover===previousAlbumCover)))t.cover=target.cover||null;if(target.year)t.year=target.year;if(target.genre)t.genre=target.genre;t.credits=normalizeCredits({...t.credits,...target.credits})}await save();closeModal(true);showAlbum(target.id);if(state.currentId&&trackById(state.currentId)?.albumId===target.id)renderPlayer();toast(a?"Album updated.":"Album created.")};
-    if(a)$("#deleteAlbum").onclick=async()=>{if(!confirm(`Delete album "${a.title}"? Songs are kept in your library.`))return;state.albums=state.albums.filter(x=>x.id!==a.id);for(const t of state.tracks){if(t.albumId===a.id){t.albumId=null;t.album=NONE_LABEL;t.albumArtistId=null;t.albumArtist=NONE_LABEL}}await save(true);closeModal(true);state.detail=null;setView("albums");toast("Album deleted.")}
+    if(a)$("#deleteAlbum").onclick=()=>deleteAlbum(a.id)
+  }
+
+  async function deleteAlbum(id){
+    const a=albumById(id);if(!a)return;
+    if(!confirm(`Delete album "${a.title}"? Its songs will stay in your library, but will no longer belong to this album.`))return;
+    state.albums=state.albums.filter(x=>x.id!==id);
+    for(const t of state.tracks){
+      if(t.albumId===id){
+        t.albumId=null;t.album=NONE_LABEL;t.albumArtistId=null;t.albumArtist=NONE_LABEL;
+      }
+    }
+    for(const f of (state.folders||[])){
+      f.items=(f.items||[]).filter(item=>!(item?.type==="album"&&item.id===id));
+    }
+    if(state.detail?.type==="album"&&state.detail.id===id)state.detail=null;
+    await save(true);
+    closeModal(true);
+    setView("albums");
+    toast("Album deleted. Its songs were kept in your library.");
   }
 
   function artistModalHtml(a){return `<div class="modalHead"><h2>${a?"Edit artist":"Create artist"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="coverEdit">${a?.image?`<img id="entityCover" src="${a.image}" alt="" style="border-radius:50%">`:`<div id="entityCover" class="nowFallback artistFallback" style="width:92px;height:92px;border-radius:50%">${`<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose profile picture</button></div></div><div class="formGrid" style="margin-top:16px">${field("Artist name","entityTitle",a?.name||"")}${field("Label","entityLabel",a?.label||"")}${field("Founded / active year","entityYear",a?.year||"")}${field("Website","entityWebsite",a?.website||"")}<div class="field full"><label>Genres</label><input id="entityGenres" value="${esc((a?.genres||[]).join(", "))}" placeholder="Pop, Hip-Hop"></div><div class="field full"><label>Bio</label><textarea id="entityBio">${esc(a?.bio||"")}</textarea></div></div><div class="modalFoot">${a?`<button class="dangerBtn" id="deleteArtist">Delete artist</button>`:""}<button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${a?"Save changes":"Create artist"}</button></div>`}
@@ -4191,6 +4232,211 @@ function editLocalProfile(){
         toast("Downloaded the original audio. Full MP3 tags are applied when the source is MP3.");
       }
     }catch(e){console.error("Localify song download failed",e);toast("Could not download this song.");}
+  }
+
+  function safeArchiveSegment(value,fallback="Untitled"){
+    let s=String(value??"").replace(/[\\/:*?"<>|]/g,"-").replace(/[\u0000-\u001f]/g," ").replace(/\s+/g," ").replace(/[. ]+$/g,"").trim();
+    if(!s||s==="."||s==="..")s=fallback;
+    if(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(s))s="_"+s;
+    return s.slice(0,120);
+  }
+  function archiveTrackFilename(t,index,total){
+    const number=trackNo(t),digits=Math.max(2,String(total||1).length);
+    const prefix=String(number!=null?number:index+1).padStart(digits,"0");
+    const disc=discNo(t)>1?"D"+discNo(t)+"-":"";
+    const ext=(String(t?.fileName||"").match(/\.([a-z0-9]{1,10})$/i)||[])[0]||".mp3";
+    return disc+prefix+" - "+safeArchiveSegment(displayTrackTitle(t,true)||t?.fileName||"Unknown song")+ext.toLowerCase();
+  }
+  function imageExtension(blob){
+    const type=String(blob?.type||"").toLowerCase();
+    return type.includes("png")?".png":type.includes("webp")?".webp":type.includes("gif")?".gif":type.includes("avif")?".avif":".jpg";
+  }
+  async function archiveArtworkBlob(source){
+    if(!source||typeof source!=="string")return null;
+    try{
+      const response=await fetch(source,{cache:"no-store",mode:"cors",credentials:"omit"});
+      if(!response.ok)return null;
+      const blob=await response.blob();
+      return blob.type.startsWith("image/")&&blob.size?blob:null;
+    }catch{return null}
+  }
+  async function makeZipFromBlobs(entries){
+    const chunks=[],central=[];let offset=0,done=0;const enc=new TextEncoder();
+    for(const entry of entries){
+      if(!entry?.blob)continue;
+      const blob=entry.blob instanceof Blob?entry.blob:new Blob([entry.blob]);
+      const name=String(entry.name||"").replace(/\\/g,"/"),nb=enc.encode(name);
+      const crc=await crc32Blob(blob),size=blob.size,header=zipLocalHeader(nb,crc,size);
+      chunks.push(header,blob);central.push(zipCentralHeader(nb,crc,size,offset));
+      offset+=header.length+size;done++;
+    }
+    const centralOffset=offset;let centralSize=0;
+    for(const header of central){chunks.push(header);centralSize+=header.length}
+    chunks.push(zipEnd(done,centralSize,centralOffset));
+    return new Blob(chunks,{type:"application/zip"});
+  }
+  async function writeZipEntriesStreaming(handle,entries,label){
+    const writable=await handle.createWritable({keepExistingData:false}),enc=new TextEncoder(),central=[];
+    let offset=0,closed=false,filesDone=0;
+    const batchSize=1024*1024;
+    const write=async data=>{for(let attempt=0;;attempt++){try{await writable.write(data);return}catch(e){if(attempt>=3)throw e;await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)))}}};
+    const join=parts=>{const n=parts.reduce((sum,x)=>sum+x.length,0),out=new Uint8Array(n);let at=0;for(const p of parts){out.set(p,at);at+=p.length}return out};
+    try{
+      for(const entry of entries){
+        if(!entry?.blob)continue;
+        const blob=entry.blob instanceof Blob?entry.blob:new Blob([entry.blob]);
+        const nb=enc.encode(String(entry.name||"").replace(/\\/g,"/")),size=blob.size,header=zipLocalHeaderStreaming(nb,size);
+        await write(header);
+        let crc=0xffffffff,bytesWritten=0,batch=[],batchBytes=0;
+        const flush=async()=>{if(!batchBytes)return;await write(join(batch));batch=[];batchBytes=0};
+        const reader=blob.stream().getReader();
+        try{
+          while(true){
+            const {value,done}=await reader.read();if(done)break;if(!value?.byteLength)continue;
+            const chunk=value instanceof Uint8Array?value:new Uint8Array(value);
+            crc=crc32Update(crc,chunk);bytesWritten+=chunk.byteLength;batch.push(chunk);batchBytes+=chunk.byteLength;
+            if(batchBytes>=batchSize)await flush();
+          }
+        }finally{try{reader.releaseLock()}catch{}}
+        await flush();
+        if(bytesWritten!==size)throw new Error("The file changed while the ZIP was being written.");
+        crc=(crc^0xffffffff)>>>0;
+        const descriptor=zipDataDescriptor64(crc,size);
+        await write(descriptor);
+        central.push(zipCentralHeader(nb,crc,size,offset));
+        offset+=header.length+size+descriptor.length;
+        filesDone++;
+        if(filesDone===entries.length||filesDone%4===0)toast("Preparing "+label+"… "+filesDone+"/"+entries.length+" files");
+        await new Promise(resolve=>setTimeout(resolve,0));
+      }
+      const cdOffset=offset,cd=join(central);
+      await write(cd);await write(zipEnd(central.length,cd.length,cdOffset));
+      for(let attempt=0;attempt<3&&!closed;attempt++){
+        try{await writable.close();closed=true}catch(e){if(attempt===2)throw e;await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)))}
+      }
+      toast(label+" downloaded.");
+    }catch(e){
+      if(!closed)try{await writable.abort()}catch{}
+      throw e;
+    }
+  }
+  async function downloadArchiveEntries(entries,filename,label){
+    if(!entries.length){toast("There is nothing to download from "+label+".");return}
+    let handle=null;
+    try{
+      // Open the save picker immediately during the click gesture on browsers that support it.
+      if(window.showSaveFilePicker){
+        handle=await window.showSaveFilePicker({suggestedName:filename,types:[{description:"ZIP archive",accept:{"application/zip":[".zip"]}}]});
+      }
+      if(handle){
+        await writeZipEntriesStreaming(handle,entries,label);
+      }else{
+        const total=entries.reduce((sum,x)=>sum+(Number(x.blob?.size)||0),0);
+        if(total>512*1024*1024)throw new Error("This folder is too large for this browser's in-memory download. Open Localify in Chrome or Edge on desktop to stream the ZIP directly to disk.");
+        const zip=await makeZipFromBlobs(entries);
+        downloadBlob(zip,filename);
+        toast(label+" downloaded.");
+      }
+    }catch(e){
+      if(e?.name==="AbortError")return;
+      console.error("Localify archive download failed",e);
+      toast(e?.message||("Could not download "+label+"."));
+    }
+  }
+  async function appendAlbumToArchive(entries,album,path,missing){
+    if(!album)return;
+    const tracks=sortAlbumTracks(__localifyCatalog().byAlbum.get(album.id)||[]);
+    const root=path.replace(/\/+$/,"");
+    let cover=await archiveArtworkBlob(album.cover||"");
+    if(!cover&&tracks.length)cover=await coverBlobForTrack(tracks[0]);
+    if(cover)entries.push({name:root+"/Cover"+imageExtension(cover),blob:cover});
+    const artist=artistNamesForAlbum(album).join(", ")||"Unknown Artist";
+    const details=["Album: "+album.title,"Artist: "+artist,album.year?"Year: "+album.year:"",album.genre?"Genre: "+album.genre:"",album.label?"Label: "+album.label:""].filter(Boolean).join("\n");
+    entries.push({name:root+"/Album info.txt",blob:new Blob([details],{type:"text/plain;charset=utf-8"})});
+    await appendTracksToArchive(entries,tracks,root,missing);
+  }
+  async function appendTracksToArchive(entries,tracks,path,missing,artworkMode="album"){
+    const ordered=sortAlbumTracks(tracks||[]);
+    for(let i=0;i<ordered.length;i++){
+      const t=ordered[i],blob=await ensureTrackBlob(t);
+      if(!isBlobLike(blob)){missing.push(displayTrackTitle(t,true)||t.fileName||"Unknown song");continue}
+      const filename=archiveTrackFilename(t,i,ordered.length);
+      entries.push({name:path+"/"+filename,blob});
+      if(artworkMode==="per-track"){
+        const cover=await coverBlobForTrack(t);
+        if(cover)entries.push({name:path+"/Artwork/"+safeArchiveSegment(filename.replace(/\.[^.]+$/,""))+imageExtension(cover),blob:cover});
+      }
+    }
+  }
+  async function downloadAlbumArchive(id){
+    const album=albumById(id);if(!album)return;
+    const tracks=sortAlbumTracks(__localifyCatalog().byAlbum.get(id)||[]);
+    if(!tracks.length){toast("This album has no songs to download.");return}
+    const root=safeArchiveSegment(album.title||"Album");
+    let handle=null;
+    try{
+      if(window.showSaveFilePicker)handle=await window.showSaveFilePicker({suggestedName:root+".zip",types:[{description:"ZIP archive",accept:{"application/zip":[".zip"]}}]});
+      const entries=[],missing=[];
+      await appendAlbumToArchive(entries,album,root,missing);
+      if(missing.length)throw new Error(missing.length+" song(s) are missing their saved audio: "+missing.slice(0,3).join(", ")+(missing.length>3?" and more.":".")); 
+      if(handle)await writeZipEntriesStreaming(handle,entries,root);
+      else{
+        const total=entries.reduce((sum,x)=>sum+(Number(x.blob?.size)||0),0);
+        if(total>512*1024*1024)throw new Error("This album is too large for this browser's in-memory download. Open Localify in Chrome or Edge on desktop to save it as a streamed ZIP.");
+        downloadBlob(await makeZipFromBlobs(entries),root+".zip");toast(root+" downloaded.");
+      }
+    }catch(e){if(e?.name==="AbortError")return;console.error(e);toast(e?.message||"Could not download this album.")}
+  }
+  async function downloadFolderArchive(id){
+    const folder=folderById(id);if(!folder)return;
+    const root=safeArchiveSegment(folder.name||"Folder");
+    let handle=null;
+    try{
+      if(window.showSaveFilePicker)handle=await window.showSaveFilePicker({suggestedName:root+".zip",types:[{description:"ZIP archive",accept:{"application/zip":[".zip"]}}]});
+      const entries=[],missing=[],items=folderItems(folder);
+      const albumIds=new Set(),songIds=new Set(),artistIds=new Set(),playlistIds=new Set();
+      for(const item of items){
+        if(item.type==="album")albumIds.add(item.id);
+        else if(item.type==="song")songIds.add(item.id);
+        else if(item.type==="artist")artistIds.add(item.id);
+        else if(item.type==="playlist")playlistIds.add(item.id);
+      }
+      for(const id of albumIds){const a=albumById(id);if(a)await appendAlbumToArchive(entries,a,root+"/Albums/"+safeArchiveSegment(a.title),missing)}
+      for(const id of artistIds){
+        const artist=artistById(id);if(!artist)continue;
+        const artistRoot=root+"/Artists/"+safeArchiveSegment(artist.name);
+        const image=await archiveArtworkBlob(artist.image||"");
+        if(image)entries.push({name:artistRoot+"/Artist"+imageExtension(image),blob:image});
+        entries.push({name:artistRoot+"/Artist info.txt",blob:new Blob(["Artist: "+artistDisplayName(artist),artist.year?"Year: "+artist.year:"",Array.isArray(artist.genres)?"Genres: "+artist.genres.join(", "):""].filter(Boolean).join("\n"),{type:"text/plain;charset=utf-8"})});
+        const artistAlbums=state.albums.filter(a=>artistIdsForAlbum(a).includes(id));
+        const artistAlbumIds=new Set(artistAlbums.map(a=>a.id));
+        for(const a of artistAlbums)await appendAlbumToArchive(entries,a,artistRoot+"/Albums/"+safeArchiveSegment(a.title),missing);
+        const loose=state.tracks.filter(t=>artistIdsForTrack(t).includes(id)&&(!t.albumId||!artistAlbumIds.has(t.albumId)));
+        await appendTracksToArchive(entries,loose,artistRoot+"/Songs",missing,"per-track");
+      }
+      for(const id of songIds){
+        const track=trackById(id);if(!track)continue;
+        const songRoot=root+"/Songs/"+safeArchiveSegment(safeDownloadName(track));
+        await appendTracksToArchive(entries,[track],songRoot,missing,"per-track");
+      }
+      for(const id of playlistIds){
+        const playlist=playlistById(id);if(!playlist)continue;
+        const playlistRoot=root+"/Playlists/"+safeArchiveSegment(playlist.name);
+        const cover=await archiveArtworkBlob(playlist.cover||"");
+        if(cover)entries.push({name:playlistRoot+"/Cover"+imageExtension(cover),blob:cover});
+        const tracks=(playlist.trackIds||[]).map(trackById).filter(Boolean);
+        await appendTracksToArchive(entries,tracks,playlistRoot+"/Songs",missing,"per-track");
+        entries.push({name:playlistRoot+"/Playlist info.txt",blob:new Blob(["Playlist: "+playlist.name,"Songs: "+tracks.length],{type:"text/plain;charset=utf-8"})});
+      }
+      if(missing.length)throw new Error(missing.length+" song(s) are missing saved audio: "+missing.slice(0,4).join(", ")+(missing.length>4?" and more.":".")); 
+      if(!entries.length){toast("This folder has no downloadable items.");return}
+      if(handle)await writeZipEntriesStreaming(handle,entries,root);
+      else{
+        const total=entries.reduce((sum,x)=>sum+(Number(x.blob?.size)||0),0);
+        if(total>512*1024*1024)throw new Error("This folder is too large for this browser's in-memory download. Open Localify in Chrome or Edge on desktop to save it as a streamed ZIP.");
+        downloadBlob(await makeZipFromBlobs(entries),root+".zip");toast(root+" downloaded.");
+      }
+    }catch(e){if(e?.name==="AbortError")return;console.error(e);toast(e?.message||"Could not download this folder.")}
   }
 
   async function makeZip(entries){const chunks=[],central=[];let offset=0;const enc=new TextEncoder();for(const entry of entries){const nb=enc.encode(entry.name),data=entry.bytes instanceof Uint8Array?entry.bytes:new Uint8Array(entry.bytes),crc=crc32(data),size=data.length,h=zipLocalHeader(nb,crc,size);chunks.push(h,data);central.push(zipCentralHeader(nb,crc,size,offset));offset+=h.length+size}const cdOffset=offset;let cdSize=0;for(const c of central){chunks.push(c);cdSize+=c.length}chunks.push(zipEnd(central.length,cdSize,cdOffset));return new Blob(chunks,{type:'application/zip'})}
