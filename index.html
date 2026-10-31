@@ -619,7 +619,7 @@ main{min-width:0;min-height:0}
 .folderPreviewItem img{width:100%;height:100%;object-fit:cover;display:block}
 .folderPreviewItem .svgIcon{width:35%;height:35%}
 .folderIconBadge{position:absolute;right:20px;top:20px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(0,0,0,.52);backdrop-filter:blur(8px);color:#eaf0f5;border:1px solid rgba(255,255,255,.1)}
-.folderTitle{margin:10px 2px 3px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.folderDetailActions{flex-wrap:wrap;min-width:0}.folderTitle{margin:10px 2px 3px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .folderSub{font-size:11px;color:#79838f}
 .folderPicker{display:grid;gap:10px;max-height:58vh;overflow:auto}
 .folderPickerSection{display:grid;gap:6px}
@@ -1868,7 +1868,7 @@ main{min-width:0;min-height:0}
     const f=folderById(id);if(!f)return;
     state.currentView="folders";state.detail={type:"folder",id};state.selected=[];renderNav();
     const items=folderItems(f),albums=items.filter(x=>x.type==="album"),songs=items.filter(x=>x.type==="song"),artists=items.filter(x=>x.type==="artist"),playlists=items.filter(x=>x.type==="playlist");
-    let html='<div class="sectionHead"><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+items.length+' items</div></div><div class="sectionHeadActions"><button class="secondary" id="folderDownload">'+uiIcon("download")+' Download folder</button><button class="secondary" id="folderEdit">'+uiIcon("edit")+' Edit</button><button class="dangerBtn" id="folderDelete">'+uiIcon("trash")+' Delete folder</button><button class="primary" id="folderAddItems">'+uiIcon("plus")+' Add items</button></div></div>';
+    let html='<div class="sectionHead"><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+items.length+' items</div></div><div class="sectionHeadActions folderDetailActions"><button class="secondary" id="folderDownload">'+uiIcon("download")+' Download folder</button><button class="secondary" id="folderEdit">'+uiIcon("edit")+' Edit</button><button class="dangerBtn" id="folderDelete">'+uiIcon("trash")+' Delete folder</button><button class="primary" id="folderAddItems">'+uiIcon("plus")+' Add items</button></div></div>';
     if(albums.length)html+='<div class="section"><div class="sectionHead"><h2>Albums</h2><span>'+albums.length+'</span></div><div class="grid">'+albums.map(x=>albumCard(albumById(x.id))).join("")+'</div></div>';
     if(songs.length)html+='<div class="section"><div class="sectionHead"><h2>Songs</h2><span>'+songs.length+'</span></div><div class="tableWrap">'+trackTable(songs.map(x=>trackById(x.id)).filter(Boolean),false,"folder:"+id)+'</div></div>';
     if(artists.length)html+='<div class="section"><div class="sectionHead"><h2>Artists</h2><span>'+artists.length+'</span></div><div class="viewGrid">'+artists.map(x=>artistCard(artistById(x.id))).join("")+'</div></div>';
@@ -4240,8 +4240,8 @@ function editLocalProfile(){
     if(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(s))s="_"+s;
     return s.slice(0,120);
   }
-  function archiveTrackFilename(t,index,total){
-    const number=trackNo(t),digits=Math.max(2,String(total||1).length);
+  function archiveTrackFilename(t,index,total,useOriginalTrackNumbers=true){
+    const number=useOriginalTrackNumbers?trackNo(t):null,digits=Math.max(2,String(total||1).length);
     const prefix=String(number!=null?number:index+1).padStart(digits,"0");
     const disc=discNo(t)>1?"D"+discNo(t)+"-":"";
     const ext=(String(t?.fileName||"").match(/\.([a-z0-9]{1,10})$/i)||[])[0]||".mp3";
@@ -4355,12 +4355,12 @@ function editLocalProfile(){
     entries.push({name:root+"/Album info.txt",blob:new Blob([details],{type:"text/plain;charset=utf-8"})});
     await appendTracksToArchive(entries,tracks,root,missing);
   }
-  async function appendTracksToArchive(entries,tracks,path,missing,artworkMode="album"){
-    const ordered=sortAlbumTracks(tracks||[]);
+  async function appendTracksToArchive(entries,tracks,path,missing,artworkMode="album",preserveOrder=false,useOriginalTrackNumbers=true){
+    const ordered=preserveOrder?[...(tracks||[])]:sortAlbumTracks(tracks||[]);
     for(let i=0;i<ordered.length;i++){
       const t=ordered[i],blob=await ensureTrackBlob(t);
       if(!isBlobLike(blob)){missing.push(displayTrackTitle(t,true)||t.fileName||"Unknown song");continue}
-      const filename=archiveTrackFilename(t,i,ordered.length);
+      const filename=archiveTrackFilename(t,i,ordered.length,useOriginalTrackNumbers);
       entries.push({name:path+"/"+filename,blob});
       if(artworkMode==="per-track"){
         const cover=await coverBlobForTrack(t);
@@ -4425,7 +4425,7 @@ function editLocalProfile(){
         const cover=await archiveArtworkBlob(playlist.cover||"");
         if(cover)entries.push({name:playlistRoot+"/Cover"+imageExtension(cover),blob:cover});
         const tracks=(playlist.trackIds||[]).map(trackById).filter(Boolean);
-        await appendTracksToArchive(entries,tracks,playlistRoot+"/Songs",missing,"per-track");
+        await appendTracksToArchive(entries,tracks,playlistRoot+"/Songs",missing,"per-track",true,false);
         entries.push({name:playlistRoot+"/Playlist info.txt",blob:new Blob(["Playlist: "+playlist.name,"Songs: "+tracks.length],{type:"text/plain;charset=utf-8"})});
       }
       if(missing.length)throw new Error(missing.length+" song(s) are missing saved audio: "+missing.slice(0,4).join(", ")+(missing.length>4?" and more.":".")); 
