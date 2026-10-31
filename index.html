@@ -1117,10 +1117,7 @@ main{min-width:0;min-height:0}
     return knownCoverUrlForAlbum(reference);
   }
   function coverHtml(t,cls=""){
-    const album=albumById(t?.albumId);
-    const known=knownCoverUrlForTrack(t);
-    const artistCover=artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);
-    const cover=firstArtworkSource([t?.cover,album?.cover,artistCover,known]);
+    const cover=trackArtworkSource(t);
     return cover?"<img class=\"" + cls + " localifyCoverImage\" src=\"" + esc(cover) + "\" alt=\"\" loading=\"lazy\" decoding=\"async\" referrerpolicy=\"no-referrer\">":"<div class=\"" + cls + " fallback\">"+uiIcon("music")+"</div>";
   }
   function artBox(t,cls="art"){return `<div class="${cls}">${coverHtml(t)}</div>`}
@@ -2190,7 +2187,7 @@ main{min-width:0;min-height:0}
 
   function discordDirectCoverUrl(t){
     const album=albumById(t?.albumId);
-    const explicit=[t?.discordCoverUrl,album?.discordCoverUrl,t?.cover,album?.cover,
+    const explicit=[t?.discordCoverUrl,album?.discordCoverUrl,t?.coverOverride?t.cover:"",album?.cover,
       ...artistIdsForTrack(t).map(id=>artistById(id)?.image)]
       .find(value=>typeof value==="string"&&/^https:\/\/[^\s]+$/i.test(value.trim()));
     return explicit?String(explicit).trim():LOCALIFY_DEFAULT_ART_URL;
@@ -2603,7 +2600,7 @@ main{min-width:0;min-height:0}
   async function localArtworkForDiscord(t){
     if(!t)return {data:"",key:"none:unknown"};
     const album=albumById(t.albumId);
-    const candidates=[t.cover,album?.cover,...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
+    const candidates=[t.coverOverride?t.cover:"",album?.cover,...artistIdsForTrack(t).map(id=>artistById(id)?.image)];
     const source=candidates.find(v=>typeof v==="string"&&/^data:image\/[^,]+;base64,/i.test(v.trim())&&v.length<=5*1024*1024);
     if(!source)return {data:"",key:"none:"+String(t.id||"track")};
     const cached=discordLocalArtworkCache.get(t.id);
@@ -2860,10 +2857,19 @@ main{min-width:0;min-height:0}
   function trackArtworkSource(t){
     if(!t)return "";
     const album=albumById(t.albumId);
+    const songOverride=t.coverOverride?firstArtworkSource([t.cover]):"";
+    if(songOverride)return songOverride;
+    // Album artwork is authoritative for every song in that album. Older
+    // libraries may still have an embedded copy of the previous album art
+    // saved on each track, so resolve the album image before those old copies.
+    const albumCover=album?coverForAlbum(album,album.cover):"";
+    if(albumCover)return firstArtworkSource([albumCover]);
+    const savedSongCover=firstArtworkSource([t.cover]);
+    if(savedSongCover)return savedSongCover;
     const artistImages=artistIdsForTrack(t).map(id=>artistById(id)?.image||"");
     let known="";
     try{known=knownCoverUrlForTrack(t)||""}catch{}
-    return firstArtworkSource([t.cover,album?.cover,...artistImages,known]);
+    return firstArtworkSource([...artistImages,known]);
   }
   function contextArtworkSource(){
     const d=state.detail;
@@ -2871,17 +2877,17 @@ main{min-width:0;min-height:0}
     if(d.type==="album"){
       const a=albumById(d.id);if(!a)return "";
       const tracks=state.tracks.filter(t=>t.albumId===a.id);
-      return firstArtworkSource([a.cover,...tracks.map(trackArtworkSource)]);
+      return firstArtworkSource([a.cover])||firstArtworkSource(tracks.map(trackArtworkSource));
     }
     if(d.type==="playlist"){
       const p=playlistById(d.id);if(!p)return "";
-      return firstArtworkSource([p.cover,...(p.trackIds||[]).map(id=>trackArtworkSource(trackById(id)))]);
+      return firstArtworkSource([p.cover])||firstArtworkSource((p.trackIds||[]).map(id=>trackArtworkSource(trackById(id))));
     }
     if(d.type==="artist"){
       const a=artistById(d.id);if(!a)return "";
       const albums=state.albums.filter(x=>artistIdsForAlbum(x).includes(a.id));
       const tracks=state.tracks.filter(t=>artistIdsForTrack(t).includes(a.id));
-      return firstArtworkSource([a.image,...albums.map(x=>x.cover),...tracks.map(trackArtworkSource)]);
+      return firstArtworkSource([a.image])||firstArtworkSource(albums.map(x=>x.cover))||firstArtworkSource(tracks.map(trackArtworkSource));
     }
     if(d.type==="folder"){
       const f=folderById(d.id);if(!f)return "";
@@ -3874,7 +3880,7 @@ function editLocalProfile(){
     bindModalDirty();bindTrackEditorEvents(m,t.id);
   }
   function trackFormHtml(t){
-    const currentAlbum=albumById(t.albumId);const currentArtist=artistById(firstArtistId(t));const cover=t.cover||currentAlbum?.cover||artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);
+    const currentAlbum=albumById(t.albumId);const currentArtist=artistById(firstArtistId(t));const cover=trackArtworkSource(t)||currentAlbum?.cover||artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);
     return `<div class="modalHead"><h2>Edit song</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
       <div class="coverEdit">${cover?`<img id="editCover" src="${cover}" alt="">`:`<div id="editCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("music")}</div>`}<div><button class="secondary" id="songCoverBtn">Choose artwork</button><div class="help" style="margin-top:6px">Artwork can differ from the album artwork.</div></div></div>
       <div class="formGrid" style="margin-top:16px">
@@ -3890,16 +3896,21 @@ function editLocalProfile(){
       </div><div class="modalFoot"><button class="secondary" id="cancelEdit">Cancel</button><button class="primary" id="saveEdit">Save changes</button></div>`;
   }
   function bindTrackEditorEvents(m,id){
-    const t=trackById(id);let newCover=t.cover||albumById(t.albumId)?.cover||artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean);
+    const t=trackById(id);let newCover=t.coverOverride?t.cover:(albumById(t.albumId)?.cover||t.cover||artistIdsForTrack(t).map(id=>artistById(id)?.image).find(Boolean));let coverWasChosen=false;
+    const updateSongCoverPreview=()=>{const el=$("#editCover");if(!el)return;if(newCover)el.outerHTML=`<img id="editCover" src="${esc(newCover)}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`;else el.outerHTML=`<div id="editCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("music")}</div>`};
     $("#closeModal").onclick=()=>closeModal();$("#cancelEdit").onclick=()=>closeModal();
-    $("#songCoverBtn").onclick=()=>imagePicker(newCover,d=>{newCover=d;const el=$("#editCover");if(d)el.outerHTML=`<img id="editCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`;markDirty()});
+    $("#songCoverBtn").onclick=()=>imagePicker(newCover,d=>{newCover=d||null;coverWasChosen=true;updateSongCoverPreview();markDirty()});
     $("#songLyrics").addEventListener("paste",()=>setTimeout(()=>{$("#songLyrics").value=$("#songLyrics").value.replace(/\r\n?/g,"\n");markDirty()},0));
     $("#newArtistInline").onclick=()=>editArtist(null,{returnTo:{type:"track",id}});
     $("#newAlbumInline").onclick=()=>{const ids=readArtistPicker("songArtists");if(!ids.length){toast("Choose at least one artist first.");return}editAlbum(null,{artistIds:ids,returnTo:{type:"track",id}})};
-    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);setArtistPickerSelection("songArtists",ids);const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);const alCover=a.cover||artistCover;if(alCover&&!newCover){newCover=alCover;const el=$("#editCover");el.outerHTML=`<img id="editCover" src="${newCover}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`}}};
+    $("#songAlbum").onchange=()=>{const a=albumById($("#songAlbum").value);if(a){const ids=artistIdsForAlbum(a);setArtistPickerSelection("songArtists",ids);if(!coverWasChosen&&!t.coverOverride){const artistCover=ids.map(id=>artistById(id)?.image).find(Boolean);newCover=a.cover||artistCover||null;updateSongCoverPreview()}}};
     $("#saveEdit").onclick=async()=>{
       const artistIds=readArtistPicker("songArtists"),album=albumById($("#songAlbum").value);
-      t.title=$("#songTitle").value.trim()||t.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;t.discordCoverUrl=String($("#songDiscordCover")?.value||"").trim();t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL;t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;t.cover=newCover;t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
+      const albumChanged=t.albumId!==(album?.id||null);
+      t.title=$("#songTitle").value.trim()||t.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;t.discordCoverUrl=String($("#songDiscordCover")?.value||"").trim();t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL;t.year=$("#songYear").value;t.genre=$("#songGenre").value;t.track=$("#songTrack").value||null;t.disc=$("#songDisc").value||null;t.explicit=$("#songExplicit").checked;t.lyrics=$("#songLyrics").value;
+      if(coverWasChosen){t.cover=newCover;t.coverOverride=!!newCover}
+      else if(!t.coverOverride&&(album?.cover||albumChanged))t.cover=album?.cover||null;
+      t.credits=normalizeCredits({producer:$("#credProducer").value,songwriter:$("#credSongwriter").value,composer:$("#credComposer").value,publisher:$("#credPublisher").value,label:creditList(t.credits,"label"),copyright:creditList(t.credits,"copyright")});
       if(album){if(!album.cover&&newCover)album.cover=newCover;}
       t._diskDirty=!!state.libraryFolderHandle;await save();closeModal(true);renderCurrentViewWithoutScroll();toast("Song updated.");
     };
@@ -3931,7 +3942,7 @@ function editLocalProfile(){
   }
   function editAlbum(id,opts={}){
     const a=id?albumById(id):null;let cover=a?.cover||null;setModal(albumModalHtml(a,{...opts,artistId:a?.artistId||opts.artistId||""}),{large:true});bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`;markDirty()});$("#entityNewArtist").onclick=()=>editArtist(null,{returnTo:{type:"album",id:id,selectAfter:true}});
-    $("#saveEntity").onclick=async()=>{const artistIds=readArtistPicker("entityArtists");if(!$("#entityTitle").value.trim()){toast("Give the album a title.");return}let target=a;if(!target){target={id:uid(),title:"",artistIds:[...artistIds],artistId:artistIds[0]||null,cover:null,year:"",genre:"",label:"",description:"",credits:{}};state.albums.push(target)}target.title=$("#entityTitle").value.trim();applyArtistIds(target,artistIds);const imageUrl=String($("#entityDiscordCover")?.value||"").trim();target.discordCoverUrl=imageUrl;target.cover=imageUrl||cover||null;target.year=$("#entityYear").value;target.genre=$("#entityGenre").value;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.credits=normalizeCredits({producer:$("#entityProducer").value,songwriter:$("#entitySongwriter").value,composer:$("#entityComposer").value,publisher:$("#entityPublisher").value,label:$("#entityLabel").value,copyright:$("#entityCopyright").value});for(const t of state.tracks.filter(t=>t.albumId===target.id)){t.album=target.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;applyAlbumArtistIds(t,artistIds);t.albumArtist=namesOfIds(artistIds).join(", ")||NONE_LABEL;if(imageUrl)t.cover=imageUrl;else if(cover)t.cover=cover;if(target.year)t.year=target.year;if(target.genre)t.genre=target.genre;t.credits=normalizeCredits({...t.credits,...target.credits})}await save();closeModal(true);showAlbum(target.id);toast(a?"Album updated.":"Album created.")};
+    $("#saveEntity").onclick=async()=>{const artistIds=readArtistPicker("entityArtists");if(!$("#entityTitle").value.trim()){toast("Give the album a title.");return}let target=a;if(!target){target={id:uid(),title:"",artistIds:[...artistIds],artistId:artistIds[0]||null,cover:null,year:"",genre:"",label:"",description:"",credits:{}};state.albums.push(target)}const previousAlbumCover=target.cover||null;target.title=$("#entityTitle").value.trim();applyArtistIds(target,artistIds);const imageUrl=String($("#entityDiscordCover")?.value||"").trim();target.discordCoverUrl=imageUrl;target.cover=imageUrl||cover||null;target.year=$("#entityYear").value;target.genre=$("#entityGenre").value;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.credits=normalizeCredits({producer:$("#entityProducer").value,songwriter:$("#entitySongwriter").value,composer:$("#entityComposer").value,publisher:$("#entityPublisher").value,label:$("#entityLabel").value,copyright:$("#entityCopyright").value});for(const t of state.tracks.filter(t=>t.albumId===target.id)){t.album=target.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;applyAlbumArtistIds(t,artistIds);t.albumArtist=namesOfIds(artistIds).join(", ")||NONE_LABEL;if(!t.coverOverride&&(target.cover|| (previousAlbumCover&&t.cover===previousAlbumCover)))t.cover=target.cover||null;if(target.year)t.year=target.year;if(target.genre)t.genre=target.genre;t.credits=normalizeCredits({...t.credits,...target.credits})}await save();closeModal(true);showAlbum(target.id);if(state.currentId&&trackById(state.currentId)?.albumId===target.id)renderPlayer();toast(a?"Album updated.":"Album created.")};
     if(a)$("#deleteAlbum").onclick=async()=>{if(!confirm(`Delete album "${a.title}"? Songs are kept in your library.`))return;state.albums=state.albums.filter(x=>x.id!==a.id);for(const t of state.tracks){if(t.albumId===a.id){t.albumId=null;t.album=NONE_LABEL;t.albumArtistId=null;t.albumArtist=NONE_LABEL}}await save(true);closeModal(true);state.detail=null;setView("albums");toast("Album deleted.")}
   }
 
