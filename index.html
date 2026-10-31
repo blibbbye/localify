@@ -4131,7 +4131,7 @@ function editLocalProfile(){
   function zipLocalHeaderStreaming(nameBytes,size){const extra=zip64Extra([size,size]),a=new Uint8Array(30+nameBytes.length+extra.length),dv=new DataView(a.buffer);dv.setUint32(0,0x04034b50,true);dv.setUint16(4,45,true);dv.setUint16(6,0x808,true);dv.setUint16(8,0,true);dv.setUint16(10,0,true);dv.setUint16(12,0,true);dv.setUint16(14,0,true);dv.setUint32(18,0xffffffff,true);dv.setUint32(22,0xffffffff,true);dv.setUint16(26,nameBytes.length,true);dv.setUint16(28,extra.length,true);a.set(nameBytes,30);a.set(extra,30+nameBytes.length);return a}
   function zipDataDescriptor64(crc,size){const a=new Uint8Array(24),dv=new DataView(a.buffer);dv.setUint32(0,0x08074b50,true);dv.setUint32(4,crc>>>0,true);a.set(u64(size),8);a.set(u64(size),16);return a}
   function zipLocalHeader(nameBytes,crc,size){const extra=zip64Extra([size,size]),a=new Uint8Array(30+nameBytes.length+extra.length),dv=new DataView(a.buffer);dv.setUint32(0,0x04034b50,true);dv.setUint16(4,45,true);dv.setUint16(6,0x800,true);dv.setUint16(8,0,true);dv.setUint16(10,0,true);dv.setUint16(12,0,true);dv.setUint32(14,crc>>>0,true);dv.setUint32(18,0xffffffff,true);dv.setUint32(22,0xffffffff,true);dv.setUint16(26,nameBytes.length,true);dv.setUint16(28,extra.length,true);a.set(nameBytes,30);a.set(extra,30+nameBytes.length);return a}
-  function zipCentralHeader(nameBytes,crc,size,offset){const extra=zip64Extra([size,size,offset]),a=new Uint8Array(46+nameBytes.length+extra.length),dv=new DataView(a.buffer);dv.setUint32(0,0x02014b50,true);dv.setUint16(4,45,true);dv.setUint16(6,45,true);dv.setUint16(8,0x800,true);dv.setUint16(10,0,true);dv.setUint16(12,0,true);dv.setUint16(14,0,true);dv.setUint32(16,crc>>>0,true);dv.setUint32(20,0xffffffff,true);dv.setUint32(24,0xffffffff,true);dv.setUint16(28,nameBytes.length,true);dv.setUint16(30,extra.length,true);dv.setUint16(32,0,true);dv.setUint16(34,0,true);dv.setUint16(36,0,true);dv.setUint16(38,0,true);dv.setUint32(42,0xffffffff,true);a.set(nameBytes,46);a.set(extra,46+nameBytes.length);return a}
+  function zipCentralHeader(nameBytes,crc,size,offset,streaming=false){const extra=zip64Extra([size,size,offset]),a=new Uint8Array(46+nameBytes.length+extra.length),dv=new DataView(a.buffer);dv.setUint32(0,0x02014b50,true);dv.setUint16(4,45,true);dv.setUint16(6,45,true);dv.setUint16(8,streaming?0x808:0x800,true);dv.setUint16(10,0,true);dv.setUint16(12,0,true);dv.setUint16(14,0,true);dv.setUint32(16,crc>>>0,true);dv.setUint32(20,0xffffffff,true);dv.setUint32(24,0xffffffff,true);dv.setUint16(28,nameBytes.length,true);dv.setUint16(30,extra.length,true);dv.setUint16(32,0,true);dv.setUint16(34,0,true);dv.setUint16(36,0,true);dv.setUint16(38,0,true);dv.setUint32(42,0xffffffff,true);a.set(nameBytes,46);a.set(extra,46+nameBytes.length);return a}
   function zipEnd(count,cdSize,cdOffset){const eocd64Offset=cdOffset+cdSize,body=new Uint8Array(56),dv=new DataView(body.buffer);dv.setUint32(0,0x06064b50,true);dv.setUint32(4,44,true);dv.setUint16(8,45,true);dv.setUint16(10,45,true);dv.setUint32(12,0,true);dv.setUint32(16,0,true);body.set(u64(count),24);body.set(u64(count),32);body.set(u64(cdSize),40);body.set(u64(cdOffset),48);const locator=new Uint8Array(20),ldv=new DataView(locator.buffer);ldv.setUint32(0,0x07064b50,true);ldv.setUint32(4,0,true);locator.set(u64(eocd64Offset),8);ldv.setUint32(16,1,true);const classic=new Uint8Array(22),ev=new DataView(classic.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,0xffff,true);ev.setUint16(10,0xffff,true);ev.setUint32(12,0xffffffff,true);ev.setUint32(16,0xffffffff,true);ev.setUint16(20,0,true);return new Uint8Array([...body,...locator,...classic])}
   function downloadBlob(blob,name){
     const url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -4303,7 +4303,7 @@ function editLocalProfile(){
         crc=(crc^0xffffffff)>>>0;
         const descriptor=zipDataDescriptor64(crc,size);
         await write(descriptor);
-        central.push(zipCentralHeader(nb,crc,size,offset));
+        central.push(zipCentralHeader(nb,crc,size,offset,true));
         offset+=header.length+size+descriptor.length;
         filesDone++;
         if(filesDone===entries.length||filesDone%4===0)toast("Preparing "+label+"… "+filesDone+"/"+entries.length+" files");
@@ -4780,7 +4780,7 @@ function editLocalProfile(){
         if(streamBytes!==size)throw new Error('Audio size changed while exporting “'+String(t.title||t.fileName||'Unknown song').slice(0,100)+'”.');
         const crc=(crcState^0xffffffff)>>>0,dd=zipDataDescriptor64(crc,size);
         await writeWithRetry(dd);
-        central.push(zipCentralHeader(nb,crc,size,offset));
+        central.push(zipCentralHeader(nb,crc,size,offset,true));
         offset+=h.length+size+dd.length;
         totalBytes+=h.length+size+dd.length;
         done++;
