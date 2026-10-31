@@ -63,7 +63,7 @@
     .discordStatus.error{color:#ffc4cb;border-color:rgba(255,91,110,.28);background:rgba(255,91,110,.08)}
     .discordStatus.error .discordDot{background:#fb7185;box-shadow:0 0 0 3px rgba(251,113,133,.12)}
     .discordStatus{display:none!important}
-    .discordTopBtn{width:42px;height:42px;padding:0;border-radius:13px;display:grid;place-items:center;background:#15181e;border:1px solid #272c35;color:#cbd2dc;flex:none;position:relative}
+    .discordServerBtn{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:12px;background:#5865f2;border:1px solid rgba(255,255,255,.12);color:#fff;box-shadow:0 5px 16px rgba(88,101,242,.18);text-decoration:none;transition:transform .15s ease,background .15s ease,box-shadow .15s ease}.discordServerBtn:hover{background:#6975f5;transform:translateY(-1px);box-shadow:0 7px 20px rgba(88,101,242,.28)}.discordServerBtn .svgIcon{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
     .discordTopBtn:hover{background:#1c2128;color:#fff;border-color:#39414c}
     .discordTopBtn.connected{color:#d9ffe5;border-color:rgba(74,222,128,.34);background:rgba(34,197,94,.09)}
     .discordTopBtn.error{color:#ffc4cb;border-color:rgba(255,91,110,.34);background:rgba(255,91,110,.08)}
@@ -894,7 +894,7 @@ main{min-width:0;min-height:0}
       <button class="secondary btnIcon" id="quickAdd"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add songs</span></button>
       <button class="profileTopBtn" id="profileBtn" title="Profile" aria-label="Open profile"><span id="profileGlyph"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg></span></button>
       <div class="profileMenu" id="profileMenu" aria-hidden="true"></div>
-      <button class="discordTopBtn" id="discordTopBtn" title="Discord Rich Presence" aria-label="Open Discord Rich Presence settings"><span class="discordGlyph"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 10.5c1.8 1.3 5.2 1.3 7 0"/><circle cx="9" cy="12" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r=".7" fill="currentColor" stroke="none"/></svg></span><span class="discordTopDot"></span></button>
+      <a class="discordServerBtn" id="discordServerBtn" href="https://discord.gg/Z2K7xj7aP6" target="_blank" rel="noopener noreferrer" title="Join the Localify Discord server" aria-label="Join the Localify Discord server"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.7 5.2A18.4 18.4 0 0 0 15.2 3.8l-.6 1.2a16.8 16.8 0 0 0-5.2 0l-.6-1.2a18.4 18.4 0 0 0-4.5 1.4C1.5 9.4.7 13.5 1.1 17.5a18.5 18.5 0 0 0 5.6 2.8l1.2-1.9-1.8-.9.4-.3a13.2 13.2 0 0 0 11 0l.4.3-1.8.9 1.2 1.9a18.5 18.5 0 0 0 5.6-2.8c.5-4.7-.8-8.8-3.2-12.3ZM8.8 14.7c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm6.4 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg></a>
       <div class="discordStatus" id="discordStatus" aria-hidden="true"><span class="discordDot"></span><span id="discordStatusText">Discord offline</span></div><div class="pill" id="libraryBadge">0 tracks</div>
       <button class="secondary mobileTools" id="mobileTools" title="Library tools" aria-label="Library tools"><span class="mobileToolsGlyph" aria-hidden="true"><svg class="svgIcon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="mobileToolsLabel">Library tools</span></button>
     </div>
@@ -3477,7 +3477,7 @@ function editLocalProfile(){
           '<section class="settingsSection">'+
             '<div class="settingsSectionHead"><div><div class="settingsSectionTitle">Discord Rich Presence</div><div class="settingsSectionSub">Connect the Localify Discord Player and control what appears in Discord.</div></div></div>'+
             '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Show listening status</strong><span>Show your current song and artist while music is playing.</span></div><input type="checkbox" id="accountDiscord" '+(enabled?'checked':'')+'></div>'+
-            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="primary" id="accountOpenDiscord">Discord connector controls</button><button type="button" class="secondary" id="accountReconnectDiscord">Reconnect</button></div>'+
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="primary" id="accountOpenDiscord">Open Discord connector</button><button type="button" class="secondary" id="accountReconnectDiscord">Reconnect</button></div>'+
             '<div class="settingsSectionSub" id="accountDiscordNote" style="margin-top:10px">The Windows Discord desktop app and Localify Discord Player must both be running.</div>'+
           '</section>'+
           '<section class="settingsSection">'+
@@ -5408,7 +5408,7 @@ function submitGlobalSearch(){
       submitGlobalSearch();
     }
   });
-  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#profileBtn").onclick=e=>{e.preventDefault();e.stopPropagation();toggleProfileMenu()};$("#discordTopBtn").onclick=openDiscordSetup;$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#presetBtn").onclick=openPresetsMenu;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importPresetFile(f,pendingExpectedPresetKind)};
+  $("#quickAdd").onclick=()=>{unlockPersistentStorage();pickFiles({})};$("#profileBtn").onclick=e=>{e.preventDefault();e.stopPropagation();toggleProfileMenu()};$("#mobileTools").onclick=openMobileTools;$("#importBtn").onclick=()=>pickFiles({});$("#folderBtn").onclick=pickFolder;$("#presetBtn").onclick=openPresetsMenu;$("#deleteLibraryBtn").onclick=openDeleteLibraryWarning;$("#filePicker").onchange=e=>addFiles([...e.target.files],importContext);$("#bundlePicker").onchange=e=>{const f=e.target.files[0];if(f)importPresetFile(f,pendingExpectedPresetKind)};
   $$("#nav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
   $("#playPause").onclick=toggleCurrentPlayback;
   $("#nowPanelToggle").onclick=()=>setNowSidebar(!document.querySelector(".app")?.classList.contains("nowPanelOpen"));
