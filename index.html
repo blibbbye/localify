@@ -121,7 +121,7 @@
       .actionsHead{width:50px}
       .profileHero{min-width:0}
       .entityActions{max-width:100%;overflow:hidden}
-      .rowActions .more-row{display:none}
+      
       .dropzone .mobileFileButton{display:inline-flex;align-items:center;justify-content:center;width:100%;margin-top:10px}
       .dropzone{padding:14px}
       .heroActions .secondary{display:none}
@@ -2049,7 +2049,7 @@ main{min-width:0;min-height:0}
     $(".selectAll")?.addEventListener("change",e=>{const ids=shown.map(t=>t.id);if(e.target.checked)state.selected=[...new Set([...state.selected,...ids])];else state.selected=state.selected.filter(id=>!ids.includes(id));renderCurrentViewWithoutScroll()});
     $$(".play-row").forEach(b=>b.onclick=e=>{e.stopPropagation();playId(b.closest("tr").dataset.id)});
     $$(".like-row").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleLike(b.closest("tr").dataset.id)});
-    $(".more-row").forEach(b=>b.onclick=e=>{e.stopPropagation();const r=b.closest("tr");const inPlaylist=state.detail?.type==="playlist";openContext(e.clientX,e.clientY,r.dataset.id,inPlaylist?"playlist":"song",inPlaylist?state.detail.id:null)});
+    
     $$("[data-headsort]").forEach(b=>b.onclick=()=>{const scope=b.dataset.sortScope||trackTableScope(),k=b.dataset.headsort,cur=getTrackSort(scope);state.trackSorts=state.trackSorts||{};state.trackSorts[scope]={key:k,dir:cur.key===k?(cur.dir==="asc"?"desc":"asc"):"asc"};autoSave();renderCurrentViewWithoutScroll()});
     $$("#bulkPlay").forEach(b=>b.onclick=()=>bulkPlay(shown));
     $("#bulkEdit")?.addEventListener("click",()=>bulkEdit(state.selected.map(trackById).filter(Boolean)));
@@ -4025,6 +4025,7 @@ function editLocalProfile(){
       if(a==="download")downloadTrack(id);
     })
   }
+  document.addEventListener("click",e=>{const button=e.target.closest(".more-row");if(!button)return;const row=button.closest(".track-row");if(!row)return;e.preventDefault();e.stopPropagation();const inPlaylist=state.detail?.type==="playlist";openContext(e.clientX,e.clientY,row.dataset.id,inPlaylist?"playlist":"song",inPlaylist?state.detail.id:null)},true);
   document.addEventListener("click",e=>{if(!e.target.closest("#contextMenu")&&!e.target.closest(".more-row"))$("#contextMenu").classList.remove("show")});
 
   function showLyrics(id){const t=trackById(id);if(!t)return;$("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverHtml(t)}</div><div><h2 class="viewTitle">${esc(t.title)}</h2><div class="subtle">${artistLinksForTrackHtml(t)} • ${albumLinkForTrackHtml(t)}</div><div class="entityActions"><button class="primary" id="playLyrics">${uiIcon("play")} Play</button><button class="secondary" id="editLyrics">${uiIcon("edit")} Edit song</button></div></div></div><div class="lyricsPanel">${esc(t.lyrics||"No lyrics saved for this song yet.")}</div>`;$("#playLyrics").onclick=()=>playId(id);$("#editLyrics").onclick=()=>editTrack(id)}
