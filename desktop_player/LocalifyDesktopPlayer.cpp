@@ -8,6 +8,7 @@
 #include <dwmapi.h>
 #include <windowsx.h>
 #include <shellapi.h>
+#include <shlobj.h>
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -65,7 +66,7 @@ static bool validClientId(const std::wstring&id){
  for(wchar_t ch:id)if(ch<L'0'||ch>L'9')return false;
  return true;
 }
-static std::wstring discordIniPath(){
+static std::wstring legacyDiscordIniPath(){
  wchar_t module[MAX_PATH]{};
  DWORD n=GetModuleFileNameW(nullptr,module,MAX_PATH);
  std::wstring p(module,n?n:0);
@@ -73,30 +74,50 @@ static std::wstring discordIniPath(){
  if(slash==std::wstring::npos)return L"Localify Discord Player.ini";
  p.resize(slash+1);p+=L"Localify Discord Player.ini";return p;
 }
+static std::wstring discordIniPath(){
+ wchar_t appData[MAX_PATH]{};
+ if(SUCCEEDED(SHGetFolderPathW(nullptr,CSIDL_APPDATA|CSIDL_FLAG_CREATE,nullptr,SHGFP_TYPE_CURRENT,appData))){
+  std::wstring folder=std::wstring(appData)+L"\\Localify";
+  CreateDirectoryW(folder.c_str(),nullptr);
+  return folder+L"\\Discord Connector.ini";
+ }
+ return legacyDiscordIniPath();
+}
 static void loadDiscordClientId(){
  const std::wstring path=discordIniPath();
+ const std::wstring oldPath=legacyDiscordIniPath();
+ // Migrate a previously saved, valid ID from beside the old EXE into AppData.
  if(GetFileAttributesW(path.c_str())==INVALID_FILE_ATTRIBUTES){
-  HANDLE f=CreateFileW(path.c_str(),GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);
-  if(f!=INVALID_HANDLE_VALUE){
-   const char*sample="[Discord]\r\n; Required: paste a real Application ID from Discord Developer Portal > General Information.\r\nClientId=\r\n";
-   DWORD written=0;WriteFile(f,sample,(DWORD)strlen(sample),&written,nullptr);CloseHandle(f);
-  }
+  wchar_t oldId[64]{};
+  GetPrivateProfileStringW(L"Discord",L"ClientId",L"",oldId,64,oldPath.c_str());
+  std::wstring migrated(oldId);
+  if(migrated!=LEGACY_UNVERIFIED_CLIENT_ID&&validClientId(migrated))
+   WritePrivateProfileStringW(L"Discord",L"ClientId",migrated.c_str(),path.c_str());
+  else
+   WritePrivateProfileStringW(L"Discord",L"ClientId",L"",path.c_str());
  }
  wchar_t id[64]{};
- GetPrivateProfileStringW(L"Discord",L"ClientId",W(CLIENT_ID).c_str(),id,64,path.c_str());
+ GetPrivateProfileStringW(L"Discord",L"ClientId",L"",id,64,path.c_str());
  std::wstring loadedId(id);
- auto ws=[](wchar_t c){return c==L' '||c==L'\t'||c==L'\r'||c==L'\n';};
+ auto ws=[](wchar_t c){return c==L' '||c==L'\\t'||c==L'\\r'||c==L'\\n';};
  while(!loadedId.empty()&&ws(loadedId.front()))loadedId.erase(loadedId.begin());
  while(!loadedId.empty()&&ws(loadedId.back()))loadedId.pop_back();
- // Older builds used an unverified fallback ID. Ask for a real app ID instead of retrying it forever.
- if(loadedId==LEGACY_UNVERIFIED_CLIENT_ID){loadedId.clear();WritePrivateProfileStringW(L"Discord",L"ClientId",L"",path.c_str());}
+ // The old built-in ID was unverified. Never silently retry it.
+ if(loadedId==LEGACY_UNVERIFIED_CLIENT_ID){
+  loadedId.clear();
+  WritePrivateProfileStringW(L"Discord",L"ClientId",L"",path.c_str());
+ }
  if(!validClientId(loadedId)){
   DiscordClientId.clear();
-  setDiscordStatus(4,"Setup needed: open Settings and enter your Discord Application ID.");
+  setDiscordStatus(4,"Setup required: add your Discord Application ID in Settings.");
   return;
  }
  int bytes=WideCharToMultiByte(CP_UTF8,0,loadedId.c_str(),-1,nullptr,0,nullptr,nullptr);
- if(bytes<=1){DiscordClientId.clear();setDiscordStatus(4,"Setup needed: open Settings and enter your Discord Application ID.");return;}
+ if(bytes<=1){
+  DiscordClientId.clear();
+  setDiscordStatus(4,"Setup required: add your Discord Application ID in Settings.");
+  return;
+ }
  std::string value((size_t)bytes,0);
  WideCharToMultiByte(CP_UTF8,0,loadedId.c_str(),-1,value.data(),bytes,nullptr,nullptr);
  value.resize((size_t)bytes-1);
@@ -287,7 +308,11 @@ static void http(SOCKET s){
   body+=Server.load()?"true":"false";
   body+=",\"discordState\":"+std::to_string(DiscordState.load());
   body+=",\"discordStatus\":\""+esc(UTF8(diagnostic))+"\"";
-  body+=",\"port\":4219,\"version\":\"5.1\"}";
+  body+=",\"port\":4219,\"version\":\"6.0\",\"applicationConfigured\":";
+  body+=DiscordClientId.empty()?"false":"true";
+  body+=",\"playing\":";
+  {std::lock_guard<std::mutex> lock(M);body+=P.playing?"true":"false";}
+  body+="}";
   reply(s,"200 OK","application/json",body);closesocket(s);return;
 }
  if(m=="GET"&&t.rfind("/control",0)==0){uint64_t q=0;size_t p=t.find("since=");if(p!=std::string::npos)q=_strtoui64(t.c_str()+p+6,0,10);std::lock_guard<std::mutex>l(M);std::string z=C.seq>q?"{\"seq\":"+std::to_string(C.seq)+",\"action\":\""+esc(C.action)+"\",\"value\":"+std::to_string(C.value)+"}":"{\"seq\":"+std::to_string(q)+"}";reply(s,"200 OK","application/json",z);closesocket(s);return;}
@@ -326,16 +351,14 @@ static void server(){
 static std::string pkt(uint32_t op,const std::string&j){std::string x(8+j.size(),'\0');uint32_t n=(uint32_t)j.size();memcpy(x.data(),&op,4);memcpy(x.data()+4,&n,4);memcpy(x.data()+8,j.data(),j.size());return x;}
 static bool pw(uint32_t op,const std::string&j){
  if(Pipe==INVALID_HANDLE_VALUE)return false;
- const std::string x=pkt(op,j);
- size_t sent=0;
- while(sent<x.size()){
-  DWORD w=0;
-  if(!WriteFile(Pipe,x.data()+sent,(DWORD)(x.size()-sent),&w,nullptr)||!w){
-   LastPipeError=GetLastError();
-   if(Pipe!=INVALID_HANDLE_VALUE){CloseHandle(Pipe);Pipe=INVALID_HANDLE_VALUE;}
-   Discord=false;return false;
-  }
-  sent+=w;
+ // Discord IPC expects one complete header + JSON frame per pipe write.
+ const std::string frame=pkt(op,j);
+ DWORD written=0;
+ if(!WriteFile(Pipe,frame.data(),(DWORD)frame.size(),&written,nullptr)||written!=frame.size()){
+  LastPipeError=GetLastError();
+  if(Pipe!=INVALID_HANDLE_VALUE){CloseHandle(Pipe);Pipe=INVALID_HANDLE_VALUE;}
+  Discord=false;
+  return false;
  }
  return true;
 }
@@ -396,9 +419,8 @@ static bool connectDiscord(){
   }
   if(h==INVALID_HANDLE_VALUE)continue;
   pipeOpened=true;Pipe=h;
-  DWORD mode=PIPE_READMODE_BYTE;
-  SetNamedPipeHandleState(Pipe,&mode,nullptr,nullptr);
-  setDiscordStatus(0,"Discord IPC found; waiting for READY...");
+  // Keep the pipe's default byte-read mode; framing is handled below.
+  setDiscordStatus(0,"Discord IPC found; completing handshake...");
   LastPipeError=0;
   if(!pw(0,hello)){
    lastFailure=6;lastMessage="Could not send the Discord IPC handshake (Win32 error "+std::to_string(LastPipeError)+").";
@@ -614,18 +636,19 @@ static bool saveClientId(const std::wstring&id){
 static LRESULT CALLBACK settingsWndProc(HWND h,UINT msg,WPARAM w,LPARAM l){
  switch(msg){
   case WM_CREATE:{
-   CreateWindowExW(0,L"STATIC",L"Discord connection settings",WS_CHILD|WS_VISIBLE,22,18,500,28,h,nullptr,GetModuleHandleW(nullptr),nullptr);
-   CreateWindowExW(0,L"STATIC",L"Discord Application ID",WS_CHILD|WS_VISIBLE,24,65,490,20,h,nullptr,GetModuleHandleW(nullptr),nullptr);
-   std::wstring current=DiscordClientId.empty()?W(CLIENT_ID):W(DiscordClientId);
-   ClientIdEdit=CreateWindowExW(WS_EX_CLIENTEDGE,L"EDIT",current.c_str(),WS_CHILD|WS_VISIBLE|ES_AUTOHSCROLL,22,88,518,30,h,(HMENU)(INT_PTR)2100,GetModuleHandleW(nullptr),nullptr);
-   CreateWindowExW(0,L"STATIC",L"Required: open the Discord Developer Portal, create or select an application, copy its Application ID from General Information, paste it above, then choose Save & reconnect. A Discord user ID is different.",WS_CHILD|WS_VISIBLE,24,126,515,52,h,nullptr,GetModuleHandleW(nullptr),nullptr);
-   KeepOnTopCheck=CreateWindowExW(0,L"BUTTON",L"Keep the connector above other windows",WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX,24,185,400,24,h,(HMENU)(INT_PTR)ID_SETTINGS_TOPMOST,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"STATIC",L"Connect Localify to Discord",WS_CHILD|WS_VISIBLE,22,18,520,30,h,nullptr,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"STATIC",L"One-time setup — paste your application's ID below. It is saved locally on this PC.",WS_CHILD|WS_VISIBLE,24,52,540,22,h,nullptr,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"STATIC",L"APPLICATION ID",WS_CHILD|WS_VISIBLE,24,93,490,18,h,nullptr,GetModuleHandleW(nullptr),nullptr);
+   std::wstring current=DiscordClientId.empty()?L"":W(DiscordClientId);
+   ClientIdEdit=CreateWindowExW(WS_EX_CLIENTEDGE,L"EDIT",current.c_str(),WS_CHILD|WS_VISIBLE|ES_AUTOHSCROLL,22,116,548,34,h,(HMENU)(INT_PTR)2100,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"STATIC",L"Open the Developer Portal, choose your Localify application, then copy Application ID from General Information. Paste that numeric ID here — not your Discord user ID or bot token.",WS_CHILD|WS_VISIBLE,24,160,540,45,h,nullptr,GetModuleHandleW(nullptr),nullptr);
+   KeepOnTopCheck=CreateWindowExW(0,L"BUTTON",L"Keep connector above other windows",WS_CHILD|WS_VISIBLE|BS_AUTOCHECKBOX,24,222,400,24,h,(HMENU)(INT_PTR)ID_SETTINGS_TOPMOST,GetModuleHandleW(nullptr),nullptr);
    SendMessageW(KeepOnTopCheck,BM_SETCHECK,KeepOnTop?BST_CHECKED:BST_UNCHECKED,0);
-   CreateWindowExW(0,L"BUTTON",L"Open Discord",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,22,224,108,32,h,(HMENU)(INT_PTR)ID_SETTINGS_OPEN,GetModuleHandleW(nullptr),nullptr);
-   CreateWindowExW(0,L"BUTTON",L"Copy details",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,138,224,108,32,h,(HMENU)(INT_PTR)ID_SETTINGS_COPY,GetModuleHandleW(nullptr),nullptr);
-   CreateWindowExW(0,L"BUTTON",L"Open Developer Portal",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,22,273,155,34,h,(HMENU)(INT_PTR)ID_SETTINGS_DEFAULT,GetModuleHandleW(nullptr),nullptr);
-   CreateWindowExW(0,L"BUTTON",L"Cancel",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,358,273,78,34,h,(HMENU)(INT_PTR)ID_SETTINGS_CANCEL,GetModuleHandleW(nullptr),nullptr);
-   CreateWindowExW(0,L"BUTTON",L"Save & reconnect",WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON,444,273,110,34,h,(HMENU)(INT_PTR)ID_SETTINGS_SAVE,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Open Discord",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,22,265,112,34,h,(HMENU)(INT_PTR)ID_SETTINGS_OPEN,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Copy diagnostics",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,144,265,128,34,h,(HMENU)(INT_PTR)ID_SETTINGS_COPY,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Developer Portal",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,22,315,142,34,h,(HMENU)(INT_PTR)ID_SETTINGS_DEFAULT,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Cancel",WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,384,315,78,34,h,(HMENU)(INT_PTR)ID_SETTINGS_CANCEL,GetModuleHandleW(nullptr),nullptr);
+   CreateWindowExW(0,L"BUTTON",L"Save & connect",WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON,470,315,100,34,h,(HMENU)(INT_PTR)ID_SETTINGS_SAVE,GetModuleHandleW(nullptr),nullptr);
    return 0;
   }
   case WM_COMMAND:{
@@ -656,7 +679,7 @@ static LRESULT CALLBACK settingsWndProc(HWND h,UINT msg,WPARAM w,LPARAM l){
 static void openSettingsWindow(){
  if(SettingsWindow&&IsWindow(SettingsWindow)){ShowWindow(SettingsWindow,SW_SHOWNORMAL);SetForegroundWindow(SettingsWindow);return;}
  if(!H)return;
- RECT owner{};GetWindowRect(H,&owner);const int ww=580,hh=355;
+ RECT owner{};GetWindowRect(H,&owner);const int ww=620,hh=410;
  const int x=owner.left+((owner.right-owner.left)-ww)/2;
  const int y=owner.top+((owner.bottom-owner.top)-hh)/2;
  EnableWindow(H,FALSE);
@@ -725,8 +748,8 @@ static void paint(HDC out){
  drawBtn(u.previous,L"PREV",false,false,9);
  drawBtn(u.play,p.playing?L"Ⅱ  PAUSE":L"▶  PLAY",false,true,10);
  drawBtn(u.next,L"NEXT",false,false,9);
- drawBtn(u.shuffle,L"SHUFFLE",p.shuffle,false,8);
- drawBtn(u.repeat,p.repeat=="one"?L"REPEAT 1":L"REPEAT",p.repeat!="off",false,8);
+ drawBtn(u.shuffle,p.shuffle?L"SHUFFLE ON":L"SHUFFLE OFF",p.shuffle,false,8);
+ drawBtn(u.repeat,p.repeat=="one"?L"REPEAT ONE":(p.repeat=="all"?L"REPEAT ALL":L"REPEAT OFF"),p.repeat!="off",false,8);
  txt(g,L"VOL", (float)u.volume.left-33,(float)u.volume.top+6,28,15,8,Color(255,123,137,155),true);
  fill(g,(float)u.volume.left,(float)u.volume.top+11,(float)(u.volume.right-u.volume.left),5,3,Color(255,42,49,61));
  const double vol=std::clamp(p.volume,0.0,1.0);
@@ -744,10 +767,11 @@ static void paint(HDC out){
  if(Discord.load())diagnostic=L"Connected — listening activity is ready";
  else if(diagnostic.empty())diagnostic=L"Open Discord Desktop, then press Reconnect";
  if(BridgeError.load()==WSAEADDRINUSE)diagnostic=L"Bridge port 4219 is busy. Close older connector copies.";
+ if(DiscordClientId.empty())diagnostic=L"One-time setup needed: add your Discord Application ID in Settings.";
  txt(g,diagnostic.c_str(),36,(float)u.footer.top+33,(float)u.openDiscord.left-48,17,9,dot);
  drawBtn(u.openDiscord,L"OPEN DISCORD",false,false,8);
  drawBtn(u.reconnect,L"RECONNECT",false,false,8);
- drawBtn(u.settings,L"SETTINGS",false,false,8);
+ drawBtn(u.settings,DiscordClientId.empty()?L"SET UP":L"SETTINGS",false,DiscordClientId.empty(),8);
  BitBlt(out,0,0,w,h,m,0,0,SRCCOPY);
  SelectObject(m,old);DeleteObject(bm);DeleteDC(m);
 }
@@ -830,6 +854,8 @@ int WINAPI wWinMain(HINSTANCE hi,HINSTANCE,LPWSTR,int show){
  BOOL dark=TRUE;DwmSetWindowAttribute(H,DWMWA_USE_IMMERSIVE_DARK_MODE,&dark,sizeof(dark));
  ShowWindow(H,show);UpdateWindow(H);SetTimer(H,1,350,0);
  std::thread(server).detach();std::thread(rpcLoop).detach();
+ // First launch opens the setup window rather than leaving the user at a failed handshake.
+ if(DiscordClientId.empty())openSettingsWindow();
  MSG msg;while(GetMessageW(&msg,0,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}
  Run=false;disconnectDiscord();WSACleanup();GdiplusShutdown(GP);return 0;
 }
