@@ -2803,7 +2803,7 @@ main{min-width:0;min-height:0}
     const panel=$("#nowSidebar");if(!panel||innerWidth<=1050)return;
     const t=trackById(state.currentId);
     if(!t){panel.innerHTML='<div class="nowSidebarInner"><div class="nowSidebarTitle">Now Playing</div><div class="nowSidebarEmpty">Play a song to see its details here.</div></div>';return}
-    const album=albumName(t),artists=artistName(t),lyrics=t.lyrics?.trim()||"No lyrics saved for this song yet.";
+    const album=albumName(t),artists=artistName(t),rawLyrics=t.lyrics?.trim()||"",lyrics=(rawLyrics?rawLyrics.replace(/^\[\d{2}:\d{2}\.\d{2,3}\]/gm,"").replace(/<\d{2}:\d{2}\.\d{2,3}>/g,""):"No lyrics saved for this song yet.");
     panel.innerHTML='<div class="nowSidebarInner">'+
       '<div class="nowSidebarHead"><div class="nowSidebarTitle">Now Playing</div><button class="circle iconOnly" id="closeNowSidebar" title="Hide panel" aria-label="Hide Now Playing panel">'+uiIcon("close")+'</button></div>'+
       '<div class="nowSidebarCover">'+coverHtml(t)+'</div>'+
