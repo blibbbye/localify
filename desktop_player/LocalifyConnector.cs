@@ -74,7 +74,7 @@ namespace LocalifyDiscordConnector
 
         private readonly object gate = new object();
         private readonly JavaScriptSerializer json = NewSerializer();
-        private readonly string defaultIniPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Localify Discord Player.ini");
+        private readonly string defaultIniPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Localify Discord Connector.ini");
         private string configPath;
         private string clientId = DefaultClientId;
         private bool enabled = true;
@@ -183,7 +183,7 @@ namespace LocalifyDiscordConnector
 
         private void LoadSettings()
         {
-            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Localify", "Localify Discord Player.ini");
+            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Localify", "Localify Discord Connector.ini");
             configPath = File.Exists(defaultIniPath) ? defaultIniPath : appDataPath;
             try
             {
@@ -223,7 +223,7 @@ namespace LocalifyDiscordConnector
             {
                 try
                 {
-                    configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Localify", "Localify Discord Player.ini");
+                    configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Localify", "Localify Discord Connector.ini");
                     Directory.CreateDirectory(Path.GetDirectoryName(configPath));
                     string text = "[Discord]\r\nClientId=" + clientId + "\r\nRichPresenceEnabled=" + (enabled ? "true" : "false") + "\r\nKeepOnTop=" + (keepOnTop ? "true" : "false") + "\r\n";
                     File.WriteAllText(configPath, text, new UTF8Encoding(false));
