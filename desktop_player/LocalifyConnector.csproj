@@ -6,7 +6,7 @@
     <ProjectGuid>{A2D9D19C-F7F7-4D4A-AC9E-1A5D432E8B25}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>LocalifyDiscordConnector</RootNamespace>
-    <AssemblyName>Localify Discord Player</AssemblyName>
+    <AssemblyName>Localify Discord Connector</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <LangVersion>7.3</LangVersion>
     <StartupObject>LocalifyDiscordConnector.Program</StartupObject>
