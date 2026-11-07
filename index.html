@@ -4078,7 +4078,7 @@ function editLocalProfile(){
     const t=trackById(id);if(!t)return;
     const raw=String(t.lyrics||"").replace(/\r/g,""),rows=raw.split("\n").map((line,index)=>{
       const m=line.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\]/),time=m?Number(m[1])*60+Number(m[2])+Number("0."+m[3]):null;
-      return {index,text:m?line.slice(m[0].length):line,time};
+      return {index,text:(m?line.slice(m[0].length):line).replace(/<\\d{2}:\\d{2}\\.\\d{2,3}>/g,""),time};
     });
     const timed=rows.map((r,i)=>r.time===null?-1:i).filter(i=>i>=0);
     if(timed.length){
