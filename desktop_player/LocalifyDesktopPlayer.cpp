@@ -71,8 +71,8 @@ static std::wstring legacyDiscordIniPath(){
  DWORD n=GetModuleFileNameW(nullptr,module,MAX_PATH);
  std::wstring p(module,n?n:0);
  size_t slash=p.find_last_of(L"\\/");
- if(slash==std::wstring::npos)return L"Localify Discord Player.ini";
- p.resize(slash+1);p+=L"Localify Discord Player.ini";return p;
+ if(slash==std::wstring::npos)return L"Localify Discord Connector.ini";
+ p.resize(slash+1);p+=L"Localify Discord Connector.ini";return p;
 }
 static std::wstring discordIniPath(){
  wchar_t appData[MAX_PATH]{};
