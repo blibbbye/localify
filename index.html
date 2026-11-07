@@ -257,8 +257,8 @@
     .toolbar .active{color:var(--accent);border-color:#435328;background:#1b2219}
     .empty{padding:54px 22px;text-align:center;border:1px dashed #2d343e;border-radius:18px;color:#7f8894}
     .empty h3{color:#d7dbe0;margin:0 0 6px}
-    .lyricsPanel{white-space:pre-wrap;line-height:1.8;color:#fff;background:#101318;border:1px solid #242a31;border-radius:18px;padding:20px;margin-top:12px;min-height:280px}
-    .lyricsPanel.syncedLyrics{white-space:normal;display:grid;gap:8px}.lyricLine{padding:9px 12px;border-radius:10px;color:#fff;line-height:1.65;transition:background .18s,color .18s,transform .18s}.lyricLine.active{color:#fff;background:rgba(125,211,252,.13);box-shadow:inset 3px 0 #7dd3fc;transform:translateX(2px);font-weight:800}
+    .lyricsPanel{white-space:pre-wrap;line-height:1.8;color:#7f8995;background:#101318;border:1px solid #242a31;border-radius:18px;padding:20px;margin-top:12px;min-height:280px}
+    .lyricsPanel.syncedLyrics{white-space:normal;display:grid;gap:8px}.lyricLine{padding:9px 12px;border-radius:10px;color:#7f8995;line-height:1.65}.lyricLine.active{color:#fff}
     .modalShade{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
     .modalShade.show{display:flex}
     .modalShade .modal{overscroll-behavior:contain}
@@ -4089,24 +4089,22 @@ function editLocalProfile(){
     const t=trackById(id);if(!t)return;
     const raw=String(t.lyrics||"").replace(/\r/g,""),rows=raw.split("\n").map((line,index)=>{
       const m=line.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\]/),time=m?Number(m[1])*60+Number(m[2])+Number("0."+m[3]):null;
-      return {index,text:(m?line.slice(m[0].length):line).replace(/<\\d{2}:\\d{2}\\.\\d{2,3}>/g,""),time};
+      return {index,text:(m?line.slice(m[0].length):line).replace(/<\d{2}:\d{2}\.\d{2,3}>/g,""),time};
     });
-    const timed=rows.map((r,i)=>r.time===null?-1:i).filter(i=>i>=0);
-    if(timed.length){
-      rows.forEach((r,i)=>{if(r.time!==null)return;const prev=[...timed].reverse().find(j=>j<i),next=timed.find(j=>j>i);
-        if(prev!==undefined&&next!==undefined)r.time=rows[prev].time+(rows[next].time-rows[prev].time)*(i-prev)/(next-prev);
-        else if(prev!==undefined){const duration=Number(t.duration)||audio.duration||0,end=duration>rows[prev].time?duration:rows[prev].time+4;r.time=rows[prev].time+(end-rows[prev].time)*(i-prev)/(rows.length-prev)}
-        else if(next!==undefined)r.time=Math.max(0,rows[next].time-(next-i)*3.5);
-      });
-    }
+    const timed=rows.filter(r=>r.time!==null);
     const hasTimed=timed.length>0;
     $("#content").innerHTML='<div class="profileHero"><div class="profileArt">'+coverHtml(t)+'</div><div><h2 class="viewTitle">'+esc(t.title)+'</h2><div class="subtle">'+artistLinksForTrackHtml(t)+' • '+albumLinkForTrackHtml(t)+'</div><div class="entityActions"><button class="primary" id="playLyrics">'+uiIcon("play")+' Play</button><button class="secondary" id="editLyrics">'+uiIcon("edit")+' Edit song</button></div></div></div><div class="lyricsPanel '+(hasTimed?"syncedLyrics":"")+'" id="lyricsDisplay">'+(rows.length?rows.map(r=>'<div class="lyricLine" data-lyric-index="'+r.index+'">'+esc(r.text||" ")+'</div>').join(""):'No lyrics saved for this song yet.')+'</div>';
     $("#playLyrics").onclick=()=>playId(id);$("#editLyrics").onclick=()=>editTrack(id);
     const update=()=>{
       if(!hasTimed||audio.dataset.localifyTrackId!==id)return;
       const now=audio.currentTime;let active=-1;
-      for(let i=0;i<rows.length;i++)if(rows[i].time!==null&&rows[i].time<=now)active=i;
-      $$("#lyricsDisplay .lyricLine").forEach((el,i)=>{const on=i===active;el.classList.toggle("active",on);if(on&&el.dataset.activeScroll!=="1"){el.dataset.activeScroll="1";el.scrollIntoView({block:"nearest",behavior:"smooth"})}else if(!on)el.dataset.activeScroll="0"});
+      for(const row of timed)if(row.time<=now)active=row.index;
+      $$("#lyricsDisplay .lyricLine").forEach(el=>{
+        const on=Number(el.dataset.lyricIndex)===active;
+        el.classList.toggle("active",on);
+        if(on&&el.dataset.activeScroll!=="1"){el.dataset.activeScroll="1";el.scrollIntoView({block:"nearest",behavior:"smooth"})}
+        else if(!on)el.dataset.activeScroll="0";
+      });
     };
     audio.addEventListener("timeupdate",update);audio.addEventListener("seeked",update);update();
   }
