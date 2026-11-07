@@ -359,6 +359,7 @@ namespace LocalifyDiscordConnector
                         reply["ok"] = true;
                         reply["desktopPlayer"] = true;
                         reply["discordConnected"] = s.DiscordConnected;
+                        reply["discordState"] = s.DiscordState;
                         reply["discordStatus"] = s.DiscordStatus;
                         reply["serverListening"] = s.BridgeOnline;
                         reply["port"] = Port;
