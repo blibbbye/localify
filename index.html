@@ -2765,12 +2765,10 @@ main{min-width:0;min-height:0}
         <div class="modalSection"><div class="modalSectionTitle">Connect Localify to Discord</div>
           <div class="discordStep"><div class="discordStepNum">1</div><div><strong>Download the latest connector</strong><p>Use the Download EXE button below.</p></div></div>
           <div class="discordStep"><div class="discordStepNum">2</div><div><strong>Open Discord Desktop</strong><p>The desktop app must be running, not just Discord in a browser.</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Configure the connector once</strong><p>Open Settings, paste the Application ID from your Discord Developer Portal application, then choose Save & reconnect. Leave the connector running.</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">4</div><div><strong>Allow local-network access</strong><p>Accept your browser’s prompt for Localify if it appears, then press Reconnect.</p></div></div>
-          <div class="discordStep"><div class="discordStepNum">5</div><div><strong>Play music in Localify</strong><p>Your current song and artist should appear on Discord.</p></div></div>
+          <div class="discordStep"><div class="discordStepNum">3</div><div><strong>Play music in Localify</strong><p>Your current song and artist should appear on Discord.</p></div></div>
         </div>
         <div class="discordActions"><a class="primary btnIcon" href="https://raw.githubusercontent.com/blibbbye/Localify/main/Localify%20Discord%20Connector.exe" download="Localify Discord Connector.exe">${uiIcon("download")} Download EXE</a><button class="secondary btnIcon" id="discordReconnect">${uiIcon("repeat")} Reconnect</button><button class="secondary" id="discordDone">Done</button></div>
-        <div class="help">The Desktop Player listens only on your computer at <code>127.0.0.1:4219</code>. Your music files stay in Localify.</div>
+        <div class="help">Windows can block the app because its not like verified or something but just press More and then allow.</div>
       </div>`);
     $("#closeModal").onclick=()=>closeModal(true);$("#discordDone").onclick=()=>closeModal(true);
     $("#discordPresenceToggle").onchange=async e=>{state.settings.discordPresence=!!e.target.checked;await save();if(state.settings.discordPresence===false){clearDiscordPresence();setDiscordUi("disabled","Discord off")}else{connectDiscordBridge();sendDiscordPresence(true)}};
