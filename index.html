@@ -175,7 +175,7 @@
     .lrcInlineTop,.lrcInlineFoot,.lrcInlineActions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .lrcLiveTime{font:800 13px ui-monospace,monospace;color:#b9e5fa;background:#0c1218;border:1px solid #293744;border-radius:9px;padding:7px 10px}
     .lrcTransport{display:flex;gap:7px;flex-wrap:wrap}.lrcSeek{width:100%;accent-color:#7dd3fc;margin:0;min-height:18px}.lrcTransport .small{padding:6px 9px!important}.lrcModeRow{display:flex;align-items:center;justify-content:space-between;gap:12px}.lrcModeRow select{background:#0c0f13;color:#fff;border:1px solid #303945;border-radius:9px;padding:8px 10px}
-    .lrcLines{display:grid;gap:6px;max-height:260px;overflow:auto;padding-right:2px}.lrcLine{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border:1px solid #252e38;background:#0e1318;border-radius:10px;text-align:left;width:100%;min-width:0}.lrcLine.selected{border-color:#75bce0;background:rgba(74,144,184,.13);box-shadow:0 0 0 2px rgba(125,211,252,.08)}.lrcLineTime{font:700 10px ui-monospace,monospace;color:#7f8d9b;min-width:44px;padding-top:3px}.lrcLineWords{display:flex;gap:4px;flex-wrap:wrap;min-width:0}.lrcWord{padding:2px 3px;border-radius:4px;color:#dfe5eb;font-size:12px}.lrcWord.selected{background:#28516a;color:#e8f7ff;outline:1px solid #4a8eb2}.lrcInline .secondary:disabled,.lrcInline .primary:disabled{opacity:.45;cursor:not-allowed}
+    .lrcLines{display:grid;gap:6px;max-height:260px;overflow:auto;padding-right:2px}.lrcLine{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border:1px solid #252e38;background:#0e1318;border-radius:10px;text-align:left;width:100%;min-width:0}.lrcLine.selected{border-color:#75bce0;background:rgba(74,144,184,.13);box-shadow:0 0 0 2px rgba(125,211,252,.08)}.lrcLineTime{font:700 10px ui-monospace,monospace;color:#7f8d9b;min-width:44px;padding-top:3px}.lrcLineWords{display:flex;gap:4px;flex-wrap:wrap;min-width:0}.lrcWord{padding:4px 5px;border-radius:5px;color:#f4f6f8;font-size:13px;line-height:1.5;background:transparent;border:0}.lrcWord:hover{background:#252d36;color:#fff}.lrcWord.selected{background:#315d78;color:#fff;outline:1px solid #79b9dc;box-shadow:0 0 0 2px rgba(121,185,220,.12)}.lrcLine{background:#11161c;border-color:#252d36;transition:background .12s,border-color .12s}.lrcLine.selected{background:#182633;border-color:#4b91b8}.lrcLineWords{align-items:center;gap:2px;line-height:1.7}.lrcWord:focus-visible{outline:2px solid #79b9dc;outline-offset:2px}.lrcInline .secondary:disabled,.lrcInline .primary:disabled{opacity:.45;cursor:not-allowed}
     @media(max-width:700px){.lrcFieldHead{align-items:flex-start;flex-direction:column}.lrcInline{padding:11px}.lrcTransport button{flex:1}.lrcInlineFoot{align-items:stretch}.lrcInlineFoot button{width:100%}}
     .creditPeople{min-height:74px}
     .mobileImportBtn{display:none}
@@ -257,8 +257,8 @@
     .toolbar .active{color:var(--accent);border-color:#435328;background:#1b2219}
     .empty{padding:54px 22px;text-align:center;border:1px dashed #2d343e;border-radius:18px;color:#7f8894}
     .empty h3{color:#d7dbe0;margin:0 0 6px}
-    .lyricsPanel{white-space:pre-wrap;line-height:1.8;color:#e9ebee;background:#101318;border:1px solid #242a31;border-radius:18px;padding:20px;margin-top:12px;min-height:280px}
-    .lyricsPanel.syncedLyrics{white-space:normal;display:grid;gap:8px}.lyricLine{padding:9px 12px;border-radius:10px;color:#7f8995;line-height:1.65;transition:background .18s,color .18s,transform .18s}.lyricLine.active{color:#fff;background:rgba(125,211,252,.13);box-shadow:inset 3px 0 #7dd3fc;transform:translateX(2px);font-weight:800}
+    .lyricsPanel{white-space:pre-wrap;line-height:1.8;color:#fff;background:#101318;border:1px solid #242a31;border-radius:18px;padding:20px;margin-top:12px;min-height:280px}
+    .lyricsPanel.syncedLyrics{white-space:normal;display:grid;gap:8px}.lyricLine{padding:9px 12px;border-radius:10px;color:#fff;line-height:1.65;transition:background .18s,color .18s,transform .18s}.lyricLine.active{color:#fff;background:rgba(125,211,252,.13);box-shadow:inset 3px 0 #7dd3fc;transform:translateX(2px);font-weight:800}
     .modalShade{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
     .modalShade.show{display:flex}
     .modalShade .modal{overscroll-behavior:contain}
@@ -281,7 +281,7 @@
     .nowArt img{width:100%;height:100%;object-fit:cover}
     .nowText{min-width:0}
     .nowTitle{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .nowArtist{color:#7e8793;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowPanelToggle.liked{color:var(--accent);background:rgba(125,211,252,.08)}.nowSidebar{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;background:linear-gradient(180deg,#10151b,#0c1015);border-left:1px solid #252b33;padding:18px}.nowSidebarInner{display:grid;gap:15px}.nowSidebarHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.nowSidebarTitle{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:#7d8793;font-weight:950}.nowSidebarCover{width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;background:#20252d;box-shadow:0 18px 55px rgba(0,0,0,.4)}.nowSidebarCover img{width:100%;height:100%;object-fit:cover;display:block}.nowSidebarSong{font-size:23px;font-weight:950;line-height:1.08;letter-spacing:-.5px;display:flex;align-items:flex-start;gap:8px;min-width:0}.nowSidebarSongTitle{min-width:0;overflow-wrap:anywhere}.nowSidebarSong .badge{margin-left:0;margin-top:2px}.nowSidebarArtist{color:#aab2bd;font-size:13px;margin-top:5px}.nowSidebarMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nowSidebarMetaBox{background:#12171d;border:1px solid #252c35;border-radius:12px;padding:10px}.nowSidebarMetaBox strong{display:block;color:#7d8793;font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.nowSidebarMetaBox span{display:block;color:#e5e9ee;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowSidebarLyrics{white-space:pre-wrap;line-height:1.7;color:#dce2e8;background:#10151b;border:1px solid #252c35;border-radius:14px;padding:14px;min-height:160px;max-height:38vh;overflow:auto}.nowSidebarEmpty{padding:24px 10px;text-align:center;color:#7d8793}.app:not(.nowPanelOpen) .nowSidebar{display:none}
+    .nowArtist{color:#7e8793;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowPanelToggle.liked{color:var(--accent);background:rgba(125,211,252,.08)}.nowSidebar{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;background:linear-gradient(180deg,#10151b,#0c1015);border-left:1px solid #252b33;padding:18px}.nowSidebarInner{display:grid;gap:15px}.nowSidebarHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.nowSidebarTitle{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:#7d8793;font-weight:950}.nowSidebarCover{width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;background:#20252d;box-shadow:0 18px 55px rgba(0,0,0,.4)}.nowSidebarCover img{width:100%;height:100%;object-fit:cover;display:block}.nowSidebarSong{font-size:23px;font-weight:950;line-height:1.08;letter-spacing:-.5px;display:flex;align-items:flex-start;gap:8px;min-width:0}.nowSidebarSongTitle{min-width:0;overflow-wrap:anywhere}.nowSidebarSong .badge{margin-left:0;margin-top:2px}.nowSidebarArtist{color:#aab2bd;font-size:13px;margin-top:5px}.nowSidebarMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nowSidebarMetaBox{background:#12171d;border:1px solid #252c35;border-radius:12px;padding:10px}.nowSidebarMetaBox strong{display:block;color:#7d8793;font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.nowSidebarMetaBox span{display:block;color:#e5e9ee;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowSidebarLyrics{white-space:pre-wrap;line-height:1.7;color:#fff;background:#10151b;border:1px solid #252c35;border-radius:14px;padding:14px;min-height:160px;max-height:38vh;overflow:auto}.nowSidebarEmpty{padding:24px 10px;text-align:center;color:#7d8793}.app:not(.nowPanelOpen) .nowSidebar{display:none}
     .playerCenter{display:grid;gap:7px}
     .controls{display:flex;align-items:center;justify-content:center;gap:10px}
     .ctrl{width:34px;height:34px;border-radius:50%;background:transparent;color:#bbc3ce;font-size:15px}
@@ -2816,10 +2816,10 @@ main{min-width:0;min-height:0}
         '<div class="nowSidebarMetaBox"><strong>Track</strong><span>'+esc(t.track??"None")+'</span></div>'+
         '<div class="nowSidebarMetaBox"><strong>Disc</strong><span>'+esc(t.disc??"None")+'</span></div>'+
       '</div>'+
-      '<div class="nowSidebarTitle">Lyrics</div><div class="nowSidebarLyrics">'+esc(lyrics)+'</div>'+
+      '<button type="button" class="nowSidebarTitle nowSidebarLyricsLink" id="openSidebarLyrics">Lyrics <span>Open lyrics ↗</span></button><button type="button" class="nowSidebarLyrics" id="sidebarLyricsText" title="Open full lyrics">'+esc(lyrics)+'</button>'+
       '<div class="nowSidebarTitle">Credits</div><div class="nowSidebarLyrics">'+esc([["Producer",creditList(t.credits,"producer")],["Writer",creditList(t.credits,"songwriter")],["Composer",creditList(t.credits,"composer")]].filter(x=>x[1]).map(x=>x[0]+": "+x[1]).join("\n")||"No credits saved.")+'</div>'+
     '</div>';
-    panel.dataset.trackId=String(t.id);$("#closeNowSidebar").onclick=()=>setNowSidebar(false);
+    panel.dataset.trackId=String(t.id);$("#closeNowSidebar").onclick=()=>setNowSidebar(false);$("#openSidebarLyrics").onclick=()=>showLyrics(t.id);$("#sidebarLyricsText").onclick=()=>showLyrics(t.id);
   }
 
   function waveformBarsHtml(seedText,count=88){
@@ -3953,28 +3953,39 @@ function editLocalProfile(){
 
   function bindLrcEditor(trackId){
     const open=$("#openLrcEditor"),panel=$("#lrcInline"),textarea=$("#songLyrics");if(!open||!panel||!textarea)return;
-    let selectedLine=-1,selectedWord=-1,lines=[],wordTimes=[];
+    let selectedLine=-1,selectedWords=new Set(),lastWord=-1,lines=[],wordTimes=[];
     const timeText=sec=>{sec=Math.max(0,Number(sec)||0);return String(Math.floor(sec/60)).padStart(2,"0")+":"+((sec%60).toFixed(2)).padStart(5,"0")};
     const parse=()=>{
       lines=[];wordTimes=[];
       textarea.value.replace(/\r\n?/g,"\n").split("\n").forEach(raw=>{
-        const mt=raw.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\]/),time=mt?Number(mt[1])*60+Number(mt[2])+Number("0."+mt[3]):null,body=mt?raw.slice(mt[0].length):raw,words=[];
-        const re=/<(\d{2}):(\d{2})\.(\d{2,3})>/g;let last=0,m;
-        while((m=re.exec(body))){if(m.index>last)words.push({word:body.slice(last,m.index),time:null});words.push({word:"",time:Number(m[1])*60+Number(m[2])+Number("0."+m[3])});last=re.lastIndex}
-        if(last<body.length)words.push({word:body.slice(last),time:null});if(!words.length)words.push({word:body,time:null});
-        lines.push({body,time});wordTimes.push(words);
+        const mt=raw.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\]/),time=mt?Number(mt[1])*60+Number(mt[2])+Number("0."+mt[3]):null,body=mt?raw.slice(mt[0].length):raw,tokens=[];
+        const re=/<(\d{2}):(\d{2})\.(\d{2,3})>/g;let last=0,m,pendingTime=null;
+        const addText=chunk=>{for(const part of chunk.match(/\s+|[^\s]+/g)||[]){tokens.push({word:part,time:/^\s+$/.test(part)?null:pendingTime});if(!/^\s+$/.test(part))pendingTime=null}};
+        while((m=re.exec(body))){addText(body.slice(last,m.index));pendingTime=Number(m[1])*60+Number(m[2])+Number("0."+m[3]);last=re.lastIndex}
+        addText(body.slice(last));if(!tokens.length)tokens.push({word:body,time:null});
+        lines.push({body,time});wordTimes.push(tokens);
       });
     };
     const render=()=>{
-      $("#lrcLines").innerHTML=lines.map((line,i)=>'<div class="lrcLine '+(selectedLine===i?"selected":"")+'" data-lrc-line="'+i+'"><span class="lrcLineTime">'+(line.time===null?"— —":timeText(line.time))+'</span><span class="lrcLineWords">'+wordTimes[i].map((w,j)=>'<button type="button" class="lrcWord '+(selectedLine===i&&selectedWord===j?"selected":"")+'" data-lrc-word="'+j+'">'+esc(w.word||"·")+'</button>').join("")+'</span></div>').join("");
-      $("#lrcSelectionHint").textContent=selectedLine<0?"Select a line or word to timestamp it.":selectedWord>=0?"Word selected · set its timestamp.":"Line selected · set its timestamp.";
+      $("#lrcLines").innerHTML=lines.map((line,i)=>'<div class="lrcLine '+(selectedLine===i?"selected":"")+'" data-lrc-line="'+i+'"><span class="lrcLineTime">'+(line.time===null?"— —":timeText(line.time))+'</span><span class="lrcLineWords">'+wordTimes[i].map((w,j)=>/^\s+$/.test(w.word)?esc(w.word):'<button type="button" class="lrcWord '+(selectedLine===i&&selectedWords.has(j)?"selected":"")+'" data-lrc-word="'+j+'">'+esc(w.word||"·")+'</button>').join("")+'</span></div>').join("");
+      $("#lrcSelectionHint").textContent=selectedLine<0?"Select a line or one or more words to timestamp them.":selectedWords.size?selectedWords.size+" word"+(selectedWords.size===1?"":"s")+" selected · set their timestamp.":"Line selected · set its timestamp.";
     };
     const currentTime=()=>audio.dataset.localifyTrackId===trackId?audio.currentTime:0,refreshClock=()=>{$("#lrcLiveTime").textContent=timeText(currentTime())};
-    const setAtCurrent=()=>{if(selectedLine<0){toast("Select a lyric line or word first.");return}if($("#lrcMode").value==="word"){if(selectedWord<0){toast("Select a word first.");return}wordTimes[selectedLine][selectedWord].time=currentTime()}else lines[selectedLine].time=currentTime();render();markDirty();refreshClock()};
+    const setAtCurrent=()=>{if(selectedLine<0){toast("Select a lyric line or word first.");return}if($("#lrcMode").value==="word"){if(!selectedWords.size){toast("Select one or more words first.");return}selectedWords.forEach(j=>{if(wordTimes[selectedLine][j])wordTimes[selectedLine][j].time=currentTime()})}else lines[selectedLine].time=currentTime();render();markDirty();refreshClock()};
     const toLrc=()=>lines.map((line,i)=>{const prefix=line.time===null?"":"["+timeText(line.time)+"]",words=wordTimes[i];return words.some(w=>w.time!==null)?prefix+words.map(w=>(w.time===null?"":"<"+timeText(w.time)+">")+w.word).join(""):prefix+line.body}).join("\n");
-    const applyImported=content=>{textarea.value=content.replace(/^\uFEFF/,"").replace(/\r\n?/g,"\n");parse();selectedLine=-1;selectedWord=-1;render();markDirty();toast("LRC imported. Save changes to keep it.")};
-    open.onclick=()=>{parse();selectedLine=-1;selectedWord=-1;panel.hidden=!panel.hidden;if(!panel.hidden){render();refreshClock();panel.scrollIntoView({block:"nearest",behavior:"smooth"})}};
-    $("#lrcLines").onclick=e=>{const row=e.target.closest("[data-lrc-line]");if(!row)return;selectedLine=Number(row.dataset.lrcLine);const word=e.target.closest("[data-lrc-word]");selectedWord=word?Number(word.dataset.lrcWord):-1;render()};
+    const applyImported=content=>{textarea.value=content.replace(/^\uFEFF/,"").replace(/\r\n?/g,"\n");parse();selectedLine=-1;selectedWords.clear();lastWord=-1;render();markDirty();toast("LRC imported. Save changes to keep it.")};
+    open.onclick=()=>{parse();selectedLine=-1;selectedWords.clear();lastWord=-1;panel.hidden=!panel.hidden;if(!panel.hidden){render();refreshClock();panel.scrollIntoView({block:"nearest",behavior:"smooth"})}};
+    $("#lrcLines").onclick=e=>{
+      const row=e.target.closest("[data-lrc-line]");if(!row)return;
+      const lineIndex=Number(row.dataset.lrcLine),word=e.target.closest("[data-lrc-word]");
+      if(!word){selectedLine=lineIndex;selectedWords.clear();lastWord=-1;render();return}
+      const wordIndex=Number(word.dataset.lrcWord);
+      if(selectedLine!==lineIndex){selectedLine=lineIndex;selectedWords.clear();lastWord=-1}
+      if(e.shiftKey&&lastWord>=0){const from=Math.min(lastWord,wordIndex),to=Math.max(lastWord,wordIndex);if(!e.ctrlKey&&!e.metaKey)selectedWords.clear();for(let j=from;j<=to;j++)if(!/^\s+$/.test(wordTimes[lineIndex][j]?.word||""))selectedWords.add(j)}
+      else if(e.ctrlKey||e.metaKey){if(selectedWords.has(wordIndex))selectedWords.delete(wordIndex);else selectedWords.add(wordIndex);lastWord=wordIndex}
+      else{selectedWords.clear();selectedWords.add(wordIndex);lastWord=wordIndex}
+      render();
+    };
     $("#lrcSetTime").onclick=setAtCurrent;
     $("#lrcPlay").onclick=async()=>{if(state.currentId!==trackId||audio.dataset.localifyTrackId!==trackId)await playId(trackId);else if(audio.paused){try{await audio.play()}catch{toast("Could not start playback.")}}refreshClock()};
     $("#lrcPause").onclick=()=>{if(audio.dataset.localifyTrackId===trackId)audio.pause()};
