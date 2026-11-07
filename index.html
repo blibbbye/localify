@@ -2769,7 +2769,7 @@ main{min-width:0;min-height:0}
           <div class="discordStep"><div class="discordStepNum">4</div><div><strong>Allow local-network access</strong><p>Accept your browser’s prompt for Localify if it appears, then press Reconnect.</p></div></div>
           <div class="discordStep"><div class="discordStepNum">5</div><div><strong>Play music in Localify</strong><p>Your current song and artist should appear on Discord.</p></div></div>
         </div>
-        <div class="discordActions"><a class="primary btnIcon" href="https://raw.githubusercontent.com/blibbbye/Localify/main/Localify%20Discord%20Player.exe" download="Localify Discord Player.exe">${uiIcon("download")} Download EXE</a><button class="secondary btnIcon" id="discordReconnect">${uiIcon("repeat")} Reconnect</button><button class="secondary" id="discordDone">Done</button></div>
+        <div class="discordActions"><a class="primary btnIcon" href="https://raw.githubusercontent.com/blibbbye/Localify/main/Localify%20Discord%20Player.exe" download="Localify Discord Connector.exe">${uiIcon("download")} Download EXE</a><button class="secondary btnIcon" id="discordReconnect">${uiIcon("repeat")} Reconnect</button><button class="secondary" id="discordDone">Done</button></div>
         <div class="help">The Desktop Player listens only on your computer at <code>127.0.0.1:4219</code>. Your music files stay in Localify.</div>
       </div>`);
     $("#closeModal").onclick=()=>closeModal(true);$("#discordDone").onclick=()=>closeModal(true);
@@ -3480,10 +3480,10 @@ function editLocalProfile(){
         '<div class="sectionHead"><div><h2 style="font-size:30px;letter-spacing:-1px;margin:0">Account settings</h2><span>Playback, Discord and library preferences.</span></div><div class="sectionHeadActions"><button type="button" class="secondary" id="accountSettingsBack">Back to profile</button></div></div>'+
         '<div class="settingsGrid">'+
           '<section class="settingsSection">'+
-            '<div class="settingsSectionHead"><div><div class="settingsSectionTitle">Discord Rich Presence</div><div class="settingsSectionSub">Connect the Localify Discord Player and control what appears in Discord.</div></div></div>'+
+            '<div class="settingsSectionHead"><div><div class="settingsSectionTitle">Discord Rich Presence</div><div class="settingsSectionSub">Connect the Localify Discord Connector and control what appears in Discord.</div></div></div>'+
             '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Show listening status</strong><span>Show your current song and artist while music is playing.</span></div><input type="checkbox" id="accountDiscord" '+(enabled?'checked':'')+'></div>'+
             '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="primary" id="accountOpenDiscord">Open Discord connector</button><button type="button" class="secondary" id="accountReconnectDiscord">Reconnect</button></div>'+
-            '<div class="settingsSectionSub" id="accountDiscordNote" style="margin-top:10px">The Windows Discord desktop app and Localify Discord Player must both be running.</div>'+
+            '<div class="settingsSectionSub" id="accountDiscordNote" style="margin-top:10px">The Windows Discord desktop app and Localify Discord Connector must both be running.</div>'+
           '</section>'+
           '<section class="settingsSection">'+
             '<div class="settingsSectionHead"><div><div class="settingsSectionTitle">Playback</div><div class="settingsSectionSub">Set defaults for playback controls.</div></div></div>'+
