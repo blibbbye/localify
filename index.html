@@ -174,7 +174,7 @@
     .lrcInline{margin-top:12px;padding:14px;border:1px solid #303b48;border-radius:16px;background:linear-gradient(145deg,#141b22,#101419);display:grid;gap:12px}.lrcInline[hidden]{display:none}
     .lrcInlineTop,.lrcInlineFoot,.lrcInlineActions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .lrcLiveTime{font:800 13px ui-monospace,monospace;color:#b9e5fa;background:#0c1218;border:1px solid #293744;border-radius:9px;padding:7px 10px}
-    .lrcTransport{display:flex;gap:7px;flex-wrap:wrap}.lrcModeRow{display:flex;align-items:center;justify-content:space-between;gap:12px}.lrcModeRow select{background:#0c0f13;color:#fff;border:1px solid #303945;border-radius:9px;padding:8px 10px}
+    .lrcTransport{display:flex;gap:7px;flex-wrap:wrap}.lrcSeek{width:100%;accent-color:#7dd3fc;margin:0;min-height:18px}.lrcTransport .small{padding:6px 9px!important}.lrcModeRow{display:flex;align-items:center;justify-content:space-between;gap:12px}.lrcModeRow select{background:#0c0f13;color:#fff;border:1px solid #303945;border-radius:9px;padding:8px 10px}
     .lrcLines{display:grid;gap:6px;max-height:260px;overflow:auto;padding-right:2px}.lrcLine{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border:1px solid #252e38;background:#0e1318;border-radius:10px;text-align:left;width:100%;min-width:0}.lrcLine.selected{border-color:#75bce0;background:rgba(74,144,184,.13);box-shadow:0 0 0 2px rgba(125,211,252,.08)}.lrcLineTime{font:700 10px ui-monospace,monospace;color:#7f8d9b;min-width:44px;padding-top:3px}.lrcLineWords{display:flex;gap:4px;flex-wrap:wrap;min-width:0}.lrcWord{padding:2px 3px;border-radius:4px;color:#dfe5eb;font-size:12px}.lrcWord.selected{background:#28516a;color:#e8f7ff;outline:1px solid #4a8eb2}.lrcInline .secondary:disabled,.lrcInline .primary:disabled{opacity:.45;cursor:not-allowed}
     @media(max-width:700px){.lrcFieldHead{align-items:flex-start;flex-direction:column}.lrcInline{padding:11px}.lrcTransport button{flex:1}.lrcInlineFoot{align-items:stretch}.lrcInlineFoot button{width:100%}}
     .creditPeople{min-height:74px}
@@ -3923,7 +3923,7 @@ function editLocalProfile(){
 
         ${field("Year","songYear",t.year||"")}${field("Genre","songGenre",t.genre||"")}${field("Track #","songTrack",t.track||"")}${field("Disc #","songDisc",t.disc||"")}
         <div class="field full"><label><input id="songExplicit" type="checkbox" ${t.explicit?"checked":""}> Explicit</label></div>
-        <div class="field full"><div class="lrcFieldHead"><label for="songLyrics">Lyrics</label><button type="button" class="secondary small" id="openLrcEditor">${uiIcon("mic")} Sync lyrics (LRC)</button></div><textarea id="songLyrics" class="lyricsEditor" spellcheck="false">${esc(t.lyrics||"")}</textarea><div class="lyricsHint">Paste regular lyrics here, or use Sync lyrics to timestamp lines and individual words while the song plays.</div><div class="lrcInline" id="lrcInline" hidden><div class="lrcInlineTop"><div><strong>Sync lyrics</strong><div class="help">Play the song, select a line or word, then set its timestamp.</div></div><span class="lrcLiveTime" id="lrcLiveTime">00:00.00</span></div><div class="lrcTransport"><button type="button" class="secondary" id="lrcPlay">${uiIcon("play")} Play song</button><button type="button" class="secondary" id="lrcPause">${uiIcon("pause")} Pause</button><button type="button" class="secondary" id="lrcSeekBack">−5 sec</button><button type="button" class="secondary" id="lrcSeekForward">+5 sec</button></div><div class="lrcModeRow"><span class="help">Timestamp mode</span><select id="lrcMode"><option value="line">Whole line</option><option value="word">Selected word</option></select></div><div class="lrcLines" id="lrcLines"></div><div class="lrcInlineFoot"><span class="help" id="lrcSelectionHint">Select a lyric line to begin.</span><button type="button" class="primary small" id="lrcSetTime">${uiIcon("clock")} Set timestamp</button></div><div class="lrcInlineActions"><button type="button" class="secondary small" id="lrcClearTimes">Clear timestamps</button><button type="button" class="primary small" id="lrcApply">Use synced lyrics</button></div></div></div>
+        <div class="field full"><div class="lrcFieldHead"><label for="songLyrics">Lyrics</label><button type="button" class="secondary small" id="openLrcEditor">${uiIcon("mic")} Sync lyrics (LRC)</button></div><textarea id="songLyrics" class="lyricsEditor" spellcheck="false">${esc(t.lyrics||"")}</textarea><div class="lyricsHint">Paste regular lyrics here, or use Sync lyrics to timestamp lines and individual words while the song plays.</div><div class="lrcInline" id="lrcInline" hidden><div class="lrcInlineTop"><div><strong>Sync lyrics</strong><div class="help">Play the song, select a line or word, then set its timestamp.</div></div><span class="lrcLiveTime" id="lrcLiveTime">00:00.00</span></div><div class="lrcTransport"><button type="button" class="secondary" id="lrcPlay">${uiIcon("play")} Play</button><button type="button" class="secondary" id="lrcPause">${uiIcon("pause")} Pause</button><button type="button" class="secondary" id="lrcSeekBack">−5 sec</button><button type="button" class="secondary" id="lrcSeekForward">+5 sec</button><button type="button" class="secondary small" id="lrcImport">Import</button><button type="button" class="secondary small" id="lrcExport">Export</button><input type="file" id="lrcImportFile" accept=".lrc,.txt,text/plain" hidden></div><input type="range" id="lrcSeek" min="0" max="1000" value="0" step="1" aria-label="Song position" class="lrcSeek"><div class="lrcModeRow"><span class="help">Timestamp mode</span><select id="lrcMode"><option value="line">Whole line</option><option value="word">Selected word</option></select></div><div class="lrcLines" id="lrcLines"></div><div class="lrcInlineFoot"><span class="help" id="lrcSelectionHint">Select a lyric line to begin.</span><button type="button" class="primary small" id="lrcSetTime">${uiIcon("clock")} Set timestamp</button></div><div class="lrcInlineActions"><button type="button" class="secondary small" id="lrcClearTimes">Clear timestamps</button><button type="button" class="primary small" id="lrcApply">Use synced lyrics</button></div></div></div>
         <div class="field full"><label>Credits</label><div class="formGrid">${field("Producer(s)","credProducer",creditList(t.credits,"producer"))}${field("Songwriter(s)","credSongwriter",creditList(t.credits,"songwriter"))}${field("Composer(s)","credComposer",creditList(t.credits,"composer"))}${field("Publisher(s)","credPublisher",creditList(t.credits,"publisher"))}</div></div>
       </div><div class="modalFoot"><button class="secondary" id="cancelEdit">Cancel</button><button class="primary" id="saveEdit">Save changes</button></div>`;
   }
@@ -3951,48 +3951,41 @@ function editLocalProfile(){
   }
 
   function bindLrcEditor(trackId){
-    const open=$("#openLrcEditor"),panel=$("#lrcInline"),textarea=$("#songLyrics");
-    if(!open||!panel||!textarea)return;
+    const open=$("#openLrcEditor"),panel=$("#lrcInline"),textarea=$("#songLyrics");if(!open||!panel||!textarea)return;
     let selectedLine=-1,selectedWord=-1,lines=[],wordTimes=[];
-    const parse=()=>{lines=textarea.value.replace(/\r\n?/g,"\n").split("\n").map(x=>x.trimEnd());wordTimes=lines.map(line=>Array.from(line.matchAll(/\S+/g),m=>({word:m[0],time:null,start:m.index})));};
-    const stamp=sec=>{sec=Math.max(0,Number(sec)||0);const m=Math.floor(sec/60),s=(sec%60).toFixed(2).padStart(5,"0");return "["+String(m).padStart(2,"0")+":"+s+"]"};
-    const timeText=sec=>stamp(sec).slice(1,-1);
+    const timeText=sec=>{sec=Math.max(0,Number(sec)||0);return String(Math.floor(sec/60)).padStart(2,"0")+":"+((sec%60).toFixed(2)).padStart(5,"0")};
+    const parse=()=>{
+      lines=[];wordTimes=[];
+      textarea.value.replace(/\r\n?/g,"\n").split("\n").forEach(raw=>{
+        const mt=raw.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\]/),time=mt?Number(mt[1])*60+Number(mt[2])+Number("0."+mt[3]):null,body=mt?raw.slice(mt[0].length):raw,words=[];
+        const re=/<(\d{2}):(\d{2})\.(\d{2,3})>/g;let last=0,m;
+        while((m=re.exec(body))){if(m.index>last)words.push({word:body.slice(last,m.index),time:null});words.push({word:"",time:Number(m[1])*60+Number(m[2])+Number("0."+m[3])});last=re.lastIndex}
+        if(last<body.length)words.push({word:body.slice(last),time:null});if(!words.length)words.push({word:body,time:null});
+        lines.push({body,time});wordTimes.push(words);
+      });
+    };
     const render=()=>{
-      const host=$("#lrcLines");if(!host)return;
-      host.innerHTML=lines.map((line,i)=>{const words=wordTimes[i]||[];return '<button type="button" class="lrcLine '+(selectedLine===i?"selected":"")+'" data-lrc-line="'+i+'"><span class="lrcLineTime">'+(line.match(/^\[\d{2}:\d{2}\.\d{2}\]/)?.[0]?.slice(1,-1)||"— —")+'</span><span class="lrcLineWords">'+(words.length?words.map((w,j)=>'<span class="lrcWord '+(selectedLine===i&&selectedWord===j?"selected":"")+'" data-lrc-word="'+j+'">'+esc(w.word)+(w.time!==null?' <small>✓</small>':'')+'</span>').join(""):'<span class="lrcWord">Empty line</span>')+'</span></button>'}).join("");
-      $("#lrcSelectionHint").textContent=selectedLine<0?"Select a lyric line to begin.":selectedWord>=0?"Word selected — set its timestamp.":"Line selected — set its timestamp.";
+      $("#lrcLines").innerHTML=lines.map((line,i)=>'<div class="lrcLine '+(selectedLine===i?"selected":"")+'" data-lrc-line="'+i+'"><span class="lrcLineTime">'+(line.time===null?"— —":timeText(line.time))+'</span><span class="lrcLineWords">'+wordTimes[i].map((w,j)=>'<button type="button" class="lrcWord '+(selectedLine===i&&selectedWord===j?"selected":"")+'" data-lrc-word="'+j+'">'+esc(w.word||"·")+'</button>').join("")+'</span></div>').join("");
+      $("#lrcSelectionHint").textContent=selectedLine<0?"Select a line or word to timestamp it.":selectedWord>=0?"Word selected · set its timestamp.":"Line selected · set its timestamp.";
     };
-    const currentTime=()=>audio.dataset.localifyTrackId===trackId?audio.currentTime:0;
-    const refreshClock=()=>{const el=$("#lrcLiveTime");if(el)el.textContent=timeText(currentTime())};
-    const setAtCurrent=()=>{
-      if(selectedLine<0||selectedLine>=lines.length){toast("Select a lyric line first.");return}
-      const mode=$("#lrcMode").value,now=currentTime();
-      if(mode==="word"){
-        if(selectedWord<0||!wordTimes[selectedLine]?.[selectedWord]){toast("Select a word first.");return}
-        wordTimes[selectedLine][selectedWord].time=now;
-      }else{
-        lines[selectedLine]=lines[selectedLine].replace(/^\[\d{2}:\d{2}\.\d{2}\]/,"");
-        lines[selectedLine]="["+timeText(now)+"]"+lines[selectedLine];
-      }
-      render();markDirty();refreshClock();
-    };
-    const toLrc=()=>lines.map((line,i)=>{
-      const clean=line.replace(/^\[\d{2}:\d{2}\.\d{2}\]/,"");
-      const words=wordTimes[i]||[];
-      const timed=words.some(w=>w.time!==null);
-      if(timed){let out="";for(const w of words)out+=(w.time!==null?"<"+timeText(w.time)+">":"")+w.word+" ";return (line.match(/^\[\d{2}:\d{2}\.\d{2}\]/)?.[0]||"")+out.trim()}
-      return line;
-    }).join("\n");
+    const currentTime=()=>audio.dataset.localifyTrackId===trackId?audio.currentTime:0,refreshClock=()=>{$("#lrcLiveTime").textContent=timeText(currentTime())};
+    const setAtCurrent=()=>{if(selectedLine<0){toast("Select a lyric line or word first.");return}if($("#lrcMode").value==="word"){if(selectedWord<0){toast("Select a word first.");return}wordTimes[selectedLine][selectedWord].time=currentTime()}else lines[selectedLine].time=currentTime();render();markDirty();refreshClock()};
+    const toLrc=()=>lines.map((line,i)=>{const prefix=line.time===null?"":"["+timeText(line.time)+"]",words=wordTimes[i];return words.some(w=>w.time!==null)?prefix+words.map(w=>(w.time===null?"":"<"+timeText(w.time)+">")+w.word).join(""):prefix+line.body}).join("\n");
+    const applyImported=content=>{textarea.value=content.replace(/^\uFEFF/,"").replace(/\r\n?/g,"\n");parse();selectedLine=-1;selectedWord=-1;render();markDirty();toast("LRC imported. Save changes to keep it.")};
     open.onclick=()=>{parse();selectedLine=-1;selectedWord=-1;panel.hidden=!panel.hidden;if(!panel.hidden){render();refreshClock();panel.scrollIntoView({block:"nearest",behavior:"smooth"})}};
-    $("#lrcLines").onclick=e=>{const word=e.target.closest("[data-lrc-word]"),row=e.target.closest("[data-lrc-line]");if(!row)return;const i=Number(row.dataset.lrcLine);if(selectedLine!==i){selectedLine=i;selectedWord=-1}if(word){selectedLine=i;selectedWord=Number(word.dataset.lrcWord)}render()};
+    $("#lrcLines").onclick=e=>{const row=e.target.closest("[data-lrc-line]");if(!row)return;selectedLine=Number(row.dataset.lrcLine);const word=e.target.closest("[data-lrc-word]");selectedWord=word?Number(word.dataset.lrcWord):-1;render()};
     $("#lrcSetTime").onclick=setAtCurrent;
     $("#lrcPlay").onclick=async()=>{if(state.currentId!==trackId||audio.dataset.localifyTrackId!==trackId)await playId(trackId);else if(audio.paused){try{await audio.play()}catch{toast("Could not start playback.")}}refreshClock()};
     $("#lrcPause").onclick=()=>{if(audio.dataset.localifyTrackId===trackId)audio.pause()};
     $("#lrcSeekBack").onclick=()=>{if(audio.dataset.localifyTrackId===trackId)audio.currentTime=Math.max(0,audio.currentTime-5);refreshClock()};
     $("#lrcSeekForward").onclick=()=>{if(audio.dataset.localifyTrackId===trackId&&Number.isFinite(audio.duration))audio.currentTime=Math.min(audio.duration,audio.currentTime+5);refreshClock()};
-    $("#lrcClearTimes").onclick=()=>{parse();lines=lines.map(x=>x.replace(/^\[\d{2}:\d{2}\.\d{2}\]/,""));wordTimes=lines.map(line=>Array.from(line.matchAll(/\S+/g),m=>({word:m[0],time:null,start:m.index})));render();markDirty()};
+    $("#lrcSeek").oninput=e=>{const d=audio.dataset.localifyTrackId===trackId?audio.duration:0;if(d>0){audio.currentTime=d*Number(e.target.value)/1000;refreshClock()}};
+    $("#lrcClearTimes").onclick=()=>{parse();lines.forEach(x=>x.time=null);wordTimes.forEach(row=>row.forEach(w=>w.time=null));render();markDirty()};
+    $("#lrcImport").onclick=()=>$("#lrcImportFile").click();
+    $("#lrcImportFile").onchange=async e=>{const file=e.target.files?.[0];if(file)applyImported(await file.text());e.target.value=""};
+    $("#lrcExport").onclick=()=>{const blob=new Blob([toLrc()],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(trackById(trackId)?.title||"lyrics").replace(/[^\w\- ]+/g,"").trim()+".lrc";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
     $("#lrcApply").onclick=()=>{textarea.value=toLrc();textarea.dispatchEvent(new Event("input",{bubbles:true}));panel.hidden=true;markDirty();toast("Synced lyrics added. Save the song to keep them.")};
-    const update=()=>{if(!panel.hidden)refreshClock()};audio.addEventListener("timeupdate",update);panel.addEventListener("toggle",update);
+    audio.addEventListener("timeupdate",()=>{if(panel.hidden)return;refreshClock();const seek=$("#lrcSeek");if(audio.dataset.localifyTrackId===trackId&&audio.duration)seek.value=String(Math.round(audio.currentTime/audio.duration*1000))});
   }
 
   function field(label,id,value){return `<div class="field"><label>${esc(label)}</label><input id="${id}" value="${esc(value)}"></div>`}
