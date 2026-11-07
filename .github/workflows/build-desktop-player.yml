@@ -1,4 +1,4 @@
-name: Build Localify Desktop Player
+name: Build Localify Discord Connector
 
 permissions:
   contents: write
@@ -20,55 +20,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build connector
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force build | Out-Null
-          $gccArgs = @(
-            "-std=c++17",
-            "-Os",
-            "-DNDEBUG",
-            "-mwindows",
-            "-municode",
-            "-ffunction-sections",
-            "-fdata-sections",
-            "desktop_player/LocalifyDesktopPlayer.cpp",
-            "-o",
-            "build/Localify Discord Player.exe",
-            "-lwinhttp",
-            "-lgdiplus",
-            "-lws2_32",
-            "-ldwmapi",
-            "-lole32",
-            "-lshell32",
-            "-Wl,--gc-sections",
-            "-static-libgcc",
-            "-static-libstdc++",
-            "-static",
-            "-s"
-          )
-          & g++ @gccArgs
+          msbuild "desktop_player/LocalifyConnector.csproj" /m /p:Configuration=Release /p:Platform=AnyCPU
           if ($LASTEXITCODE -ne 0) {
-            throw "g++ failed with exit code $LASTEXITCODE"
+            throw "MSBuild failed with exit code $LASTEXITCODE"
           }
+          $built = "desktop_player/bin/Release/Localify Discord Connector.exe"
+          if (!(Test-Path $built)) {
+            throw "Build output not found: $built"
+          }
+          Copy-Item $built "Localify Discord Connector.exe" -Force
 
       - name: Publish EXE to repository
+        if: github.event_name != 'pull_request'
         shell: pwsh
         run: |
-          Copy-Item "build/Localify Discord Player.exe" "Localify Discord Player.exe" -Force
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- "Localify Discord Player.exe"
+          git add -- "Localify Discord Connector.exe"
           git diff --cached --quiet
           if ($LASTEXITCODE -ne 0) {
-            git commit -m "Publish Localify Discord Player.exe"
+            git commit -m "Publish Localify Discord Connector.exe"
             git push
           }
 
       - name: Verify size
         shell: pwsh
         run: |
-          $f = Get-Item "build/Localify Discord Player.exe"
+          $f = Get-Item "Localify Discord Connector.exe"
           Write-Host "EXE size: $($f.Length) bytes"
           if ($f.Length -ge 7000000) {
             throw "EXE is too large: $($f.Length) bytes"
@@ -77,6 +61,6 @@ jobs:
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
-          name: Localify-Discord-Player
-          path: build/Localify Discord Player.exe
+          name: Localify-Discord-Connector
+          path: Localify Discord Connector.exe
           if-no-files-found: error
