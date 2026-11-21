@@ -258,7 +258,7 @@
     .empty{padding:54px 22px;text-align:center;border:1px dashed #2d343e;border-radius:18px;color:#7f8894}
     .empty h3{color:#d7dbe0;margin:0 0 6px}
     .lyricsPanel{white-space:pre-wrap;line-height:1.8;color:#7f8995;background:#101318;border:1px solid #242a31;border-radius:18px;padding:20px;margin-top:12px;min-height:280px}
-    .lyricsPanel.syncedLyrics{white-space:normal;display:grid;gap:8px}.lyricLine{padding:9px 12px;border-radius:10px;color:#7f8995;line-height:1.65}.lyricLine.active{color:#fff}
+    .lyricsPanel.syncedLyrics{white-space:normal;display:grid;gap:8px}.lyricLine{padding:9px 12px;border-radius:10px;color:#7f8995;line-height:1.65}.lyricLine.clickableLyric{cursor:pointer;transition:background .15s,color .15s}.lyricLine.clickableLyric:hover{background:rgba(255,255,255,.07);color:#fff}.lyricLine.clickableLyric:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.lyricLine.active{color:#fff}
     .modalShade{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
     .modalShade.show{display:flex}
     .modalShade .modal{overscroll-behavior:contain}
@@ -727,6 +727,11 @@ main{min-width:0;min-height:0}
   .player{width:100%;max-width:100vw;box-sizing:border-box}
 }
 
+
+    .localifyDraggable{cursor:grab!important;user-select:none}
+    .localifyDraggable:active{cursor:grabbing!important}
+    .localifyDragging{opacity:.38}
+    .localifyDragOver{outline:2px solid rgba(125,211,252,.78);outline-offset:-2px;background-color:rgba(125,211,252,.08)!important}
   </style>
 <style id="exportImageStyles">.exportImagePreview{max-height:68vh;overflow:auto;border:1px solid #252e38;border-radius:16px;background:#090d11;padding:10px}.exportImagePreview img{display:block;width:100%;height:auto;border-radius:10px}#downloadExportImage{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}</style>  <style id="localifyViewModes">
     .viewModeBar{display:flex;align-items:center;gap:4px;padding:4px;border:1px solid #252c35;border-radius:11px;background:#101419;flex:none}
@@ -864,8 +869,73 @@ main{min-width:0;min-height:0}
     /* Keep the supplied brand artwork exact; theme colours must not recolour the logo. */
 .logo{background:transparent!important;background-image:none!important;box-shadow:none!important;overflow:hidden}
 .logo .logoMarkImage{display:block;width:100%;height:100%;padding:0;object-fit:contain;mix-blend-mode:normal;filter:none}
+  .customThemesHeading{font-size:13px;font-weight:900;margin-top:18px;margin-bottom:9px;color:var(--text)}
+  .customThemesToolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .customThemeAdd,.customThemeImport{width:38px;height:38px;border:1px solid #303946;border-radius:11px;background:#111820;color:#e5eaf0;font-size:25px;display:grid;place-items:center;cursor:pointer}
+  .customThemeImport svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .customThemeGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:9px}
+  .customThemeTile{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 30px;align-items:start;gap:4px;padding:7px;border:1px solid #29313b;border-radius:12px;background:#11171d}
+  .customThemeTile.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .customThemeSelect{min-width:0;text-align:left;background:transparent;border:0;padding:0;color:inherit;cursor:pointer}
+  .customThemeSelect .themeSwatch{display:block;width:100%;height:35px;border-radius:8px;margin-bottom:6px}
+  .customThemeSelect strong{display:block;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .customThemeMore{width:28px;height:28px;border:0;border-radius:8px;background:#202832;color:#e5eaf0;font-size:21px;line-height:1;cursor:pointer}
+  .customThemeMenu{position:absolute;z-index:20;right:7px;top:38px;min-width:110px;padding:5px;border:1px solid #394451;border-radius:9px;background:#171f28;box-shadow:0 8px 24px #0009}
+  .customThemeMenu[hidden]{display:none}
+  .customThemeMenu button{display:block;width:100%;padding:8px;border:0;border-radius:6px;background:transparent;color:#e5eaf0;text-align:left;font-size:11px;cursor:pointer}
+  .customThemeMenu button:hover{background:#293541}
+  .customThemeEditor{display:grid;gap:12px;padding:14px;border:1px solid #29313b;border-radius:14px;background:#0d1217}
+  .customThemeEditorHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .customThemeEditorHead strong{font-size:13px}
+  .customThemeFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
+  .customThemeField{display:grid;gap:5px;min-width:0}
+  .customThemeField label{font-size:10px;color:#87919e;font-weight:850;text-transform:uppercase;letter-spacing:.07em}
+  .customThemeColorRow{display:grid;grid-template-columns:40px minmax(0,1fr);gap:7px;align-items:center}
+  .customThemeColorRow input[type=color]{width:40px;height:35px;padding:2px;border:1px solid #303946;border-radius:8px;background:#111820;cursor:pointer}
+  .customThemeColorRow>div{display:grid;grid-template-columns:1fr;gap:5px;min-width:0}
+  .customThemeColorRow input[type=text]{width:100%;min-width:0;background:#111820;border:1px solid #303946;border-radius:8px;padding:8px;color:#e5eaf0;font:11px ui-monospace,monospace}
+  .customThemeImageRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .customThemeImagePreview{width:100%;height:110px;border:1px solid #303946;border-radius:10px;object-fit:cover;background:#111820}
+  @media(max-width:600px){.customThemeFields{grid-template-columns:1fr}}
 </style>
-</head>
+<style id="localify-colour-themes">
+:root{--theme-transition:background-color .45s ease,border-color .4s ease,color .3s ease,box-shadow .4s ease}
+html,body,#app,#main,#content,.sidebar,.player,.nowSidebar,.profileMenu,.settingsSection,.card,.folderCard,.quickCard,.heroCard,.presetHero,.tableWrap,.modal,.lrcInline,.lrcLine,.themeChoice,button,.pill,.search input{transition:background-color .42s ease,border-color .38s ease,color .28s ease,box-shadow .42s ease,filter .35s ease}
+body.theme-gradient{background-image:radial-gradient(ellipse at 8% 0%,var(--theme-glow-a),transparent 42%),radial-gradient(ellipse at 92% 100%,var(--theme-glow-b),transparent 44%)}
+body.theme-gradient .sidebar{background:linear-gradient(180deg,var(--theme-sidebar),var(--panel))!important}
+body.theme-gradient .player{background:linear-gradient(100deg,var(--panel),var(--panel2),var(--panel))!important}
+body.theme-gradient .settingsSection,body.theme-gradient .card,body.theme-gradient .folderCard,body.theme-gradient .tableWrap,body.theme-gradient .nowSidebar{background:linear-gradient(145deg,var(--panel2),var(--panel))!important}
+body.theme-gradient .primary,body.theme-gradient .logo{background-image:var(--theme-gradient)!important;color:#fff!important;border-color:transparent!important;box-shadow:0 8px 24px var(--theme-shadow)!important}
+body.theme-gradient .primary:hover,body.theme-gradient .logo:hover{filter:brightness(1.12) saturate(1.12)}
+body.theme-gradient .themeChoice.active{background:linear-gradient(145deg,var(--theme-soft),var(--panel2))!important}
+body.theme-gradient .lrcInline{background:linear-gradient(135deg,var(--panel2),var(--panel),color-mix(in srgb,var(--theme-a) 9%,var(--panel)))!important;border-color:var(--theme-border)}
+.lrcSelectionMode{display:flex;align-items:center;justify-content:flex-end;gap:10px}.lrcSelectionMode label{font-size:11px;color:var(--muted);font-weight:800}.lrcSelectionMode select{background:var(--panel2);color:var(--text);border:1px solid var(--theme-border);border-radius:9px;padding:8px 12px;min-width:130px}
+.lrcWord{cursor:pointer}.lrcLineWords>span.lrcWord{cursor:default}
+@media(prefers-reduced-motion:reduce){html,body,#app,#main,#content,.sidebar,.player,.nowSidebar,.profileMenu,.settingsSection,.card,.folderCard,.quickCard,.heroCard,.presetHero,.tableWrap,.modal,.lrcInline,.lrcLine,.themeChoice,button,.pill,.search input{transition:none!important}}
+
+<style id="localify-theme-surface-controls">
+body.theme-gradient aside{background:var(--theme-sidebar)!important;color:var(--theme-nav-text)!important}
+body.theme-gradient .nav button,body.theme-gradient .sideAction{color:var(--theme-nav-text)!important}
+body.theme-gradient .nav button:hover,body.theme-gradient .sideAction:hover{background:var(--theme-hover)!important}
+body.theme-gradient .nav button.active{background:color-mix(in srgb,var(--theme-a) 18%,var(--theme-hover))!important;color:var(--theme-nav-text)!important}
+body.theme-gradient .topbar{background:var(--theme-topbar)!important;border-color:var(--theme-border)!important}
+body.theme-gradient .player{background:var(--theme-player)!important;border-color:var(--theme-border)!important}
+body.theme-gradient .nowSidebar{background:var(--theme-now-playing)!important;border-color:var(--theme-border)!important}
+body.theme-gradient .search input,body.theme-gradient input:not([type=color]):not([type=range]):not([type=checkbox]),body.theme-gradient textarea,body.theme-gradient select{background:var(--theme-input)!important;border-color:var(--theme-border)!important;color:var(--text)!important}
+body.theme-gradient .btn:not(.primary),body.theme-gradient .pill,body.theme-gradient .discordServerBtn{background:var(--theme-button)!important;border-color:var(--theme-border)!important;color:var(--text)!important}
+body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-input)!important}
+</style>
+</style>
+<style id="artist-select-box-fix">
+.artist-select-box{position:absolute;right:8px;bottom:8px;width:17px;height:17px;display:block;z-index:3;cursor:pointer}
+.artist-select-box input{appearance:none;-webkit-appearance:none;width:16px;height:16px;margin:0;border:1.5px solid var(--muted,#aab0b8);border-radius:3px;background:var(--panel,#14191f);display:block;cursor:pointer}
+.artist-select-box input:checked{background:var(--accent,#5ab9e8);border-color:var(--accent,#5ab9e8)}
+.artist-select-box input:checked::after{content:"";display:block;width:4px;height:8px;border:solid #071018;border-width:0 2px 2px 0;transform:rotate(45deg);margin:1px 0 0 5px}
+.artistSelectionBar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 14px}
+.catalogCleanupGroup{padding:12px;border:1px solid var(--line);border-radius:12px;margin:10px 0}
+.catalogCleanupGroup h3{margin:0 0 7px;font-size:14px}
+.catalogCleanupActions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+</style></head>
 <body>
 <div class="app">
   <aside>
@@ -934,7 +1004,7 @@ main{min-width:0;min-height:0}
     </div>
     <div class="playerRight">
       <button class="ctrl iconOnly" id="lyricsBtn" title="Lyrics" aria-label="Lyrics"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="13" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7"/></svg></button>
-      <button class="ctrl iconOnly" id="queueBtn" title="Queue" aria-label="Queue"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7"/><path d="m17 15 3 2.5-3 2.5z"/></svg></button><button class="ctrl iconOnly nowPanelToggle" id="nowPanelToggle" title="Now Playing" aria-label="Show Now Playing panel" aria-pressed="false"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 10v6M12 7h.01"/></svg></button><button class="ctrl iconOnly" id="eqBtn" title="Sound filters" aria-label="Sound filters"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 17h14M9 7v4M15 13v4"/></svg></button>
+      <button class="ctrl iconOnly" id="queueBtn" title="Queue" aria-label="Queue"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7"/><path d="m17 15 3 2.5-3 2.5z"/></svg></button><button class="ctrl iconOnly nowPanelToggle" id="nowPanelToggle" title="Now Playing" aria-label="Show Now Playing panel" aria-pressed="false"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 10v6M12 7h.01"/></svg></button><button class="ctrl iconOnly" id="eqBtn" title="Sound effects" aria-label="Sound effects"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 17h14M9 7v4M15 13v4"/></svg></button>
       <span style="color:#7e8793;display:inline-flex"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path d="M17 9.5a4 4 0 0 1 0 5M19.5 7a7 7 0 0 1 0 10"/></svg></span><input class="volume" id="volume" type="range" min="0" max="1" step=".01" value=".9">
     </div>
   </div>
@@ -967,26 +1037,52 @@ main{min-width:0;min-height:0}
   const state = {
     version: 12, tracks: [], albums: [], artists: [], playlists: [], folders: [], liked: [], recent: [],
     queue: [], queueIndex: -1, currentId: null, libraryFolderHandle: null,
-    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false },
+    settings: { volume:.9, shuffle:false, repeat:"off", eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true}, discordPresence:true, nowSidebarHidden:false, theme:"blue", lrcSelectionMode:"words" },
     profile: { displayName:"", avatar:null },
     analytics: { totalSeconds:0, plays:{}, trackSeconds:{}, days:{}, history:[] },
     currentView:"home", search:"", searchFilter:"all", librarySort:"added", librarySortDir:"desc",
     selected:[], detail:null, viewModes:{albums:"large",artists:"large",playlists:"large",songs:"list",folders:"large"}, catalogSorts:{albums:"asc",artists:"asc",playlists:"asc",folders:"asc"}, playlistSort:{}, trackSorts:{}
   };
 
+  const localifyThemes=[
+    {id:"blue",name:"Blue",desc:"Dark blue with a soft blue glow",a:"#6096c8",b:"#354f78",c:"#354f78",bg:"#090e17",panel:"#111a27",panel2:"#172334",panel3:"#202f43",sidebar:"#0c1420",border:"#29394d",hover:"#1b2a3d",swatch:"linear-gradient(120deg,#6096c8,#354f78)"},
+    {id:"purple",name:"Purple",desc:"Dark purple with a muted lilac accent",a:"#9a83bd",b:"#584777",c:"#584777",bg:"#100d18",panel:"#191522",panel2:"#211b2d",panel3:"#2c243b",sidebar:"#130f1c",border:"#3b304d",hover:"#292137",swatch:"linear-gradient(120deg,#9a83bd,#584777)"},
+    {id:"green",name:"Green",desc:"Dark green with a calm mint accent",a:"#69aa91",b:"#3c705f",c:"#3c705f",bg:"#09130f",panel:"#111d18",panel2:"#182820",panel3:"#22362c",sidebar:"#0c1712",border:"#2d493b",hover:"#1c3025",swatch:"linear-gradient(120deg,#69aa91,#3c705f)"},
+    {id:"pink",name:"Pink",desc:"Dark plum with dusty pink",a:"#c17f9d",b:"#79506d",c:"#79506d",bg:"#160e16",panel:"#211622",panel2:"#2b1c2d",panel3:"#38243a",sidebar:"#1a111b",border:"#493149",hover:"#342238",swatch:"linear-gradient(120deg,#c17f9d,#79506d)"},
+    {id:"red",name:"Red",desc:"Dark red with a soft rose accent",a:"#c87979",b:"#79464e",c:"#79464e",bg:"#170d10",panel:"#221518",panel2:"#2e1c20",panel3:"#3b252a",sidebar:"#1b1013",border:"#4d3036",hover:"#362126",swatch:"linear-gradient(120deg,#c87979,#79464e)"},
+    {id:"orange",name:"Orange",desc:"Dark brown with a warm orange accent",a:"#c49368",b:"#79583e",c:"#79583e",bg:"#17110c",panel:"#211910",panel2:"#2c2116",panel3:"#392b1d",sidebar:"#1b140e",border:"#4c3928",hover:"#352719",swatch:"linear-gradient(120deg,#c49368,#79583e)"},
+    {id:"teal",name:"Teal",desc:"Dark teal with a muted aqua accent",a:"#65a9a5",b:"#3d7477",c:"#3d7477",bg:"#091415",panel:"#101f20",panel2:"#172a2b",panel3:"#203839",sidebar:"#0b191a",border:"#2a494a",hover:"#1a3334",swatch:"linear-gradient(120deg,#65a9a5,#3d7477)"},
+    {id:"grey",name:"Grey",desc:"Almost black with cool grey accents",a:"#a0aab8",b:"#596575",c:"#596575",bg:"#0c0f13",panel:"#15191f",panel2:"#1d232b",panel3:"#282f39",sidebar:"#101419",border:"#343d49",hover:"#252d37",swatch:"linear-gradient(120deg,#a0aab8,#596575)"}
+  ];
+  function allLocalifyThemes(){
+    return [...localifyThemes,...(Array.isArray(state.settings.customThemes)?state.settings.customThemes:[])];
+  }
+  function activeLocalifyTheme(){
+    return allLocalifyThemes().find(x=>x.id===state.settings.theme)||localifyThemes[0];
+  }
   function applyTheme(){
     const root=document.documentElement;
+    const t=activeLocalifyTheme();
     const vars={
-      "--bg":"#090a0c","--panel":"#111214","--panel2":"#17181b","--panel3":"#202125","--line":"#26282d",
-      "--theme-sidebar":"#0b0c0e","--theme-border":"#272a30","--theme-hover":"#17191d",
-      "--theme-a":"#7dd3fc","--theme-b":"#bae6fd","--accent":"#7dd3fc","--accent2":"#bae6fd",
-      "--theme-soft":"rgba(125,211,252,.085)","--theme-soft-2":"rgba(125,211,252,.055)",
-      "--theme-shadow":"rgba(125,211,252,.22)","--theme-glow-a":"rgba(125,211,252,.022)",
-      "--theme-glow-b":"rgba(125,211,252,.016)","--context-glow":"rgba(125,211,252,.075)",
-      "--logo-background":"#7dd3fc","--logo-shadow":"rgba(125,211,252,.24)"
+      "--bg":t.bg,"--panel":t.panel,"--panel2":t.panel2,"--panel3":t.panel3,"--line":t.border,"--text":t.text||"#f7f7f8","--muted":t.muted||"#9ca3af",
+      "--theme-sidebar":t.sidebar||t.panel,"--theme-border":t.border,"--theme-hover":t.hover||t.panel3,"--theme-topbar":t.topbar||t.panel,"--theme-player":t.player||t.panel,"--theme-now-playing":t.nowPlaying||t.panel2,"--theme-nav-text":t.navText||t.text,"--theme-button":t.button||t.panel2,"--theme-input":t.input||t.panel2,
+      "--theme-a":t.a,"--theme-b":t.b,"--accent":t.a,"--accent2":t.b,
+      "--theme-soft":"color-mix(in srgb,"+t.a+" 13%,transparent)","--theme-soft-2":"color-mix(in srgb,"+t.b+" 8%,transparent)",
+      "--theme-shadow":"color-mix(in srgb,"+t.a+" 32%,transparent)","--theme-glow-a":"color-mix(in srgb,"+t.a+" 18%,transparent)",
+      "--theme-glow-b":"color-mix(in srgb,"+t.b+" 14%,transparent)","--context-glow":"color-mix(in srgb,"+t.a+" 15%,transparent)",
+      "--logo-background":"linear-gradient(135deg,"+t.a+","+t.b+","+t.c+")","--logo-shadow":"color-mix(in srgb,"+t.a+" 35%,transparent)",
+      "--theme-gradient":"linear-gradient(135deg,"+t.a+","+t.b+","+t.c+")"
     };
     for(const [key,value] of Object.entries(vars))root.style.setProperty(key,value);
-    document.body.classList.remove("theme-gradient","theme-solid");
+    document.body.classList.add("theme-gradient");
+    document.body.dataset.theme=t.id;
+    const main=$("#main");
+    if(main){main.style.backgroundImage="";main.style.backgroundSize="";main.style.backgroundPosition="";main.style.backgroundAttachment="";}
+  }
+  async function chooseTheme(id){
+    if(!allLocalifyThemes().some(t=>t.id===id))return;
+    state.settings.theme=id;applyTheme();await save();
+    $(".themeChoice").forEach(b=>b.classList.toggle("active",b.dataset.theme===id));
   }
 
   let queueBase=[];
@@ -1686,7 +1782,7 @@ main{min-width:0;min-height:0}
     let restored=false;
     try{restored=await restoreSaved()}catch(e){console.warn("Localify restore failed",e)}
     try{state.libraryFolderHandle=await idbGetLibraryFolderHandle()}catch{state.libraryFolderHandle=null}
-    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},discordPresence:true,nowSidebarHidden:false,theme:{preset:"white",mode:"solid",color1:"#ffffff",color2:"#ffffff"}},state.settings||{});
+    state.settings=Object.assign({volume:.9,shuffle:false,repeat:"off",eq:{bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},discordPresence:true,nowSidebarHidden:false,theme:"blue",lrcSelectionMode:"words"},state.settings||{});if(!Array.isArray(state.settings.customThemes))state.settings.customThemes=[];if(typeof state.settings.theme!=="string"||!allLocalifyThemes().some(t=>t.id===state.settings.theme))state.settings.theme="blue";if(!["words","sentences"].includes(state.settings.lrcSelectionMode))state.settings.lrcSelectionMode="words";
     state.settings.shuffle=(state.settings.shuffle===true||state.settings.shuffle===1||state.settings.shuffle==="true");
 
     state.settings.eq=Object.assign({bass:0,mid:0,treble:0,gain:0,preset:"flat",compressor:true},state.settings.eq||{});
@@ -1880,8 +1976,8 @@ main{min-width:0;min-height:0}
     state.currentView="folders";state.detail={type:"folder",id};state.selected=[];renderNav();
     const items=folderItems(f),albums=items.filter(x=>x.type==="album"),songs=items.filter(x=>x.type==="song"),artists=items.filter(x=>x.type==="artist"),playlists=items.filter(x=>x.type==="playlist");
     let html='<div class="sectionHead"><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+items.length+' items</div></div><div class="sectionHeadActions folderDetailActions"><button class="secondary" id="folderDownload">'+uiIcon("download")+' Download folder</button><button class="secondary" id="folderEdit">'+uiIcon("edit")+' Edit</button><button class="dangerBtn" id="folderDelete">'+uiIcon("trash")+' Delete folder</button><button class="primary" id="folderAddItems">'+uiIcon("plus")+' Add items</button></div></div>';
-    if(albums.length)html+='<div class="section"><div class="sectionHead"><h2>Albums</h2><span>'+albums.length+'</span></div><div class="grid">'+albums.map(x=>albumCard(albumById(x.id))).join("")+'</div></div>';
-    if(songs.length)html+='<div class="section"><div class="sectionHead"><h2>Songs</h2><span>'+songs.length+'</span></div><div class="tableWrap">'+trackTable(songs.map(x=>trackById(x.id)).filter(Boolean),false,"folder:"+id)+'</div></div>';
+    if(albums.length)html+='<div class="section"><div class="sectionHead"><h2>Albums</h2><span>'+albums.length+' · Drag to reorder</span></div><div class="grid folderAlbumOrder">'+albums.map(x=>albumCard(albumById(x.id))).join("")+'</div></div>';
+    if(songs.length)html+='<div class="section"><div class="sectionHead"><h2>Songs</h2><span>'+songs.length+' · Drag to reorder</span></div><div class="tableWrap">'+trackTable(songs.map(x=>trackById(x.id)).filter(Boolean),false,"folder:"+id,"title",true)+'</div></div>';
     if(artists.length)html+='<div class="section"><div class="sectionHead"><h2>Artists</h2><span>'+artists.length+'</span></div><div class="viewGrid">'+artists.map(x=>artistCard(artistById(x.id))).join("")+'</div></div>';
     if(playlists.length)html+='<div class="section"><div class="sectionHead"><h2>Playlists</h2><span>'+playlists.length+'</span></div><div class="viewGrid">'+playlists.map(x=>playlistCard(playlistById(x.id))).join("")+'</div></div>';
     if(!items.length)html+=empty("Folder is empty","Add albums, songs, artists or playlists to this folder.");
@@ -1890,7 +1986,9 @@ main{min-width:0;min-height:0}
     $("#folderDownload").onclick=()=>downloadFolderArchive(f.id);
     $("#folderDelete").onclick=()=>deleteFolder(f.id);
     $("#folderAddItems").onclick=()=>openFolderItemPicker(f.id);
-    bindAlbumCards();bindTrackTable();$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
+    bindAlbumCards();bindTrackTable();$$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));$$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
+    bindDragOrder($("#content"),".folderAlbumOrder .album-open",albums.map(x=>x.id),async order=>{reorderFolderType(f,"album",order);await save(true);showFolder(id)});
+    bindDragOrder($("#content"),"tbody .track-row",songs.map(x=>x.id),async order=>{reorderFolderType(f,"song",order);await save(true);showFolder(id)});
     applyContextArtworkTheme();
   }
 
@@ -1900,9 +1998,9 @@ main{min-width:0;min-height:0}
     $("#content").innerHTML=`
       <div class="hero">
         <div class="heroCard">
-          <div class="heroKicker">LOCALIFY • Built by @blibbbye + @modmodroots</div>
-          <h1>Local Files<br>But better</h1>
-          <div class="heroDesc">Locailify, A audio player website made by @blibbbye, Create albums and artists add songs from ur files and listen. This was made for me and my friends at ModMod's Unreleased!</div>
+          <div class="heroKicker">LOCALIFY • Made by @blibbbye</div>
+          <h1>Your Music<br>Your Files</h1>
+          <div class="heroDesc">Localify, A local audio player website made by @blibbbye, Create albums and artists add songs with ur own files and enyoy.</div>
           <div class="heroActions"><button class="primary" id="heroAdd">${uiIcon("plus")} Add songs</button><button class="secondary" id="heroFolder">${uiIcon("folder")} Add folder</button><button class="secondary" id="heroAlbum">${uiIcon("plus")} Create album</button><button class="secondary" id="heroArtist">${uiIcon("artist")} Create artist</button></div>
         </div>
         <div class="quickCard">
@@ -1912,7 +2010,7 @@ main{min-width:0;min-height:0}
       </div>
       <div class="section"><div class="sectionHead"><h2>Recently played</h2><span>${recent.length?"Jump back in":"Nothing played yet"}</span></div>${recent.length?`<div class="grid">${recent.map(trackCard).join("")}</div>`:empty("No history yet","Play something and it will appear here.")}</div>
       <div class="section"><div class="sectionHead"><h2>Your albums</h2><span>${albums.length} shown</span></div>${albums.length?`<div class="grid">${albums.map(albumCard).join("")}</div>`:empty("No albums yet","Create an album or import songs to build your catalog.")}</div>
-      <div class="section"><div class="creditsBox"><strong>Credits</strong><div class="subtle">Created by <b>@blibbbye</b> and <b>@modmodroots</b>.</div></div></div>`;
+      <div class="section"><div class="creditsBox"><strong>Credits</strong><div class="subtle">Made by <b>@blibbbye</b> • People that helped with ideas: <b>@modmodroots, @currentsdropout</b>.</div></div></div>`;
     $("#heroAdd").onclick=()=>pickFiles({});
     $("#heroFolder").onclick=pickFolder;
     $("#heroAlbum").onclick=()=>editAlbum(null);
@@ -1935,7 +2033,7 @@ main{min-width:0;min-height:0}
     $$('[data-search-filter]').forEach(b=>b.onclick=()=>{state.searchFilter=b.dataset.searchFilter;renderSearch()});
     if(state.searchFilter==="songs"||state.searchFilter==="all")bindTrackTable();
     bindAlbumCards();
-    $$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
+    $(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
   }
   function searchResultsHtml(ft,fa,fr){
     const sections=[];
@@ -1962,22 +2060,49 @@ main{min-width:0;min-height:0}
     const mode=normalizeViewMode(state.viewModes?.albums||"large");
     const items=albumList();
     const body=items.length?'<div class="'+catalogModeClass("albums",mode)+'">'+items.map(albumCard).join("")+'</div>':empty("No albums yet","Create your first album, then add the songs to it.");
-    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><div class="sectionHeadActions">'+'<span class="albumCount" title="Albums in your library">'+state.albums.length+'</span><button class="primary iconOnlyCreate" id="newAlbum" title="Create album" aria-label="Create album">'+uiIcon("plus")+'</button>'+viewModeToolbar("albums",mode)+'</div></div>'+body;
-    $("#newAlbum").onclick=()=>editAlbum(null);bindAlbumCards();
+    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Albums</h2><div class="subtle">Create an album first, then add songs. New songs inherit its artist, artwork and credits by default.</div></div><div class="sectionHeadActions"><span class="albumCount" title="Albums in your library">'+state.albums.length+'</span><button class="secondary iconOnlyAction" id="albumsTrash" title="Album cleanup options" aria-label="Album cleanup options">'+uiIcon("trash")+'</button><button class="primary iconOnlyCreate" id="newAlbum" title="Create album" aria-label="Create album">'+uiIcon("plus")+'</button>'+viewModeToolbar("albums",mode)+'</div></div>'+body;
+    $("#newAlbum").onclick=()=>editAlbum(null);
+    $("#albumsTrash").onclick=()=>openCatalogCleanup("albums");
+    bindAlbumCards();
   }
   function renderArtists(){
     const mode=normalizeViewMode(state.viewModes?.artists||"large");
     const items=artistList();
     const body=items.length?'<div class="'+catalogModeClass("artists",mode)+'">'+items.map(artistCard).join("")+'</div>':empty("No artists","Create an artist or import music to build your artist index.");
-    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Artists</h2><div class="subtle">Artists have their own profile, songs and albums u can add!</div></div><div class="sectionHeadActions">'+'<button class="primary iconOnlyCreate" id="newArtist" title="Create artist" aria-label="Create artist">'+uiIcon("plus")+'</button>'+viewModeToolbar("artists",mode)+'</div></div>'+body;
-    $("#newArtist").onclick=()=>editArtist(null);$$(".artist-open").forEach(e=>e.onclick=()=>showArtist(e.dataset.id));
+    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Artists</h2><div class="subtle">Idk what to say here, Hi.</div></div><div class="sectionHeadActions"><button class="secondary iconOnlyAction" id="artistsTrash" title="Artist cleanup options" aria-label="Artist cleanup options">'+uiIcon("trash")+'</button><button class="primary iconOnlyCreate" id="newArtist" title="Create artist" aria-label="Create artist">'+uiIcon("plus")+'</button>'+viewModeToolbar("artists",mode)+'</div></div>'+body;
+    $("#newArtist").onclick=()=>editArtist(null);
+    $("#artistsTrash").onclick=()=>openCatalogCleanup("artists");
+    // Use the all-elements selector here. $() returns only one element.
+    $$(".artist-open").forEach(card=>card.addEventListener("click",ev=>{
+      if(ev.target.closest(".artist-select-box"))return;
+      showArtist(card.dataset.id);
+    }));
+    $$(".artist-select-box input").forEach(input=>{
+      input.addEventListener("click",ev=>ev.stopPropagation());
+      input.addEventListener("change",()=>{
+        state.selectedArtists=state.selectedArtists||[];
+        const id=input.dataset.artistSelect;
+        if(input.checked){if(!state.selectedArtists.includes(id))state.selectedArtists.push(id)}
+        else state.selectedArtists=state.selectedArtists.filter(x=>x!==id);
+        renderArtists();
+      });
+    });
+    const selected=(state.selectedArtists||[]).filter(id=>artistById(id));
+    if(selected.length){
+      const bar=document.createElement("div");
+      bar.className="selectionBar artistSelectionBar";
+      bar.innerHTML='<strong>'+selected.length+' selected</strong><button class="secondary small" id="artistBulkEdit">Edit selected</button><button class="secondary small" id="artistBulkClear">Clear selection</button>';
+      $("#content").insertBefore(bar,$("#content").children[1]||null);
+      $("#artistBulkEdit").onclick=()=>bulkEditArtists(selected);
+      $("#artistBulkClear").onclick=()=>{state.selectedArtists=[];renderArtists()};
+    }
   }
   function renderPlaylists(){
     const mode=normalizeViewMode(state.viewModes?.playlists||"large");
     const items=sortCatalogItems("playlists",state.playlists,p=>p.name);
     const body=items.length?localifyPagedHtml(items,playlistCard,"playlists",catalogModeClass("playlists",mode)):empty("Make your first playlist","Create a playlist, then add tracks from the song menus or playlist page.");
-    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Playlists</h2><div class="subtle">Local playlists, saved automatically on this device.</div></div><div class="sectionHeadActions">'+'<button class="primary iconOnlyCreate" id="newPlaylist" title="New playlist" aria-label="New playlist">'+uiIcon("plus")+'</button>'+viewModeToolbar("playlists",mode)+'</div></div>'+body;
-    $("#newPlaylist").onclick=()=>editPlaylist(null);$$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
+    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Playlists</h2><div class="subtle">Ur local playlist to save songs to.</div></div><div class="sectionHeadActions">'+'<button class="primary iconOnlyCreate" id="newPlaylist" title="New playlist" aria-label="New playlist">'+uiIcon("plus")+'</button>'+viewModeToolbar("playlists",mode)+'</div></div>'+body;
+    $("#newPlaylist").onclick=()=>editPlaylist(null);$(".playlist-open").forEach(e=>e.onclick=()=>showPlaylist(e.dataset.id));
   }
   function renderFolders(){
     const folders=sortCatalogItems("folders",state.folders||[],f=>f.name);
@@ -1988,12 +2113,55 @@ main{min-width:0;min-height:0}
     $$(".folderCard").forEach(el=>el.onclick=()=>showFolder(el.dataset.folderId));
   }
 
+
+  function bindDragOrder(root,selector,orderedIds,onReorder){
+    if(!root||!orderedIds?.length)return;
+    let draggedId=null;
+    const elements=[...root.querySelectorAll(selector)].filter(el=>orderedIds.includes(el.dataset.id));
+    for(const el of elements){
+      el.draggable=true;
+      el.classList.add("localifyDraggable");
+      el.addEventListener("dragstart",e=>{
+        draggedId=el.dataset.id;
+        el.classList.add("localifyDragging");
+        e.dataTransfer.effectAllowed="move";
+        try{e.dataTransfer.setData("text/plain",draggedId)}catch{}
+      });
+      el.addEventListener("dragend",()=>{
+        draggedId=null;
+        elements.forEach(x=>x.classList.remove("localifyDragging","localifyDragOver"));
+      });
+      el.addEventListener("dragover",e=>{
+        if(!draggedId||draggedId===el.dataset.id)return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect="move";
+        elements.forEach(x=>x.classList.toggle("localifyDragOver",x===el));
+      });
+      el.addEventListener("drop",async e=>{
+        e.preventDefault();
+        const targetId=el.dataset.id,from=orderedIds.indexOf(draggedId),to=orderedIds.indexOf(targetId);
+        if(from<0||to<0||from===to)return;
+        const next=[...orderedIds],moved=next.splice(from,1)[0];next.splice(to,0,moved);
+        draggedId=null;
+        elements.forEach(x=>x.classList.remove("localifyDragging","localifyDragOver"));
+        await onReorder(next);
+      });
+    }
+  }
+  function reorderFolderType(folder,type,orderedIds){
+    const items=[...(folder.items||[])],slots=[];
+    items.forEach((item,index)=>{if(item?.type===type)slots.push(index)});
+    slots.forEach((slot,index)=>{if(orderedIds[index])items[slot]={...items[slot],id:orderedIds[index]}});
+    folder.items=items;
+  }
+
   function renderLiked(){
     const tracks=state.liked.map(trackById).filter(Boolean);
-    $("#content").innerHTML=`<div class="profileHero"><div>${collectionArt("liked")}</div><div><h2 class="viewTitle">Liked Songs</h2><div class="subtle">${tracks.length} liked ${tracks.length===1?"song":"songs"}</div><div class="entityActions">${tracks.length?`<button class="primary" id="playLiked">${uiIcon("play")} Play</button><button class="secondary" id="shuffleLiked">${uiIcon("shuffle")} Shuffle</button>`:""}</div></div></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("Nothing liked yet","Tap the heart beside any song to save it here.")}`;
+    $("#content").innerHTML=`<div class="profileHero"><div>${collectionArt("liked")}</div><div><h2 class="viewTitle">Liked Songs</h2><div class="subtle">${tracks.length} liked ${tracks.length===1?"song":"songs"}${tracks.length>1?" · Press the heart icon next to a song to like it":""}</div><div class="entityActions">${tracks.length?`<button class="primary" id="playLiked">${uiIcon("play")} Play</button><button class="secondary" id="shuffleLiked">${uiIcon("shuffle")} Shuffle</button>`:""}</div></div></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks,false,"liked","title",true)}</div>`:empty("Nothing liked yet","Tap the heart beside any song to save it here.")}`;
     if($("#playLiked"))$("#playLiked").onclick=()=>playQueue(tracks,0);
     if($("#shuffleLiked"))$("#shuffleLiked").onclick=()=>playQueue(shuffleArr(tracks),0);
     bindTrackTable();
+    bindDragOrder($("#content"),"tbody .track-row",tracks.map(t=>t.id),async order=>{state.liked=order;await save(true);renderLiked()});
   }
 
   function renderRecent(){
@@ -2006,7 +2174,15 @@ main{min-width:0;min-height:0}
   function albumCard(a){const tracks=__localifyCatalog().byAlbum.get(a.id)||[];const cover=coverForAlbum(a,a.cover);return `<div class="card album-open" data-id="${a.id}" style="cursor:pointer">${cover?`<div class="art"><img class="localifyCoverImage" src="${esc(cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer"></div>`:`<div class="art"><div class="fallback">${uiIcon("album")}</div></div>`}<div class="cardTitle">${esc(a.title)}</div><div class="cardSub">${artistLinksForAlbumHtml(a)} • ${tracks.length} songs • ${durationLabel(tracks)}</div></div>`}
   function bindAlbumCards(){$$(".album-open").forEach(e=>e.onclick=()=>showAlbum(e.dataset.id))}
 
-  function artistCard(a){const count=(__localifyCatalog().byArtist.get(a.id)||[]).length;return `<div class="card artist-open" data-id="${a.id}" style="cursor:pointer">${a.image?`<div class="art" style="border-radius:50%"><img class="localifyCoverImage" src="${esc(a.image)}" alt=""></div>`:`<div class="art artistFallback" style="border-radius:50%">${fallbackArt("artist")}</div>`}<div class="cardTitle">${esc(a.name)}</div><div class="cardSub">${count} songs</div></div>`}
+  function artistCard(a){
+    const count=(__localifyCatalog().byArtist.get(a.id)||[]).length;
+    const selected=(state.selectedArtists||[]).includes(a.id);
+    return `<div class="card artist-open" data-id="${esc(a.id)}" style="cursor:pointer;position:relative">
+      ${a.image?`<div class="art" style="border-radius:50%"><img class="localifyCoverImage" src="${esc(a.image)}" alt=""></div>`:`<div class="art artistFallback" style="border-radius:50%">${fallbackArt("artist")}</div>`}
+      <div class="cardTitle">${esc(artistDisplayName(a))}</div><div class="cardSub">${count} songs</div>
+      <label class="artist-select-box" title="Select artist" aria-label="Select ${esc(artistDisplayName(a))}"><input type="checkbox" data-artist-select="${esc(a.id)}" ${selected?"checked":""}></label>
+    </div>`;
+  }
   function playlistCard(p){return `<div class="card playlist-open" data-id="${p.id}" style="cursor:pointer">${p.cover?`<div class="art"><img class="localifyCoverImage" src="${esc(p.cover)}" alt=""></div>`:`<div class="art"><div class="fallback">${uiIcon("playlist")}</div></div>`}<div class="cardTitle">${esc(p.name)}</div><div class="cardSub">${p.trackIds.length} songs • ${durationLabel(p.trackIds.map(trackById).filter(Boolean))}</div></div>`}
 
   function trackTableScope(){
@@ -2039,7 +2215,7 @@ main{min-width:0;min-height:0}
   function trackTable(tracks,cleanTrackPrefixes=false,scope=trackTableScope(),defaultKey="title",disableSort=false){
     const list=disableSort?[...tracks]:sortedTrackTableTracks(tracks,scope,defaultKey);
     const pageKey="tracks:"+scope, count=Math.min(list.length,localifyPage(pageKey)*LOCALIFY_LARGE_PAGE),visible=list.slice(0,count);
-    return `<table><thead><tr><th style="width:54px"></th><th>${sortHeader("Title","title",scope,disableSort)}</th><th>${sortHeader("Artist","artist",scope,disableSort)}</th><th>${sortHeader("Album","album",scope,disableSort)}</th><th>${sortHeader("Duration","duration",scope,disableSort)}</th><th class="actionsHead"><input class="trackCheck selectAll" type="checkbox" ${visible.length&&visible.every(t=>state.selected.includes(t.id))?"checked":""} aria-label="Select all"></th></tr></thead><tbody>${visible.map(t=>`<tr data-id="${t.id}" class="track-row ${state.currentId===t.id&&!audio.paused?"isPlaying":""}"><td><button class="rowPlay play-row ${state.currentId===t.id&&!audio.paused?"isPlaying":""}" title="${state.currentId===t.id&&!audio.paused?"Pause":"Play"}">${state.currentId===t.id&&!audio.paused?uiIcon("pause"):uiIcon("play")}</button></td><td><div class="trackCell">${artBox(t,"miniArt")}<div class="miniText"><div class="miniTitle">${esc(displayTrackTitle(t,cleanTrackPrefixes))}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="miniSub">${artistLinksForTrackHtml(t,true)}</div></div></div></td><td>${artistLinksForTrackHtml(t)}</td><td>${albumLinkForTrackHtml(t)}</td><td><div class="trackDurationCell">${trackDurationContent(t)}</div></td><td><div class="rowActions"><button class="circle like-row ${state.liked.includes(t.id)?"liked":""}" title="Like" aria-label="Like">${uiIcon("heart")}</button><button class="circle more-row iconOnly" title="More" aria-label="More">${uiIcon("more")}</button><input class="trackCheck rowCheck" type="checkbox" ${state.selected.includes(t.id)?"checked":""} aria-label="Select ${esc(t.title)}"></div></td></tr>`).join("")}</tbody></table>`+localifyLoadMoreHtml(pageKey,list.length,count);
+    return `<table><thead><tr><th style="width:54px"></th><th>${sortHeader("Title","title",scope,disableSort)}</th><th>${sortHeader("Artist","artist",scope,disableSort)}</th><th>${sortHeader("Album","album",scope,disableSort)}</th><th>${sortHeader("Duration","duration",scope,disableSort)}</th><th class="actionsHead"><input class="trackCheck selectAll" type="checkbox" ${visible.length&&visible.every(t=>state.selected.includes(t.id))?"checked":""} aria-label="Select all"></th></tr></thead><tbody>${visible.map(t=>`<tr data-id="${t.id}" class="track-row ${state.currentId===t.id&&!audio.paused?"isPlaying":""}"><td><button class="rowPlay play-row ${state.currentId===t.id&&!audio.paused?"isPlaying":""}" title="${state.currentId===t.id&&!audio.paused?"Pause":"Play"}">${state.currentId===t.id&&!audio.paused?uiIcon("pause"):uiIcon("play")}</button></td><td><div class="trackCell">${artBox(t,"miniArt")}<div class="miniText"><div class="miniTitle">${esc(displayTrackTitle(t,cleanTrackPrefixes))}${t.explicit?`<span class="badge">E</span>`:""}</div><div class="miniSub">${artistLinksForTrackHtml(t)}</div></div></div></td><td>${artistLinksForTrackHtml(t)}</td><td>${albumLinkForTrackHtml(t)}</td><td><div class="trackDurationCell">${trackDurationContent(t)}</div></td><td><div class="rowActions"><button class="circle like-row ${state.liked.includes(t.id)?"liked":""}" title="Like" aria-label="Like">${uiIcon("heart")}</button><button class="circle more-row iconOnly" title="More" aria-label="More">${uiIcon("more")}</button><input class="trackCheck rowCheck" type="checkbox" ${state.selected.includes(t.id)?"checked":""} aria-label="Select ${esc(t.title)}"></div></td></tr>`).join("")}</tbody></table>`+localifyLoadMoreHtml(pageKey,list.length,count);
   }
   function selectionBar(tracks){
     const ids=tracks.map(t=>t.id); const selected=ids.filter(id=>state.selected.includes(id));
@@ -2117,9 +2293,10 @@ main{min-width:0;min-height:0}
   function showPlaylist(id,keepDetail=false){
     const p=playlistById(id);if(!p)return; state.detail={type:"playlist",id};
     const tracks=p.trackIds.map(trackById).filter(Boolean);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${p.cover?`<img class="localifyCoverImage" src="${esc(p.cover)}" alt="">`:fallbackArt("playlist")}</div><div><h2 class="viewTitle">${esc(p.name)}</h2><div class="subtle">${tracks.length} songs • ${durationLabel(tracks)}</div><div class="entityActions"><button class="primary" id="plPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="plAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="plEdit" title="Edit playlist" aria-label="Edit playlist">${uiIcon("edit")}</button><button class="dangerBtn" id="plDelete">Delete playlist</button></div></div></div>${p.description?`<div class="subtle">${esc(p.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,false,"playlist:"+id,"title")}</div></div>`:empty("Playlist is empty","Add songs from your files or from a song menu.")}`;
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${p.cover?`<img class="localifyCoverImage" src="${esc(p.cover)}" alt="">`:fallbackArt("playlist")}</div><div><h2 class="viewTitle">${esc(p.name)}</h2><div class="subtle">${tracks.length} songs • ${durationLabel(tracks)}${tracks.length>1?" · Drag songs to reorder":""}</div><div class="entityActions"><button class="primary" id="plPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="plAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="plEdit" title="Edit playlist" aria-label="Edit playlist">${uiIcon("edit")}</button><button class="dangerBtn" id="plDelete">Delete playlist</button></div></div></div>${p.description?`<div class="subtle">${esc(p.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,false,"playlist:"+id,"title",true)}</div></div>`:empty("Playlist is empty","Add songs from your files or from a song menu.")}`;
     $("#plPlay").onclick=()=>playQueue(tracks,0);$("#plAdd").onclick=()=>pickFiles({playlistId:id});$("#plEdit").onclick=()=>editPlaylist(id);$("#plDelete").onclick=async()=>deletePlaylist(id);
     bindTrackTable();
+    bindDragOrder($("#content"),"tbody .track-row",p.trackIds.filter(trackById),async order=>{p.trackIds=order;await save(true);showPlaylist(id)});
     applyContextArtworkTheme();
   }
   function playlistCompare(a,b,k){const dir=1;const av=k==='title'?a.title:k==='artist'?artistName(a):k==='album'?albumName(a):k==='duration'?a.duration:a.addedAt||0;const bv=k==='title'?b.title:k==='artist'?artistName(b):k==='album'?albumName(b):k==='duration'?b.duration:b.addedAt||0;return typeof av==='number'&&typeof bv==='number'?(av-bv)*dir:String(av).localeCompare(String(bv),undefined,{numeric:true})*dir}
@@ -3209,6 +3386,7 @@ main{min-width:0;min-height:0}
     if(!state.queue.length)return;
     state.queueIndex++;
     if(state.queueIndex>=state.queue.length){
+      if(state.settings.shuffle){const source=(queueBase||[]).filter(id=>trackById(id));const pool=source.length?source:state.tracks.map(t=>t.id);const current=state.currentId;const fresh=shuffleArr(pool);if(fresh.length>1&&fresh[0]===current){[fresh[0],fresh[1]]=[fresh[1],fresh[0]]}state.queue=fresh;state.queueIndex=0;if(!state.queue.length){audio.pause();renderPlayer();return}return playCurrent();}
       if(state.settings.repeat==="all"){
         if(state.settings.shuffle){
           const current=state.currentId;
@@ -3230,7 +3408,7 @@ main{min-width:0;min-height:0}
   function creditListeningTime(){const now=Date.now(),id=state.currentId;if(!id||audio.paused){analyticsRuntime.lastAt=now;analyticsRuntime.trackId=id||null;analyticsRuntime.lastPlaybackTime=null;return}if(!analyticsRuntime.lastAt||analyticsRuntime.trackId!==id){analyticsRuntime.lastAt=now;analyticsRuntime.trackId=id;analyticsRuntime.lastPlaybackTime=Number(audio.currentTime)||0;return}const delta=Math.min(5,Math.max(0,(now-analyticsRuntime.lastAt)/1000));if(delta>0){ensureAnalytics();analyticsRuntime.sessionSeconds+=delta;state.analytics.totalSeconds=(Number(state.analytics.totalSeconds)||0)+delta;state.analytics.trackSeconds[id]=(Number(state.analytics.trackSeconds[id])||0)+delta;const day=analyticsDayKey(now);state.analytics.days[day]=(Number(state.analytics.days[day])||0)+delta}const playbackNow=Number(audio.currentTime)||0,playbackDelta=analyticsRuntime.lastPlaybackTime===null?0:playbackNow-analyticsRuntime.lastPlaybackTime;if(!audio.seeking&&playbackDelta>0&&playbackDelta<=3.5)analyticsRuntime.listenedSeconds+=playbackDelta;analyticsRuntime.lastPlaybackTime=playbackNow;analyticsRuntime.lastAt=now;markTrackListenedThrough(id);if(now-analyticsRuntime.lastSaveAt>10000){analyticsRuntime.lastSaveAt=now;autoSave()}}
   function startAnalyticsSession(id){ensureAnalytics();recordTrackPlay(id);analyticsRuntime.lastAt=Date.now();analyticsRuntime.trackId=id;analyticsRuntime.sessionSeconds=0;analyticsRuntime.listenedSeconds=0;analyticsRuntime.lastPlaybackTime=Number(audio.currentTime)||0;autoSave()}
   function trackDurationContent(t){const done=state.analytics?.completed?.[t.id]===true;return '<span>'+esc(fmt(t.duration))+'</span>'+(done?'<span class="trackCompleteMark" title="Listened through" aria-label="Listened through">✓</span>':"")}
-  function markTrackListenedThrough(id){const t=trackById(id),duration=Number(audio.duration)||Number(t?.duration)||0;if(!t||!Number.isFinite(duration)||duration<=0||analyticsRuntime.trackId!==id||analyticsRuntime.listenedSeconds<duration*.9)return false;ensureAnalytics();if(state.analytics.completed[id])return false;state.analytics.completed[id]=true;autoSave();$(".track-row").forEach(row=>{if(row.dataset.id===id){const cell=row.querySelector(".trackDurationCell");if(cell)cell.innerHTML=trackDurationContent(t)}});return true}
+  function markTrackListenedThrough(id){const t=trackById(id),duration=Number(audio.duration)||Number(t?.duration)||0;if(!t||!Number.isFinite(duration)||duration<=0||analyticsRuntime.trackId!==id||analyticsRuntime.listenedSeconds<duration*.9)return false;ensureAnalytics();if(state.analytics.completed[id])return false;state.analytics.completed[id]=true;autoSave();$$(".track-row").forEach(row=>{if(row.dataset.id===id){const cell=row.querySelector(".trackDurationCell");if(cell)cell.innerHTML=trackDurationContent(t)}});return true}
   function formatHours(seconds){const h=(Number(seconds)||0)/3600;if(h<1)return Math.round(h*60)+" min";return h<10?h.toFixed(1)+" hr":Math.round(h)+" hr"}
   function recentAnalyticsDays(days=7){const out=[],now=Date.now();for(let i=days-1;i>=0;i--){const d=new Date(now-i*86400000);const key=analyticsDayKey(d.getTime());out.push([key,Number(state.analytics?.days?.[key])||0])}return out}
   function profileTopSongs(limit=10){ensureAnalytics();return Object.entries(state.analytics.plays).map(([id,count])=>({t:trackById(id),count:Number(count)||0,seconds:Number(state.analytics.trackSeconds[id])||0})).filter(x=>x.t).sort((a,b)=>b.count-a.count||b.seconds-a.seconds).slice(0,limit)}
@@ -3474,6 +3652,8 @@ function editLocalProfile(){
 
   function showAccountSettings(){
     closeProfileMenu();
+    // Account settings only exposes built-in preset themes; fall back from any legacy custom theme.
+    if(!localifyThemes.some(t=>t.id===state.settings.theme)){state.settings.theme="blue";applyTheme();save().catch(e=>console.warn("Could not save preset theme fallback",e));}
     state.currentView="accountSettings";
     state.detail=null;
     state.selected=[];
@@ -3485,6 +3665,10 @@ function editLocalProfile(){
       '<div class="section settingsPage" style="margin-top:0">'+
         '<div class="sectionHead"><div><h2 style="font-size:30px;letter-spacing:-1px;margin:0">Account settings</h2><span>Playback, Discord and library preferences.</span></div><div class="sectionHeadActions"><button type="button" class="secondary" id="accountSettingsBack">Back to profile</button></div></div>'+
         '<div class="settingsGrid">'+
+          '<section class="settingsSection">'+
+            '<div class="settingsSectionHead"><div><div class="settingsSectionTitle">Themes</div><div class="settingsSectionSub">Choose a colourful gradient theme for the whole Localify interface. Your choice is saved on this device.</div></div></div>'+
+            '<div class="themeGrid">'+localifyThemes.map(t=>'<button type="button" class="themeChoice '+((state.settings.theme||"blue")===t.id?"active":"")+'" data-theme="'+esc(t.id)+'"><div class="themeSwatch" style="background:'+esc(t.swatch)+'"></div><strong>'+esc(t.name)+'</strong><span>'+esc(t.desc||"Theme")+'</span></button>').join("")+'</div>'+
+          '</section>'+
           '<section class="settingsSection">'+
             '<div class="settingsSectionHead"><div><div class="settingsSectionTitle">Discord Rich Presence</div><div class="settingsSectionSub">Connect the Localify Discord Connector and control what appears in Discord.</div></div></div>'+
             '<div class="settingsToggleRow"><div class="settingsToggleCopy"><strong>Show listening status</strong><span>Show your current song and artist while music is playing.</span></div><input type="checkbox" id="accountDiscord" '+(enabled?'checked':'')+'></div>'+
@@ -3505,6 +3689,7 @@ function editLocalProfile(){
       '</div>';
     const back=$("#accountSettingsBack");
     if(back)back.onclick=()=>showProfile();
+    $$(".themeChoice").forEach(button=>{button.onclick=()=>chooseTheme(button.dataset.theme).then(()=>showAccountSettings())});
     const discord=$("#accountDiscord");
     if(discord)discord.onchange=async e=>{
       state.settings.discordPresence=!!e.target.checked;
@@ -3543,6 +3728,88 @@ function editLocalProfile(){
         await unlockPersistentStorage();
       }catch(e){console.warn("Localify storage check failed",e);toast("Could not check persistent storage in this browser.");}
     };
+  }
+
+  function bindCustomThemeEditor(){
+    const editor=$("#customThemeEditor"),create=$("#createCustomTheme");
+    if(!editor)return;
+    const theme=activeLocalifyTheme(),isCustom=(state.settings.customThemes||[]).some(t=>t.id===theme.id);if(isCustom){theme.topbar=theme.topbar||theme.panel;theme.player=theme.player||theme.panel;theme.nowPlaying=theme.nowPlaying||theme.panel2;theme.navText=theme.navText||theme.text;theme.button=theme.button||theme.panel2;theme.input=theme.input||theme.panel2;theme.hover=theme.hover||theme.panel3;}
+    const fields=[["bg","Page background"],["panel","Main panels"],["panel2","Raised panels"],["panel3","Cards / surfaces"],["sidebar","Navigation sidebar"],["topbar","Top bar"],["player","Bottom player bar"],["nowPlaying","Now playing panel"],["border","Borders"],["text","Main text"],["muted","Muted text"],["navText","Navigation text"],["button","Buttons"],["input","Input fields"],["hover","Hover / selected"],["a","Accent 1"],["b","Accent 2"]];
+    editor.innerHTML='<div class="customThemeEditor"><div class="customThemeEditorHead"><strong>Customise: '+esc(theme.name)+'</strong><span class="settingsSectionSub">'+(isCustom?"Your custom theme":"Built-in themes stay unchanged — create a copy to edit them.")+'</span></div>'+
+      (isCustom?'<div class="customThemeField"><label>Theme name</label><input type="text" id="customThemeName" maxlength="32" value="'+esc(theme.name)+'" style="background:#111820;border:1px solid #303946;border-radius:8px;padding:10px;color:#e5eaf0"></div><div class="customThemeFields">'+fields.map(([key,label])=>{const value=/^#[0-9a-f]{6}$/i.test(theme[key]||"")?theme[key]:"#888888",n=parseInt(value.slice(1),16),rgb=[(n>>16)&255,(n>>8)&255,n&255].join(", ");return '<div class="customThemeField"><label>'+label+'</label><div class="customThemeColorRow"><input type="color" data-theme-color="'+key+'" value="'+value+'"><div><input type="text" data-theme-hex="'+key+'" value="'+value+'" maxlength="7" aria-label="'+label+' hex colour"><input type="text" data-theme-rgb="'+key+'" value="'+rgb+'" aria-label="'+label+' RGB values" placeholder="R, G, B"></div></div></div>'}).join("")+'</div>'+
+      '':
+      '<div class="settingsSectionSub">Press “Create custom theme” to make an editable copy of this theme. You can then change every colour.</div>')+
+      '</div>';
+    if(create)create.onclick=async()=>{
+      const base=activeLocalifyTheme(),copy={...base,id:"custom-"+uid(),name:"My Theme",desc:"My custom colours",swatch:"linear-gradient(120deg,"+(base.a||"#6096c8")+","+(base.b||"#354f78")+")",image:""};
+      state.settings.customThemes=[...(state.settings.customThemes||[]),copy];state.settings.theme=copy.id;await save();showAccountSettings();
+    };
+    const customGrid=$("#customThemeGrid");
+    if(customGrid)customGrid.onclick=async event=>{
+      const menuButton=event.target.closest("[data-custom-menu]");
+      if(menuButton){const id=menuButton.dataset.customMenu,panel=customGrid.querySelector('[data-custom-menu-panel="'+id+'"]');customGrid.querySelectorAll("[data-custom-menu-panel]").forEach(p=>{if(p!==panel)p.hidden=true});if(panel)panel.hidden=!panel.hidden;return}
+      const exportButton=event.target.closest("[data-export-theme]");
+      if(exportButton){const item=(state.settings.customThemes||[]).find(t=>t.id===exportButton.dataset.exportTheme);if(!item)return;const blob=new Blob([JSON.stringify({format:"LocalifyThemes",version:1,themes:[item]},null,2)],{type:"application/json"});const url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=(item.name||"Localify-theme").replace(/[^a-z0-9_-]+/gi,"-")+".json";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);return}
+      const removeButton=event.target.closest("[data-remove-theme]");
+      if(removeButton){const id=removeButton.dataset.removeTheme;state.settings.customThemes=(state.settings.customThemes||[]).filter(t=>t.id!==id);if(state.settings.theme===id){state.settings.theme="blue";applyTheme()}await save();showAccountSettings();return}
+      const selectButton=event.target.closest("[data-custom-theme]");
+      if(selectButton){await chooseTheme(selectButton.dataset.customTheme);showAccountSettings()}
+    };
+
+    const importButton=$("#importCustomThemes"),importInput=$("#customThemesImportFile");
+    if(importButton&&importInput)importButton.onclick=()=>{importInput.value="";importInput.click()};
+    if(importInput)importInput.onchange=async()=>{
+      const file=importInput.files?.[0];if(!file)return;
+      if(file.size>12*1024*1024){toast("Theme file is too large (12 MB maximum).");return}
+      try{
+        const parsed=JSON.parse(await file.text());
+        const incoming=Array.isArray(parsed)?parsed:parsed?.themes;
+        if((parsed?.format&&parsed.format!=="LocalifyThemes")||!Array.isArray(incoming)||!incoming.length||incoming.length>100)throw new Error("This is not a valid Localify theme file.");
+        const allowed=["bg","panel","panel2","panel3","sidebar","topbar","player","nowPlaying","border","text","muted","navText","button","input","hover","a","b"];
+        const clean=incoming.map((raw,index)=>{
+          if(!raw||typeof raw!=="object")throw new Error("A theme entry is invalid.");
+          const t={id:"custom-"+uid(),name:String(raw.name||("Imported Theme "+(index+1))).slice(0,32),desc:"Imported custom theme"};
+          for(const key of allowed){const value=raw[key];if(value!==undefined){if(typeof value!=="string"||!/^#[0-9a-f]{6}$/i.test(value))throw new Error("A theme contains an invalid colour.");t[key]=value}}
+          for(const key of ["bg","panel","panel2","panel3","sidebar","border","a","b"])if(!t[key])throw new Error("A theme is missing required colours.");
+          t.c=t.b;t.hover=typeof raw.hover==="string"&&/^#[0-9a-f]{6}$/i.test(raw.hover)?raw.hover:t.panel3;
+          t.swatch="linear-gradient(120deg,"+t.a+","+t.b+")";
+          if(typeof raw.image==="string"&&raw.image.startsWith("data:image/")&&raw.image.length<10*1024*1024)t.image=raw.image;
+          return t;
+        });
+        state.settings.customThemes=[...(state.settings.customThemes||[]),...clean];
+        state.settings.theme=clean[0].id;applyTheme();await save();showAccountSettings();
+        toast("Imported "+clean.length+" custom theme"+(clean.length===1?"":"s")+".");
+      }catch(error){console.warn("Custom theme import failed",error);toast(error.message||"Could not import that theme file.");}
+    };
+    editor.querySelectorAll("[data-theme-color]").forEach(input=>input.oninput=async()=>{
+      if(!isCustom)return;
+      const key=input.dataset.themeColor,value=input.value,custom=state.settings.customThemes.find(t=>t.id===theme.id);if(!custom)return;
+      custom[key]=value;
+      if(key==="a"||key==="b"){custom.swatch="linear-gradient(120deg,"+custom.a+","+custom.b+")";custom.c=custom.b}
+      const hex=editor.querySelector('[data-theme-hex="'+key+'"]');if(hex)hex.value=value;
+      const rgb=editor.querySelector('[data-theme-rgb="'+key+'"]');if(rgb){const n=parseInt(value.slice(1),16);rgb.value=[(n>>16)&255,(n>>8)&255,n&255].join(", ")}
+      applyTheme();await save();
+    });
+    editor.querySelectorAll("[data-theme-hex]").forEach(input=>input.onchange=async()=>{
+      if(!isCustom)return;
+      const value=input.value.trim(),key=input.dataset.themeHex;
+      if(!/^#[0-9a-f]{6}$/i.test(value)){input.value=theme[key]||"#888888";return}
+      const custom=state.settings.customThemes.find(t=>t.id===theme.id);if(!custom)return;
+      custom[key]=value;const picker=editor.querySelector('[data-theme-color="'+key+'"]');if(picker)picker.value=value;
+      if(key==="a"||key==="b"){custom.swatch="linear-gradient(120deg,"+custom.a+","+custom.b+")";custom.c=custom.b}
+      applyTheme();await save();showAccountSettings();
+    });
+    const nameInput=$("#customThemeName");
+    if(nameInput)nameInput.onchange=async()=>{const custom=state.settings.customThemes.find(t=>t.id===theme.id);if(custom){custom.name=nameInput.value.trim().slice(0,32)||"My Theme";await save();showAccountSettings()}};
+    editor.querySelectorAll("[data-theme-rgb]").forEach(input=>input.onchange=async()=>{
+      if(!isCustom)return;
+      const parts=input.value.split(/[ ,]+/).filter(Boolean).map(Number);
+      if(parts.length!==3||parts.some(n=>!Number.isInteger(n)||n<0||n>255)){input.value="";toast("Enter RGB values from 0 to 255, like 40, 120, 200.");return}
+      const value="#"+parts.map(n=>n.toString(16).padStart(2,"0")).join(""),key=input.dataset.themeRgb,custom=state.settings.customThemes.find(t=>t.id===theme.id);if(!custom)return;
+      custom[key]=value;const picker=editor.querySelector('[data-theme-color="'+key+'"]'),hex=editor.querySelector('[data-theme-hex="'+key+'"]');if(picker)picker.value=value;if(hex)hex.value=value;
+      if(key==="a"||key==="b"){custom.swatch="linear-gradient(120deg,"+custom.a+","+custom.b+")";custom.c=custom.b}
+      applyTheme();await save();showAccountSettings();
+    });
   }
 
   function openSettingsPanel(){showAccountSettings()}
@@ -3924,7 +4191,7 @@ function editLocalProfile(){
 
         ${field("Year","songYear",t.year||"")}${field("Genre","songGenre",t.genre||"")}${field("Track #","songTrack",t.track||"")}${field("Disc #","songDisc",t.disc||"")}
         <div class="field full"><label><input id="songExplicit" type="checkbox" ${t.explicit?"checked":""}> Explicit</label></div>
-        <div class="field full"><div class="lrcFieldHead"><label for="songLyrics">Lyrics</label><button type="button" class="secondary small" id="openLrcEditor">${uiIcon("mic")} Sync lyrics (LRC)</button></div><textarea id="songLyrics" class="lyricsEditor" spellcheck="false">${esc(t.lyrics||"")}</textarea><div class="lyricsHint">Paste regular lyrics here, or use Sync lyrics to timestamp lines and individual words while the song plays.</div><div class="lrcInline" id="lrcInline" hidden><div class="lrcInlineTop"><div><strong>Sync lyrics</strong><div class="help">Play the song, then click a sentence to timestamp the whole line or click words to timestamp just those words.</div></div><span class="lrcLiveTime" id="lrcLiveTime">00:00.00</span></div><div class="lrcTransport"><button type="button" class="secondary" id="lrcPlay">${uiIcon("play")} Play</button><button type="button" class="secondary" id="lrcPause">${uiIcon("pause")} Pause</button><button type="button" class="secondary" id="lrcSeekBack">−5 sec</button><button type="button" class="secondary" id="lrcSeekForward">+5 sec</button><button type="button" class="secondary small" id="lrcImport">Import</button><button type="button" class="secondary small" id="lrcExport">Export</button><input type="file" id="lrcImportFile" accept=".lrc,.txt,text/plain" hidden></div><input type="range" id="lrcSeek" min="0" max="1000" value="0" step="1" aria-label="Song position" class="lrcSeek"><div class="lrcLines" id="lrcLines"></div><div class="lrcInlineFoot"><span class="help" id="lrcSelectionHint">Select a lyric line to begin.</span><button type="button" class="primary small" id="lrcSetTime">${uiIcon("clock")} Set timestamp</button></div><div class="lrcInlineActions"><button type="button" class="secondary small" id="lrcClearTimes">Clear timestamps</button><button type="button" class="primary small" id="lrcApply">Use synced lyrics</button></div></div></div>
+        <div class="field full"><div class="lrcFieldHead"><label for="songLyrics">Lyrics</label><button type="button" class="secondary small" id="openLrcEditor">${uiIcon("mic")} Sync lyrics (LRC)</button></div><textarea id="songLyrics" class="lyricsEditor" spellcheck="false">${esc(t.lyrics||"")}</textarea><div class="lyricsHint">Paste regular lyrics here, or use Sync lyrics to timestamp lines and individual words while the song plays.</div><div class="lrcInline" id="lrcInline" hidden><div class="lrcInlineTop"><div><strong>Sync lyrics</strong><div class="help">Choose whether clicks select whole sentences or individual words.</div></div><span class="lrcLiveTime" id="lrcLiveTime">00:00.00</span></div><div class="lrcSelectionMode"><label for="lrcSelectionMode">Click selection</label><select id="lrcSelectionMode"><option value="words">Words</option><option value="sentences">Sentences</option></select></div><div class="lrcTransport"><button type="button" class="secondary" id="lrcPlay">${uiIcon("play")} Play</button><button type="button" class="secondary" id="lrcPause">${uiIcon("pause")} Pause</button><button type="button" class="secondary" id="lrcSeekBack">−5 sec</button><button type="button" class="secondary" id="lrcSeekForward">+5 sec</button><button type="button" class="secondary small" id="lrcImport">Import</button><button type="button" class="secondary small" id="lrcExport">Export</button><input type="file" id="lrcImportFile" accept=".lrc,.txt,text/plain" hidden></div><input type="range" id="lrcSeek" min="0" max="1000" value="0" step="1" aria-label="Song position" class="lrcSeek"><div class="lrcLines" id="lrcLines"></div><div class="lrcInlineFoot"><span class="help" id="lrcSelectionHint">Select a lyric line to begin.</span><button type="button" class="primary small" id="lrcSetTime">${uiIcon("clock")} Set timestamp</button></div><div class="lrcInlineActions"><button type="button" class="secondary small" id="lrcClearTimes">Clear timestamps</button><button type="button" class="primary small" id="lrcApply">Use synced lyrics</button></div></div></div>
         <div class="field full"><label>Credits</label><div class="formGrid">${field("Producer(s)","credProducer",creditList(t.credits,"producer"))}${field("Songwriter(s)","credSongwriter",creditList(t.credits,"songwriter"))}${field("Composer(s)","credComposer",creditList(t.credits,"composer"))}${field("Publisher(s)","credPublisher",creditList(t.credits,"publisher"))}</div></div>
       </div><div class="modalFoot"><button class="secondary" id="cancelEdit">Cancel</button><button class="primary" id="saveEdit">Save changes</button></div>`;
   }
@@ -3953,7 +4220,7 @@ function editLocalProfile(){
 
   function bindLrcEditor(trackId){
     const open=$("#openLrcEditor"),panel=$("#lrcInline"),textarea=$("#songLyrics");if(!open||!panel||!textarea)return;
-    let selectedLine=-1,selectedWords=new Set(),lastWord=-1,lines=[],wordTimes=[];
+    let selectedLine=-1,selectedWords=new Set(),lastWord=-1,lines=[],wordTimes=[],selectionMode=state.settings.lrcSelectionMode==="sentences"?"sentences":"words";
     const timeText=sec=>{sec=Math.max(0,Number(sec)||0);return String(Math.floor(sec/60)).padStart(2,"0")+":"+((sec%60).toFixed(2)).padStart(5,"0")};
     const parse=()=>{
       lines=[];wordTimes=[];
@@ -3967,17 +4234,20 @@ function editLocalProfile(){
       });
     };
     const render=()=>{
-      $("#lrcLines").innerHTML=lines.map((line,i)=>'<div class="lrcLine '+(selectedLine===i?"selected":"")+'" data-lrc-line="'+i+'"><span class="lrcLineTime">'+(line.time===null?"— —":timeText(line.time))+'</span><span class="lrcLineWords">'+wordTimes[i].map((w,j)=>/^\s+$/.test(w.word)?esc(w.word):'<button type="button" class="lrcWord '+(selectedLine===i&&selectedWords.has(j)?"selected":"")+'" data-lrc-word="'+j+'">'+esc(w.word||"·")+'</button>').join("")+'</span></div>').join("");
-      $("#lrcSelectionHint").textContent=selectedLine<0?"Select a line or one or more words to timestamp them.":selectedWords.size?selectedWords.size+" word"+(selectedWords.size===1?"":"s")+" selected · set their timestamp.":"Line selected · set its timestamp.";
+      const mode=$("#lrcSelectionMode");if(mode)mode.value=selectionMode;
+      $("#lrcLines").innerHTML=lines.map((line,i)=>'<div class="lrcLine '+(selectedLine===i?"selected":"")+'" data-lrc-line="'+i+'"><span class="lrcLineTime">'+(line.time===null?"— —":timeText(line.time))+'</span><span class="lrcLineWords">'+wordTimes[i].map((w,j)=>/^\s+$/.test(w.word)?esc(w.word):selectionMode==="words"?'<button type="button" class="lrcWord '+(selectedLine===i&&selectedWords.has(j)?"selected":"")+'" data-lrc-word="'+j+'">'+esc(w.word||"·")+'</button>':'<span class="lrcWord">'+esc(w.word||"·")+'</span>').join("")+'</span></div>').join("");
+      $("#lrcSelectionHint").textContent=selectedLine<0?(selectionMode==="words"?"Click a word to select it. Use Ctrl/Cmd-click or Shift-click to select multiple words.":"Click a sentence to select the whole line."):(selectedWords.size?selectedWords.size+" word"+(selectedWords.size===1?"":"s")+" selected · set their timestamp.":"Sentence selected · set its timestamp.");
     };
     const currentTime=()=>audio.dataset.localifyTrackId===trackId?audio.currentTime:0,refreshClock=()=>{$("#lrcLiveTime").textContent=timeText(currentTime())};
     const setAtCurrent=()=>{if(selectedLine<0){toast("Select a lyric line or word first.");return}if(selectedWords.size){selectedWords.forEach(j=>{if(wordTimes[selectedLine][j])wordTimes[selectedLine][j].time=currentTime()})}else lines[selectedLine].time=currentTime();render();markDirty();refreshClock()};
     const toLrc=()=>lines.map((line,i)=>{const prefix=line.time===null?"":"["+timeText(line.time)+"]",words=wordTimes[i];return words.some(w=>w.time!==null)?prefix+words.map(w=>(w.time===null?"":"<"+timeText(w.time)+">")+w.word).join(""):prefix+line.body}).join("\n");
     const applyImported=content=>{textarea.value=content.replace(/^\uFEFF/,"").replace(/\r\n?/g,"\n");parse();selectedLine=-1;selectedWords.clear();lastWord=-1;render();markDirty();toast("LRC imported. Save changes to keep it.")};
     open.onclick=()=>{parse();selectedLine=-1;selectedWords.clear();lastWord=-1;panel.hidden=!panel.hidden;if(!panel.hidden){render();refreshClock();panel.scrollIntoView({block:"nearest",behavior:"smooth"})}};
+    $("#lrcSelectionMode").onchange=async e=>{selectionMode=e.target.value==="sentences"?"sentences":"words";state.settings.lrcSelectionMode=selectionMode;selectedLine=-1;selectedWords.clear();lastWord=-1;render();await save()};
     $("#lrcLines").onclick=e=>{
       const row=e.target.closest("[data-lrc-line]");if(!row)return;
-      const lineIndex=Number(row.dataset.lrcLine),word=e.target.closest("[data-lrc-word]");
+      const lineIndex=Number(row.dataset.lrcLine),word=selectionMode==="words"?e.target.closest("[data-lrc-word]"):null;
+      if(selectionMode==="words"&&!word)return;
       if(!word){selectedLine=lineIndex;selectedWords.clear();lastWord=-1;render();return}
       const wordIndex=Number(word.dataset.lrcWord);
       if(selectedLine!==lineIndex){selectedLine=lineIndex;selectedWords.clear();lastWord=-1}
@@ -4004,14 +4274,61 @@ function editLocalProfile(){
 
   async function bulkEdit(tracks){
     if(!tracks.length)return;
-    const m=setModal(`<div class="modalHead"><h2>Edit ${tracks.length} songs</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="help">Only fields you enable will change. Leave everything else untouched.</div><div class="formGrid" style="margin-top:16px"><div class="field full"><label class="bulkFieldToggle"><input id="applyArtist" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set artists</span></label>${artistPickerHtml("bulkArtists",[])} </div><div class="field full"><label class="bulkFieldToggle"><input id="applyAlbum" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set album</span></label><select id="bulkAlbum"><option value="">None</option>${albumOptions()}</select></div><div class="field full"><label class="bulkFieldToggle"><input id="applyAlbumArtist" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set album artists</span></label>${artistPickerHtml("bulkAlbumArtists",[])}</div><div class="field"><label class="bulkFieldToggle"><input id="applyGenre" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set genre</span></label><input id="bulkGenre"></div><div class="field"><label class="bulkFieldToggle"><input id="applyYear" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set year</span></label><input id="bulkYear"></div><div class="field"><label class="bulkFieldToggle"><input id="applyExplicit" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Explicit</span></label><select id="bulkExplicit">${yesNoOptions("keep")}</select></div><div class="field full"><label class="bulkFieldToggle"><input id="applyCover" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Apply same artwork</span></label><div><button class="secondary" id="bulkCoverBtn">Choose artwork</button><span class="help" id="bulkCoverState" style="margin-left:8px">No artwork selected</span></div></div></div><div class="modalFoot"><button class="secondary" id="bulkCancel">Cancel</button><button class="primary" id="bulkSave">Apply changes</button></div>`,{large:true});
-    bindModalDirty();let cover=null;$("#closeModal").onclick=()=>closeModal();$("#bulkCancel").onclick=()=>closeModal();$("#bulkCoverBtn").onclick=()=>imagePicker(null,d=>{cover=d;$("#bulkCoverState").textContent=d?"Artwork selected":"No artwork selected";markDirty()});
+    const m=setModal(`<div class="modalHead"><h2>Edit ${tracks.length} songs</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="help">Editing ${tracks.length} selected songs. Turn on a field to apply it; fields left off stay unchanged. Choosing artwork automatically enables artwork replacement.</div><div class="formGrid" style="margin-top:16px"><div class="field full"><label class="bulkFieldToggle"><input id="applyArtist" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set artists</span></label>${artistPickerHtml("bulkArtists",[])} </div><div class="field full"><label class="bulkFieldToggle"><input id="applyAlbum" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set album</span></label><select id="bulkAlbum"><option value="">None</option>${albumOptions()}</select></div><div class="field full"><label class="bulkFieldToggle"><input id="applyAlbumArtist" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set album artists</span></label>${artistPickerHtml("bulkAlbumArtists",[])}</div><div class="field"><label class="bulkFieldToggle"><input id="applyGenre" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set genre</span></label><input id="bulkGenre"></div><div class="field"><label class="bulkFieldToggle"><input id="applyYear" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Set year</span></label><input id="bulkYear"></div><div class="field"><label class="bulkFieldToggle"><input id="applyExplicit" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Explicit</span></label><select id="bulkExplicit">${yesNoOptions("keep")}</select></div><div class="field full"><label class="bulkFieldToggle"><input id="applyCover" type="checkbox"><span class="bulkToggleDot">${uiIcon("check")}</span><span>Apply same artwork</span></label><div><button class="secondary" id="bulkCoverBtn">Choose artwork</button><span class="help" id="bulkCoverState" style="margin-left:8px">No artwork selected</span></div></div></div><div class="modalFoot"><button class="secondary" id="bulkCancel">Cancel</button><button class="primary" id="bulkSave">Apply changes</button></div>`,{large:true});
+    bindModalDirty();let cover=null;$("#closeModal").onclick=()=>closeModal();$("#bulkCancel").onclick=()=>closeModal();$("#bulkCoverBtn").onclick=()=>imagePicker(null,d=>{cover=d;$("#bulkCoverState").textContent=d?"Artwork selected":"No artwork selected";if(d)$("#applyCover").checked=true;markDirty()});
     $("#bulkSave").onclick=async()=>{
       const bulkArtistIds=$("#applyArtist").checked?readArtistPicker("bulkArtists"):null;const bulkAlbumArtistIds=$("#applyAlbumArtist").checked?readArtistPicker("bulkAlbumArtists"):null;
-      for(const t of tracks){const applyAlbum=$("#applyAlbum").checked;const album=applyAlbum?albumById($("#bulkAlbum").value):null;if(bulkArtistIds){applyArtistIds(t,bulkArtistIds);t.artist=namesOfIds(bulkArtistIds).join(", ")||NONE_LABEL}if(applyAlbum){t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;if(album&&!t.cover&&album.cover)t.cover=album.cover;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL}if(bulkAlbumArtistIds){applyAlbumArtistIds(t,bulkAlbumArtistIds);t.albumArtist=namesOfIds(bulkAlbumArtistIds).join(", ")||NONE_LABEL}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover)t.cover=cover}
+      for(const t of tracks){const applyAlbum=$("#applyAlbum").checked;const album=applyAlbum?albumById($("#bulkAlbum").value):null;if(bulkArtistIds){applyArtistIds(t,bulkArtistIds);t.artist=namesOfIds(bulkArtistIds).join(", ")||NONE_LABEL}if(applyAlbum){t.albumId=album?.id||null;t.album=album?.title||NONE_LABEL;if(album&&!t.cover&&album.cover)t.cover=album.cover;applyAlbumArtistIds(t,album?artistIdsForAlbum(album):[]);t.albumArtist=namesOfIds(t.albumArtistIds).join(", ")||NONE_LABEL;if(album&&!artistIdsForTrack(t).length){applyArtistIds(t,artistIdsForAlbum(album));t.artist=namesOfIds(artistIdsForTrack(t)).join(", ")||NONE_LABEL}}if(bulkAlbumArtistIds){applyAlbumArtistIds(t,bulkAlbumArtistIds);t.albumArtist=namesOfIds(bulkAlbumArtistIds).join(", ")||NONE_LABEL}if($("#applyGenre").checked)t.genre=$("#bulkGenre").value;if($("#applyYear").checked)t.year=$("#bulkYear").value;if($("#applyExplicit").checked){const v=$("#bulkExplicit").value;if(v==="yes")t.explicit=true;if(v==="no")t.explicit=false}if($("#applyCover").checked&&cover){t.cover=cover;t.coverOverride=true}}
       await save();state.selected=[];closeModal(true);renderCurrentViewWithoutScroll();toast("Bulk changes applied.");
     };
   }
+
+  function deleteArtistIds(ids,label="artists"){
+    const list=[...new Set(ids||[])].map(artistById).filter(Boolean);if(!list.length){toast("No matching artists to delete.");return}
+    if(!confirm("Are you sure this will delete "+list.length+" "+label+"? Songs and albums will remain, but their artist links will be cleared."))return;
+    const remove=new Set(list.map(a=>a.id));state.artists=state.artists.filter(a=>!remove.has(a.id));
+    for(const a of state.albums)applyArtistIds(a,artistIdsForAlbum(a).filter(id=>!remove.has(id)));
+    for(const t of state.tracks){const ids=artistIdsForTrack(t).filter(id=>!remove.has(id));applyArtistIds(t,ids);t.artist=namesOfIds(ids).join(", ")||NONE_LABEL;const aa=idsOf(t,"albumArtistIds","albumArtistId").filter(id=>!remove.has(id));applyAlbumArtistIds(t,aa);t.albumArtist=namesOfIds(aa).join(", ")||NONE_LABEL}
+    state.selectedArtists=[];save(true).then(()=>{closeModal(true);setView("artists");toast("Deleted "+list.length+" artists.")});
+  }
+  function cleanupAlbums(ids,label){
+    const list=[...new Set(ids||[])].map(albumById).filter(Boolean);if(!list.length){toast("No matching albums to delete.");return}
+    if(!confirm("Are you sure this will delete "+list.length+" "+label+"? Songs will stay in your library, but will no longer belong to these albums."))return;
+    const remove=new Set(list.map(a=>a.id));state.albums=state.albums.filter(a=>!remove.has(a.id));
+    for(const t of state.tracks)if(remove.has(t.albumId)){t.albumId=null;t.album=NONE_LABEL;t.albumArtistIds=[];t.albumArtistId=null;t.albumArtist=NONE_LABEL}
+    for(const folder of state.folders||[])folder.items=(folder.items||[]).filter(item=>!(item?.type==="album"&&remove.has(item.id)));
+    save(true).then(()=>{closeModal(true);setView("albums");toast("Deleted "+list.length+" albums. Songs were kept.")});
+  }
+  function bulkEditArtists(ids){
+    const artists=[...new Set(ids||[])].map(artistById).filter(Boolean);if(!artists.length)return;
+    setModal('<div class="modalHead"><h2>Bulk edit '+artists.length+' artists</h2><button class="circle iconOnly" id="closeArtistBulk">×</button></div><div class="help">Only filled fields are applied to every selected artist.</div><div class="formGrid"><div class="field full"><label>Set label</label><input id="artistBulkLabel"></div><div class="field full"><label>Set website</label><input id="artistBulkWebsite"></div><div class="field full"><label>Set active year</label><input id="artistBulkYear"></div><div class="field full"><label>Set genres (comma separated)</label><input id="artistBulkGenres"></div><div class="field full"><label>Set bio</label><textarea id="artistBulkBio"></textarea></div><div class="field full"><label>Apply same profile picture</label><button class="secondary" id="artistBulkImage">Choose image</button><span id="artistBulkImageState" class="help">No image selected</span></div></div><div class="modalFoot"><button class="dangerBtn" id="artistBulkDelete">Delete selected ('+artists.length+')</button><button class="secondary" id="artistBulkCancel">Cancel</button><button class="primary" id="artistBulkApply">Apply to '+artists.length+' artists</button></div>',{large:true});
+    let image=null;$("#closeArtistBulk").onclick=()=>closeModal();$("#artistBulkCancel").onclick=()=>closeModal();$("#artistBulkDelete").onclick=()=>deleteArtistIds(artists.map(a=>a.id),"selected artists");
+    $("#artistBulkImage").onclick=()=>imagePicker(null,data=>{image=data;$("#artistBulkImageState").textContent=data?"Image selected":"No image selected"});
+    $("#artistBulkApply").onclick=async()=>{const label=$("#artistBulkLabel").value.trim(),website=$("#artistBulkWebsite").value.trim(),year=$("#artistBulkYear").value.trim(),genres=$("#artistBulkGenres").value.trim(),bio=$("#artistBulkBio").value.trim();for(const a of artists){if(label)a.label=label;if(website)a.website=website;if(year)a.year=year;if(genres)a.genres=genres.split(",").map(x=>x.trim()).filter(Boolean);if(bio)a.bio=bio;if(image!==null)a.image=image}state.selectedArtists=[];await save();closeModal(true);renderArtists();toast("Artist changes applied.")};
+  }
+  function openCatalogCleanup(kind){
+    if(kind==="artists"){
+      const artists=artistList(),trackArtists=new Set(),albumArtists=new Set();
+      for(const t of state.tracks)for(const id of artistIdsForTrack(t))trackArtists.add(id);
+      for(const a of state.albums)for(const id of artistIdsForAlbum(a))albumArtists.add(id);
+      const noSongs=artists.filter(a=>!trackArtists.has(a.id));
+      const noAlbums=artists.filter(a=>!albumArtists.has(a.id));
+      const unknown=artists.filter(a=>/^unknown artist$/i.test(artistDisplayName(a)));
+      setModal('<div class="modalHead"><div><h2>Manage artists</h2><div class="help">rn theres only "Delete artists" but maybe will be more.</div></div><button class="circle iconOnly" id="closeCatalogCleanup">'+uiIcon("close")+'</button></div><div class="catalogCleanupGroup"><h3>Delete artists</h3><div class="catalogCleanupActions"><button class="secondary small" id="deleteArtistsNoSongs">Without songs ('+noSongs.length+')</button><button class="secondary small" id="deleteArtistsNoAlbums">Without albums ('+noAlbums.length+')</button><button class="secondary small" id="deleteUnknownArtists">Unknown Artist ('+unknown.length+')</button><button class="dangerBtn small" id="deleteAllArtists">All artists ('+artists.length+')</button></div></div>',{large:true});
+      $("#closeCatalogCleanup").onclick=()=>closeModal(true);
+      $("#deleteArtistsNoSongs").onclick=()=>deleteArtistIds(noSongs.map(a=>a.id),"artists without songs");
+      $("#deleteArtistsNoAlbums").onclick=()=>deleteArtistIds(noAlbums.map(a=>a.id),"artists without albums");
+      $("#deleteUnknownArtists").onclick=()=>deleteArtistIds(unknown.map(a=>a.id),"Unknown Artist entries");
+      $("#deleteAllArtists").onclick=()=>deleteArtistIds(artists.map(a=>a.id),"artists");
+      return;
+    }
+    const albums=albumList(),emptyAlbums=albums.filter(a=>(__localifyCatalog().byAlbum.get(a.id)||[]).length===0);
+    setModal('<div class="modalHead"><div><h2>Manage albums</h2><div class="help">same here (read artists delete things)</div></div><button class="circle iconOnly" id="closeCatalogCleanup">'+uiIcon("close")+'</button></div><div class="catalogCleanupGroup"><h3>Delete albums</h3><div class="catalogCleanupActions"><button class="secondary small" id="deleteEmptyAlbums">Without songs ('+emptyAlbums.length+')</button><button class="dangerBtn small" id="deleteAllAlbums">All albums ('+albums.length+')</button></div></div>',{large:true});
+    $("#closeCatalogCleanup").onclick=()=>closeModal(true);
+    $("#deleteEmptyAlbums").onclick=()=>cleanupAlbums(emptyAlbums.map(a=>a.id),"albums without songs");
+    $("#deleteAllAlbums").onclick=()=>cleanupAlbums(albums.map(a=>a.id),"albums");
+  }
+
   function bulkPlay(tracks){playQueue(tracks.filter(t=>state.selected.includes(t.id)),0)}
   function bulkAddPlaylist(ids){
     const tracks=ids.map(trackById).filter(Boolean);if(!tracks.length)return;
@@ -4026,7 +4343,7 @@ function editLocalProfile(){
   }
   function editAlbum(id,opts={}){
     const a=id?albumById(id):null;let cover=a?.cover||null;setModal(albumModalHtml(a,{...opts,artistId:a?.artistId||opts.artistId||""}),{large:true});bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(cover,d=>{cover=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:12px">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("album")}</div>`;markDirty()});$("#entityNewArtist").onclick=()=>editArtist(null,{returnTo:{type:"album",id:id,selectAfter:true}});
-    $("#saveEntity").onclick=async()=>{const artistIds=readArtistPicker("entityArtists");if(!$("#entityTitle").value.trim()){toast("Give the album a title.");return}let target=a;if(!target){target={id:uid(),title:"",artistIds:[...artistIds],artistId:artistIds[0]||null,cover:null,year:"",genre:"",label:"",description:"",credits:{}};state.albums.push(target)}const previousAlbumCover=target.cover||null;target.title=$("#entityTitle").value.trim();applyArtistIds(target,artistIds);const imageUrl=String($("#entityDiscordCover")?.value||"").trim();target.discordCoverUrl=imageUrl;target.cover=imageUrl||cover||null;target.year=$("#entityYear").value;target.genre=$("#entityGenre").value;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.credits=normalizeCredits({producer:$("#entityProducer").value,songwriter:$("#entitySongwriter").value,composer:$("#entityComposer").value,publisher:$("#entityPublisher").value,label:$("#entityLabel").value,copyright:$("#entityCopyright").value});for(const t of state.tracks.filter(t=>t.albumId===target.id)){t.album=target.title;applyArtistIds(t,artistIds);t.artist=namesOfIds(artistIds).join(", ")||NONE_LABEL;applyAlbumArtistIds(t,artistIds);t.albumArtist=namesOfIds(artistIds).join(", ")||NONE_LABEL;if(!t.coverOverride&&(target.cover|| (previousAlbumCover&&t.cover===previousAlbumCover)))t.cover=target.cover||null;if(target.year)t.year=target.year;if(target.genre)t.genre=target.genre;t.credits=normalizeCredits({...t.credits,...target.credits})}await save();closeModal(true);showAlbum(target.id);if(state.currentId&&trackById(state.currentId)?.albumId===target.id)renderPlayer();toast(a?"Album updated.":"Album created.")};
+    $("#saveEntity").onclick=async()=>{const artistIds=readArtistPicker("entityArtists");if(!$("#entityTitle").value.trim()){toast("Give the album a title.");return}let target=a;if(!target){target={id:uid(),title:"",artistIds:[...artistIds],artistId:artistIds[0]||null,cover:null,year:"",genre:"",label:"",description:"",credits:{}};state.albums.push(target)}const previousAlbumCover=target.cover||null;target.title=$("#entityTitle").value.trim();applyArtistIds(target,artistIds);const imageUrl=String($("#entityDiscordCover")?.value||"").trim();target.discordCoverUrl=imageUrl;target.cover=imageUrl||cover||null;target.year=$("#entityYear").value;target.genre=$("#entityGenre").value;target.label=$("#entityLabel").value;target.description=$("#entityDescription").value;target.credits=normalizeCredits({producer:$("#entityProducer").value,songwriter:$("#entitySongwriter").value,composer:$("#entityComposer").value,publisher:$("#entityPublisher").value,label:$("#entityLabel").value,copyright:$("#entityCopyright").value});for(const t of state.tracks.filter(t=>t.albumId===target.id)){t.album=target.title;applyAlbumArtistIds(t,artistIds);t.albumArtist=namesOfIds(artistIds).join(", ")||NONE_LABEL;if(!t.coverOverride&&(target.cover|| (previousAlbumCover&&t.cover===previousAlbumCover)))t.cover=target.cover||null;if(target.year)t.year=target.year;if(target.genre)t.genre=target.genre;t.credits=normalizeCredits({...t.credits,...target.credits})}await save();closeModal(true);showAlbum(target.id);if(state.currentId&&trackById(state.currentId)?.albumId===target.id)renderPlayer();toast(a?"Album updated.":"Album created.")};
     if(a)$("#deleteAlbum").onclick=()=>deleteAlbum(a.id)
   }
 
@@ -4053,7 +4370,7 @@ function editLocalProfile(){
   function editArtist(id,opts={}){
     const a=id?artistById(id):null;let img=a?.image||null;setModal(artistModalHtml(a));bindModalDirty();$("#closeModal").onclick=()=>closeModal();$("#cancelEntity").onclick=()=>closeModal();$("#entityCoverBtn").onclick=()=>imagePicker(img,d=>{img=d;const el=$("#entityCover");el.outerHTML=d?`<img id="entityCover" src="${d}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:50%">`:`<div id="entityCover" class="nowFallback artistFallback" style="width:92px;height:92px;border-radius:50%">${`<svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-4 3-6 6.5-6s5.7 2 6.5 6"/></svg>`}</div>`;markDirty()});
     $("#saveEntity").onclick=async()=>{const name=$("#entityTitle").value.trim();if(!name){toast("Give the artist a name.");return}let target=a;if(!target){target={id:uid(),name:"",image:null,bio:"",genres:[],website:"",label:"",year:""};state.artists.push(target)}target.name=name;target.image=img;target.label=$("#entityLabel").value;target.year=$("#entityYear").value;target.website=$("#entityWebsite").value;target.genres=$("#entityGenres").value.split(",").map(x=>x.trim()).filter(Boolean);target.bio=$("#entityBio").value;for(const t of state.tracks){if(t.artistId===target.id)t.artist=target.name;if(t.albumArtistId===target.id)t.albumArtist=target.name}await save();closeModal(true);if(opts.returnTo?.type==="track")editTrack(opts.returnTo.id);else if(opts.returnTo?.type==="album")editAlbum(opts.returnTo.id,{artistIds:[target.id]});else showArtist(target.id);toast(a?"Artist updated.":`Artist ${name} created.`)};
-    if(a)$("#deleteArtist").onclick=async()=>{if(confirm(`Delete artist "${a.name}"? Songs stay in your library.`)){state.artists=state.artists.filter(x=>x.id!==a.id);await save();closeModal(true);setView("artists")}}
+    if(a)$("#deleteArtist").onclick=()=>deleteArtistIds([a.id],`artist "${a.name}"`)
   }
 
   function playlistModalHtml(p){return `<div class="modalHead"><h2>${p?"Edit playlist":"New playlist"}</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div><div class="coverEdit">${p?.cover?`<img id="entityCover" src="${p.cover}" alt="">`:`<div id="entityCover" class="nowFallback" style="width:92px;height:92px;border-radius:12px">${uiIcon("playlist")}</div>`}<div><button class="secondary" id="entityCoverBtn">Choose artwork</button></div></div><div class="formGrid" style="margin-top:16px">${field("Name","entityTitle",p?.name||"")}<div class="field"><label>Style / mood</label><input id="entityLabel" value="${esc(p?.label||"")}" placeholder="Workout, favorites..."></div><div class="field full"><label>Description</label><textarea id="entityDescription">${esc(p?.description||"")}</textarea></div></div><div class="modalFoot"><button class="secondary" id="cancelEntity">Cancel</button><button class="primary" id="saveEntity">${p?"Save changes":"Create playlist"}</button></div>`}
@@ -4093,8 +4410,18 @@ function editLocalProfile(){
     });
     const timed=rows.filter(r=>r.time!==null);
     const hasTimed=timed.length>0;
-    $("#content").innerHTML='<div class="profileHero"><div class="profileArt">'+coverHtml(t)+'</div><div><h2 class="viewTitle">'+esc(t.title)+'</h2><div class="subtle">'+artistLinksForTrackHtml(t)+' • '+albumLinkForTrackHtml(t)+'</div><div class="entityActions"><button class="primary" id="playLyrics">'+uiIcon("play")+' Play</button><button class="secondary" id="editLyrics">'+uiIcon("edit")+' Edit song</button></div></div></div><div class="lyricsPanel '+(hasTimed?"syncedLyrics":"")+'" id="lyricsDisplay">'+(rows.length?rows.map(r=>'<div class="lyricLine" data-lyric-index="'+r.index+'">'+esc(r.text||" ")+'</div>').join(""):'No lyrics saved for this song yet.')+'</div>';
+    $("#content").innerHTML='<div class="profileHero"><div class="profileArt">'+coverHtml(t)+'</div><div><h2 class="viewTitle">'+esc(t.title)+'</h2><div class="subtle">'+artistLinksForTrackHtml(t)+' • '+albumLinkForTrackHtml(t)+'</div><div class="entityActions"><button class="primary" id="playLyrics">'+uiIcon("play")+' Play</button><button class="secondary" id="editLyrics">'+uiIcon("edit")+' Edit song</button></div></div></div><div class="lyricsPanel '+(hasTimed?"syncedLyrics":"")+'" id="lyricsDisplay">'+(rows.length?rows.map(r=>'<div class="lyricLine '+(r.time!==null?"clickableLyric":"")+'" data-lyric-index="'+r.index+'" '+(r.time!==null?'role="button" tabindex="0" aria-label="Play from '+Math.floor(r.time/60)+':'+String(Math.floor(r.time%60)).padStart(2,"0")+'" data-lyric-time="'+r.time+'"':'')+'>'+esc(r.text||" ")+'</div>').join(""):'No lyrics saved for this song yet.')+'</div>';
     $("#playLyrics").onclick=()=>playId(id);$("#editLyrics").onclick=()=>editTrack(id);
+    const seekToLyric=time=>{
+      const seek=()=>{if(audio.dataset.localifyTrackId===id&&Number.isFinite(audio.duration))audio.currentTime=Math.max(0,Math.min(audio.duration,time))};
+      if(audio.dataset.localifyTrackId===id&&audio.readyState>=1){seek();return}
+      const onLoaded=()=>{if(state.currentId===id&&audio.dataset.localifyTrackId===id)seek()};
+      audio.addEventListener("loadedmetadata",onLoaded,{once:true});
+      playId(id);
+    };
+    const lyricClick=e=>{const line=e.target.closest(".clickableLyric");if(!line)return;seekToLyric(Number(line.dataset.lyricTime))};
+    $("#lyricsDisplay").addEventListener("click",lyricClick);
+    $("#lyricsDisplay").addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches(".clickableLyric")){e.preventDefault();seekToLyric(Number(e.target.dataset.lyricTime))}});
     const update=()=>{
       if(!hasTimed||audio.dataset.localifyTrackId!==id)return;
       const now=audio.currentTime;let active=-1;
@@ -4171,7 +4498,7 @@ function editLocalProfile(){
     // Add matching entries here when you create new backups above.
     const options=[["flat","Flat"],["bass","Bass"]];
     setModal(`
-      <div class="modalHead"><h2>Sound filters</h2><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div>
+      <div class="modalHead" style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h2>Sound effects</h2><div style="display:flex;align-items:center;gap:7px;flex-shrink:0"><button class="primary small" id="eqDownloadProcessed" type="button" title="Download the current song with effects applied">Download effected song</button><button class="circle iconOnly" id="closeModal" title="Close" aria-label="Close">${uiIcon("close")}</button></div></div>
       <div class="field"><label for="eqPreset">Preset</label><select id="eqPreset">${options.map(([k,n])=>`<option value="${k}" ${q.preset===k?"selected":""}>${n}</option>`).join("")}</select></div>
       <div class="formGrid" style="margin-top:14px">
         <div class="field"><label for="eqBass" id="eqBassLabel">Bass ${q.bass} dB</label><input class="eqSlider" id="eqBass" type="range" min="-24" max="24" value="${q.bass}" step="1" aria-label="Bass"></div>
@@ -4200,7 +4527,36 @@ function editLocalProfile(){
     preset.onchange=()=>{const p=EQ_PRESETS[preset.value]||EQ_PRESETS.flat;bass.value=p.bass;mid.value=p.mid;treble.value=p.treble;gain.value=p.gain;update()};
     update();
     $("#closeModal").onclick=()=>closeModal(true);$("#eqDone").onclick=()=>{applyEQ();closeModal(true)};
+    $("#eqDownloadProcessed").onclick=async()=>{const current=trackById(state.currentId);if(!current){toast("Play a song first.");return}const btn=$("#eqDownloadProcessed");btn.disabled=true;btn.textContent="Loading audio…";try{await new Promise(resolve=>requestAnimationFrame(()=>resolve()));const blob=await ensureTrackBlob(current);if(!blob||!blob.size)throw new Error("Could not find this song in Localify storage. Try playing it first, then download again.");btn.textContent="Applying effects…";await new Promise(resolve=>requestAnimationFrame(()=>resolve()));const wav=await renderSongWithEffectsWav(blob,state.settings.eq||{});if(!wav||!wav.size)throw new Error("The processed audio export was empty.");btn.textContent="Preparing download…";await new Promise(resolve=>requestAnimationFrame(()=>resolve()));downloadBlob(wav,(artistName(current)||"Localify")+" - "+(current.title||"song")+" (effects).wav");toast("Processed song downloaded as WAV.")}catch(e){console.error(e);toast(e?.message||"Could not export the processed song.")}finally{if(btn){btn.disabled=false;btn.textContent="↓ Download effected song"}}};
   }
+async function renderSongWithEffectsWav(blob,eq){
+ if(!blob)throw new Error("Song audio is unavailable.");
+ const AC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+ if(!AC)throw new Error("This browser does not support audio export with effects.");
+ const DecodeContext=window.AudioContext||window.webkitAudioContext;if(!DecodeContext)throw new Error("Audio decoding is not supported in this browser.");
+ const decodeContext=new DecodeContext();let decoded;try{decoded=await decodeContext.decodeAudioData(await blob.arrayBuffer())}finally{try{await decodeContext.close()}catch{}}
+ const channels=Math.max(1,Math.min(2,decoded.numberOfChannels)),length=decoded.length,sampleRate=decoded.sampleRate;
+ const offline=new AC(channels,length,sampleRate),source=offline.createBufferSource();source.buffer=decoded;
+ const bass=offline.createBiquadFilter(),mid=offline.createBiquadFilter(),treble=offline.createBiquadFilter(),gain=offline.createGain(),comp=offline.createDynamicsCompressor();
+ bass.type="lowshelf";bass.frequency.value=105;bass.Q.value=.72;
+ mid.type="peaking";mid.frequency.value=950;mid.Q.value=.85;
+ treble.type="highshelf";treble.frequency.value=5600;treble.Q.value=.72;
+ const q={bass:0,mid:0,treble:0,gain:0,compressor:false,...(eq||{})};
+ bass.gain.value=Math.max(-24,Math.min(24,Number(q.bass)||0));
+ mid.gain.value=Math.max(-24,Math.min(24,Number(q.mid)||0));
+ treble.gain.value=Math.max(-24,Math.min(24,Number(q.treble)||0));
+ const boost=Math.max(0,bass.gain.value)*.42+Math.max(0,mid.gain.value)*.22+Math.max(0,treble.gain.value)*.18;
+ gain.gain.value=Math.pow(10,(Math.max(-12,Math.min(12,Number(q.gain)||0))-Math.min(18,boost))/20);
+ comp.threshold.value=q.compressor===true?-11:0;comp.knee.value=14;comp.ratio.value=q.compressor===true?4.2:1;comp.attack.value=.003;comp.release.value=.13;
+ source.connect(bass).connect(mid).connect(treble).connect(gain).connect(comp).connect(offline.destination);
+ source.start(0);
+ const rendered=await offline.startRendering(),num=rendered.length*channels,pcmBytes=num*2,buffer=new ArrayBuffer(44+pcmBytes),view=new DataView(buffer);
+ const write=(offset,str)=>{for(let i=0;i<str.length;i++)view.setUint8(offset+i,str.charCodeAt(i))};
+ write(0,"RIFF");view.setUint32(4,36+pcmBytes,true);write(8,"WAVE");write(12,"fmt ");view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,channels,true);view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate*channels*2,true);view.setUint16(32,channels*2,true);view.setUint16(34,16,true);write(36,"data");view.setUint32(40,pcmBytes,true);
+ let offset=44;
+ for(let i=0;i<rendered.length;i++)for(let c=0;c<channels;c++){const sample=Math.max(-1,Math.min(1,rendered.getChannelData(c)[i]));view.setInt16(offset,sample<0?sample*32768:sample*32767,true);offset+=2}
+ return new Blob([buffer],{type:"audio/wav"});
+}
   function u16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a}
   function u32(v){const a=new Uint8Array(4);new DataView(a.buffer).setUint32(0,v>>>0,true);return a}
   function u64(v){const a=new Uint8Array(8),dv=new DataView(a.buffer),n=Math.max(0,Math.floor(Number(v)||0));dv.setUint32(0,n>>>0,true);dv.setUint32(4,Math.floor(n/4294967296)>>>0,true);return a}
@@ -5411,9 +5767,9 @@ function openPresetsMenu(){
     const html =
       "<div class=\"modalHead\"><h2>Presets</h2><button class=\"circle iconOnly\" id=\"closeModal\" title=\"Close\" aria-label=\"Close\">"+uiIcon("close")+"</button></div>"+
       "<div class=\"presetHome\">"+
-        "<div class=\"presetHero\"><div class=\"presetHeroTop\"><div><h3>Portable Localify presets</h3><p>Save and share your Localify library as <code>.localify</code> files. Audio is included in the package, and large exports use ZIP64 and streaming when your browser supports it.</p></div><div class=\"presetHeroIcon\">"+uiIcon("save")+"</div></div></div>"+
+        "<div class=\"presetHero\"><div class=\"presetHeroTop\"><div><h3>Portable Localify presets</h3><p>Save your Localify library as <code>.localify</code> files. It is 1 file and is easy to transport to other devices.</p></div><div class=\"presetHeroIcon\">"+uiIcon("save")+"</div></div></div>"+
         "<div class=\"presetActionGrid\">"+
-          "<button class=\"presetAction\" id=\"presetExportBtn\"><span class=\"presetActionIcon\">"+uiIcon("download")+"</span><span><strong>Export preset</strong><span>Back up or share your library</span></span></button>"+
+          "<button class=\"presetAction\" id=\"presetExportBtn\"><span class=\"presetActionIcon\">"+uiIcon("download")+"</span><span><strong>Export preset</strong><span>Export ur library into a preset</span></span></button>"+
           "<button class=\"presetAction\" id=\"presetImportBtn\"><span class=\"presetActionIcon\">"+uiIcon("upload")+"</span><span><strong>Import preset</strong><span>Load a Localify file onto this device</span></span></button>"+
         "</div>"+
         "<div class=\"presetQuickTitle\">Quick tools</div>"+
