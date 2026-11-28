@@ -214,7 +214,7 @@
     .creditsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
     .creditsGrid div{background:#151a20;border:1px solid #232a32;border-radius:10px;padding:9px}
     .creditsGrid strong{display:block;color:#7c8692;font-size:10px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
-    .entityActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.iconOnlyAction{width:40px;height:40px;padding:0!important;display:inline-grid!important;place-items:center!important;flex:none}.iconOnlyAction .svgIcon{width:18px;height:18px;margin:0}.infoBtn{display:grid!important;place-items:center!important;padding:0!important}.infoBtn .svgIcon{width:18px;height:18px;margin:0}
+    .entityActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.entityActions button{display:inline-flex;align-items:center;justify-content:center;gap:8px;line-height:1}.entityActions button>.svgIcon{display:block;flex:none;width:17px;height:17px;margin:0;vertical-align:middle}.iconOnlyAction{width:40px;height:40px;padding:0!important;display:inline-grid!important;place-items:center!important;align-content:center!important;justify-content:center!important;line-height:0!important;flex:none}.iconOnlyAction .svgIcon{display:block;width:18px;height:18px;margin:0;vertical-align:middle}.infoBtn{display:grid!important;place-items:center!important;padding:0!important}.infoBtn .svgIcon{width:18px;height:18px;margin:0}
     .small{padding:7px 10px!important;font-size:11px}.iconOnlyCreate{width:42px;height:42px;padding:0!important;display:inline-grid!important;place-items:center!important;border-radius:12px;flex:none}.iconOnlyCreate .svgIcon{width:19px;height:19px;margin:0}
     .modal.large{width:min(940px,100%)}
     .modalSection{padding:12px 0;border-top:1px solid #242a31}
@@ -242,7 +242,7 @@
     .miniArt img{width:100%;height:100%;object-fit:cover}
     .miniText{min-width:0}.miniTitle{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.miniSub{color:#7d8592;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .rowActions{display:flex;gap:7px;justify-content:flex-end;align-items:center}
-    .circle{width:34px;height:34px;border-radius:50%;background:#191d24;display:grid;place-items:center;color:#c4cad3}
+    .circle{width:34px;height:34px;border-radius:50%;background:#191d24;display:grid;place-items:center;align-content:center;justify-content:center;padding:0;line-height:0;color:#c4cad3}.circle>.svgIcon,.iconOnly>.svgIcon,.infoBtn>.svgIcon,.btnIcon .iconInline>.svgIcon{display:block;flex:none;width:18px;height:18px;margin:0;vertical-align:middle}
     .circle:hover{background:#242a34;color:#fff}
     .liked{color:var(--accent)!important}
     .badge{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:5px;background:#242831;color:#b7bec8;font-size:9px;font-weight:1000;margin-left:7px}
@@ -277,11 +277,11 @@
     .toast.show{opacity:1;transform:translateY(0)}
     .player{grid-column:1/-1;width:100%;max-width:100vw;background:#0b0e12;border-top:1px solid #262b33;display:grid;grid-template-columns:minmax(230px,1.1fr) minmax(350px,1.25fr) minmax(230px,1fr);align-items:center;gap:16px;padding:12px 18px;z-index:20}
     .now{display:flex;align-items:center;gap:12px;min-width:0}
-    .nowArt{width:56px;height:56px;border-radius:10px;overflow:hidden;background:#222;flex:none}
-    .nowArt img{width:100%;height:100%;object-fit:cover}
+    .nowArt{width:56px;height:56px;min-width:56px;max-width:56px;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#222;flex:0 0 56px}
+    .nowArt img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:cover;display:block}
     .nowText{min-width:0}
     .nowTitle{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .nowArtist{color:#7e8793;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowPanelToggle.liked{color:var(--accent);background:rgba(125,211,252,.08)}.nowSidebar{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;background:linear-gradient(180deg,#10151b,#0c1015);border-left:1px solid #252b33;padding:18px}.nowSidebarInner{display:grid;gap:15px}.nowSidebarHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.nowSidebarTitle{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:#7d8793;font-weight:950}.nowSidebarCover{width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;background:#20252d;box-shadow:0 18px 55px rgba(0,0,0,.4)}.nowSidebarCover img{width:100%;height:100%;object-fit:cover;display:block}.nowSidebarSong{font-size:23px;font-weight:950;line-height:1.08;letter-spacing:-.5px;display:flex;align-items:flex-start;gap:8px;min-width:0}.nowSidebarSongTitle{min-width:0;overflow-wrap:anywhere}.nowSidebarSong .badge{margin-left:0;margin-top:2px}.nowSidebarArtist{color:#aab2bd;font-size:13px;margin-top:5px}.nowSidebarMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nowSidebarMetaBox{background:#12171d;border:1px solid #252c35;border-radius:12px;padding:10px}.nowSidebarMetaBox strong{display:block;color:#7d8793;font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.nowSidebarMetaBox span{display:block;color:#e5e9ee;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowSidebarLyrics{white-space:pre-wrap;line-height:1.7;color:#fff;background:#10151b;border:1px solid #252c35;border-radius:14px;padding:14px;min-height:160px;max-height:38vh;overflow:auto}.nowSidebarLyricsLink{display:flex;align-items:center;justify-content:space-between;width:100%;padding:0;border:0;background:transparent;text-align:left;cursor:pointer}.nowSidebarLyricsLink span{font-size:10px;color:#aeb7c2;font-weight:750;text-transform:none;letter-spacing:0}.nowSidebarLyricsLink:hover span{color:#fff}.nowSidebarLyrics#sidebarLyricsText{display:block;width:100%;font:inherit;text-align:left;cursor:pointer}.nowSidebarLyrics#sidebarLyricsText:hover{border-color:#46515e;background:#151c24}.nowSidebarEmpty{padding:24px 10px;text-align:center;color:#7d8793}.app:not(.nowPanelOpen) .nowSidebar{display:none}
+    .nowArtist{color:#7e8793;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowPanelToggle.liked{color:var(--accent);background:rgba(125,211,252,.08)}.nowSidebar{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;background:linear-gradient(180deg,#10151b,#0c1015);border-left:1px solid #252b33;padding:18px}.nowSidebarInner{display:grid;gap:15px}.nowSidebarHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.nowSidebarTitle{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:#7d8793;font-weight:950}.nowSidebarCover{position:relative;width:100%;max-width:100%;min-width:0;aspect-ratio:1/1;height:auto;max-height:min(42vh,420px);border-radius:18px;overflow:hidden;background:#20252d;box-shadow:0 18px 55px rgba(0,0,0,.4);contain:layout paint}.nowSidebarCover img{position:absolute;inset:0;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:cover;display:block}.nowSidebarSong{font-size:23px;font-weight:950;line-height:1.08;letter-spacing:-.5px;display:flex;align-items:flex-start;gap:8px;min-width:0}.nowSidebarSongTitle{min-width:0;overflow-wrap:anywhere}.nowSidebarSong .badge{margin-left:0;margin-top:2px}.nowSidebarArtist{color:#aab2bd;font-size:13px;margin-top:5px}.nowSidebarMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nowSidebarMetaBox{background:#12171d;border:1px solid #252c35;border-radius:12px;padding:10px}.nowSidebarMetaBox strong{display:block;color:#7d8793;font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.nowSidebarMetaBox span{display:block;color:#e5e9ee;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nowSidebarLyrics{white-space:pre-wrap;line-height:1.7;color:#fff;background:#10151b;border:1px solid #252c35;border-radius:14px;padding:14px;min-height:160px;max-height:38vh;overflow:auto}.nowSidebarLyricsLink{display:flex;align-items:center;justify-content:space-between;width:100%;padding:0;border:0;background:transparent;text-align:left;cursor:pointer}.nowSidebarLyricsLink span{font-size:10px;color:#aeb7c2;font-weight:750;text-transform:none;letter-spacing:0}.nowSidebarLyricsLink:hover span{color:#fff}.nowSidebarLyrics#sidebarLyricsText{display:block;width:100%;font:inherit;text-align:left;cursor:pointer}.nowSidebarLyrics#sidebarLyricsText:hover{border-color:#46515e;background:#151c24}.nowSidebarEmpty{padding:24px 10px;text-align:center;color:#7d8793}.app:not(.nowPanelOpen) .nowSidebar{display:none}
     .playerCenter{display:grid;gap:7px}
     .controls{display:flex;align-items:center;justify-content:center;gap:10px}
     .ctrl{width:34px;height:34px;border-radius:50%;background:transparent;color:#bbc3ce;font-size:15px}
@@ -391,7 +391,7 @@ main,#main,.content{min-width:0;max-width:100%;overflow-x:hidden}
 .player{box-sizing:border-box}
 
 /* Localify responsive/layout patch v2 */
-.svgIcon{width:18px;height:18px;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.svgIcon{width:18px;height:18px;display:block;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .btnIcon{display:inline-flex;align-items:center;justify-content:center;gap:7px}.btnIcon .svgIcon{width:16px;height:16px}.iconOnly .svgIcon{width:18px;height:18px}
 .btnIcon .iconInline{display:inline-flex;align-items:center;justify-content:center}.btnIcon{vertical-align:middle}
 .primary .svgIcon,.secondary .svgIcon,.dangerBtn .svgIcon,.toolbar button .svgIcon,.entityActions button .svgIcon,.contextMenu button .svgIcon,.sideAction .svgIcon{display:inline-block;vertical-align:middle;margin-right:6px}.contextMenu button .svgIcon{width:16px;height:16px}
@@ -732,6 +732,7 @@ main{min-width:0;min-height:0}
     .localifyDraggable:active{cursor:grabbing!important}
     .localifyDragging{opacity:.38}
     .localifyDragOver{outline:2px solid rgba(125,211,252,.78);outline-offset:-2px;background-color:rgba(125,211,252,.08)!important}
+  /* Global button centering rule removed; alignment is handled by each button class. */
   </style>
 <style id="exportImageStyles">.exportImagePreview{max-height:68vh;overflow:auto;border:1px solid #252e38;border-radius:16px;background:#090d11;padding:10px}.exportImagePreview img{display:block;width:100%;height:auto;border-radius:10px}#downloadExportImage{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}</style>  <style id="localifyViewModes">
     .viewModeBar{display:flex;align-items:center;gap:4px;padding:4px;border:1px solid #252c35;border-radius:11px;background:#101419;flex:none}
@@ -928,13 +929,99 @@ body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-i
 </style>
 <style id="artist-select-box-fix">
 .artist-select-box{position:absolute;right:8px;bottom:8px;width:17px;height:17px;display:block;z-index:3;cursor:pointer}
-.artist-select-box input{appearance:none;-webkit-appearance:none;width:16px;height:16px;margin:0;border:1.5px solid var(--muted,#aab0b8);border-radius:3px;background:var(--panel,#14191f);display:block;cursor:pointer}
+.artist-select-box input{appearance:none;-webkit-appearance:none;width:16px;height:16px;margin:0;border:1px solid #3a424d;border-radius:4px;background:#12161b;display:block;cursor:pointer;transition:background .12s,border-color .12s}.artist-select-box input:hover{border-color:#697686;background:#1a2027}
 .artist-select-box input:checked{background:var(--accent,#5ab9e8);border-color:var(--accent,#5ab9e8)}
 .artist-select-box input:checked::after{content:"";display:block;width:4px;height:8px;border:solid #071018;border-width:0 2px 2px 0;transform:rotate(45deg);margin:1px 0 0 5px}
 .artistSelectionBar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 14px}
 .catalogCleanupGroup{padding:12px;border:1px solid var(--line);border-radius:12px;margin:10px 0}
 .catalogCleanupGroup h3{margin:0 0 7px;font-size:14px}
 .catalogCleanupActions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+
+/* Icon-only button correction: undo the shared text-button SVG spacing rule. */
+button.iconOnly .svgIcon,
+button.iconOnlyAction .svgIcon,
+button.infoBtn .svgIcon,
+button.iconOnlyCreate .svgIcon,
+button.circle .svgIcon{
+  display:block!important;
+  width:18px!important;
+  height:18px!important;
+  margin:0!important;
+  padding:0!important;
+  vertical-align:initial!important;
+  flex:0 0 18px!important;
+}
+button.iconOnly,
+button.iconOnlyAction,
+button.infoBtn,
+button.iconOnlyCreate,
+button.circle{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  line-height:0!important;
+}
+
+/* Alpha layout polish. */
+.artist-select-box input{border-color:#343c47!important;background:#12161b!important}
+.artist-select-box input:checked{background:#334553!important;border-color:#557184!important}
+.artist-select-box input:checked::after{border-color:#c8e8f7!important}
+.albumMetaLine{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.albumInfoInline{width:23px!important;height:23px!important;min-width:23px!important;flex:0 0 23px!important;margin-left:4px!important;border-radius:50%!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;line-height:0!important}
+.albumInfoInline .svgIcon{width:14px!important;height:14px!important;flex:0 0 14px!important;margin:0!important}
+.folderDetailActions{display:flex;align-items:center;gap:8px;flex-wrap:nowrap!important;width:auto}
+.folderDetailActions .folderIconAction{width:38px;height:38px;min-width:38px;flex:0 0 38px;padding:0!important;display:inline-flex!important;align-items:center;justify-content:center;line-height:0!important}
+.folderDetailActions .folderIconAction .svgIcon{width:17px;height:17px;display:block;margin:0!important}
+.folderDetailActions .folderDeleteAction{margin-left:auto}
+.deleteLibraryBtn{color:#ff687b!important;background:rgba(255,73,94,.08)!important;border-color:rgba(255,91,110,.32)!important}
+.deleteLibraryBtn:hover{color:#ff9aa7!important;background:rgba(255,73,94,.16)!important}
+.deleteLibraryBtn .deleteLibraryIcon{display:inline-flex!important;align-items:center;justify-content:center;flex:none;width:20px;height:20px}
+.deleteLibraryBtn .deleteLibraryIcon .svgIcon{width:17px;height:17px;display:block;margin:0!important}
+.deleteLibraryBtn .deleteLibraryText{display:inline!important;white-space:nowrap}
+@media(max-width:700px){
+ .deleteLibraryBtn{display:flex!important;align-items:center;justify-content:flex-start!important;gap:9px}
+ .deleteLibraryBtn .deleteLibraryIcon,.deleteLibraryBtn .deleteLibraryText{display:inline-flex!important}
+ .deleteLibraryBtn .deleteLibraryText{font-size:0!important}
+ .deleteLibraryBtn .deleteLibraryText:after{content:"Delete library";font-size:11px}
+ .folderDetailActions{flex-wrap:wrap!important}
+ .folderDetailActions .folderDeleteAction{margin-left:auto}
+}
+
+/* Keep library tools available in the compact desktop sidebar. */
+@media (max-width:1050px) and (min-width:701px){
+  aside{min-width:0;overflow:visible}
+  .sideBottom{display:grid!important;gap:7px;width:100%;margin-top:8px}
+  .sideAction{
+    width:44px!important;min-width:44px!important;height:42px!important;
+    min-height:42px!important;margin:0 auto!important;padding:0!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    gap:0!important;overflow:visible!important;border-radius:11px!important;
+  }
+  .sideAction .iconInline,.sideAction .deleteLibraryIcon{
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    width:20px!important;height:20px!important;flex:0 0 20px!important;
+  }
+  .sideAction .iconInline .svgIcon,.sideAction .deleteLibraryIcon .svgIcon{
+    display:block!important;width:18px!important;height:18px!important;margin:0!important;
+  }
+  .sideAction>span:not(.iconInline):not(.deleteLibraryIcon){display:none!important}
+  .deleteLibraryBtn{width:44px!important;min-width:44px!important;padding:0!important;justify-content:center!important}
+  .deleteLibraryBtn .deleteLibraryText{display:none!important}
+}
+ 
+/* Compact destructive/import actions on narrow screens without affecting desktop layout. */
+@media(max-width:760px){
+ .entityActions .responsiveIconAction,
+ .presetActionGrid .presetAction,
+ .presetQuickGrid button,
+ .folderDetailActions .folderIconAction{min-width:38px}
+ .entityActions .responsiveIconAction{width:38px;height:38px;padding:0!important;display:inline-flex!important;align-items:center;justify-content:center;line-height:0;font-size:0}
+ .entityActions .responsiveIconAction .svgIcon{width:17px;height:17px;margin:0!important;display:block}
+ .presetActionGrid .presetAction,.presetQuickGrid button{position:relative}
+ .presetActionGrid .presetAction strong,.presetActionGrid .presetAction span:not(.presetActionIcon),
+ .presetQuickGrid button>span{display:none}
+}
 </style></head>
 <body>
 <div class="app">
@@ -956,7 +1043,7 @@ body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-i
       <button class="sideAction btnIcon" id="importBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span>Add music</span></button>
       <button class="sideAction btnIcon" id="folderBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2 2h9v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 7.5v-2h6l2 2"/></svg></span><span>Add folder</span></button>
       <button class="sideAction btnIcon" id="presetBtn"><span class="iconInline"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h10l6 6v10H4z"/><path d="M14 4v6h6"/></svg></span><span>Presets</span></button>
-      <button class="sideAction deleteLibraryBtn" id="deleteLibraryBtn"><span><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7"/><path d="M6 7l1 13h10l1-13"/></svg></span><span>Delete library</span></button>
+      <button class="sideAction deleteLibraryBtn btnIcon" id="deleteLibraryBtn"><span class="deleteLibraryIcon"><svg class="svgIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7"/><path d="M6 7l1 13h10l1-13"/></svg></span><span class="deleteLibraryText">Delete library</span></button>
       <input type="file" id="filePicker" accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf" multiple hidden>
       <input type="file" id="directoryPicker" webkitdirectory directory mozdirectory multiple hidden accept="audio/*,.mp3,.m4a,.mp4,.aac,.flac,.wav,.ogg,.oga,.opus,.webm,.aiff,.aif,.alac,.caf,image/*">
       <input type="file" id="bundlePicker" accept="*/*" hidden>
@@ -1050,7 +1137,13 @@ body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-i
     {id:"green",name:"Green",desc:"Dark green with a calm mint accent",a:"#69aa91",b:"#3c705f",c:"#3c705f",bg:"#09130f",panel:"#111d18",panel2:"#182820",panel3:"#22362c",sidebar:"#0c1712",border:"#2d493b",hover:"#1c3025",swatch:"linear-gradient(120deg,#69aa91,#3c705f)"},
     {id:"pink",name:"Pink",desc:"Dark plum with dusty pink",a:"#c17f9d",b:"#79506d",c:"#79506d",bg:"#160e16",panel:"#211622",panel2:"#2b1c2d",panel3:"#38243a",sidebar:"#1a111b",border:"#493149",hover:"#342238",swatch:"linear-gradient(120deg,#c17f9d,#79506d)"},
     {id:"red",name:"Red",desc:"Dark red with a soft rose accent",a:"#c87979",b:"#79464e",c:"#79464e",bg:"#170d10",panel:"#221518",panel2:"#2e1c20",panel3:"#3b252a",sidebar:"#1b1013",border:"#4d3036",hover:"#362126",swatch:"linear-gradient(120deg,#c87979,#79464e)"},
-    {id:"orange",name:"Orange",desc:"Dark brown with a warm orange accent",a:"#c49368",b:"#79583e",c:"#79583e",bg:"#17110c",panel:"#211910",panel2:"#2c2116",panel3:"#392b1d",sidebar:"#1b140e",border:"#4c3928",hover:"#352719",swatch:"linear-gradient(120deg,#c49368,#79583e)"},
+    {id:"orange",name:"Orange",desc:"Bright true orange with a vivid tangerine accent",a:"#ff7800",b:"#ff4d00",c:"#ff4d00",bg:"#170b04",panel:"#241006",panel2:"#321507",panel3:"#431c08",sidebar:"#1c0d04",border:"#65300d",hover:"#3a1908",swatch:"linear-gradient(120deg,#ff7800,#ff4d00)"},
+    {id:"crimson",name:"Crimson",desc:"Deep red with a vivid crimson accent",a:"#f43f5e",b:"#be123c",c:"#be123c",bg:"#17070d",panel:"#230b13",panel2:"#310e1b",panel3:"#421326",sidebar:"#1b0911",border:"#5b1d30",hover:"#38101f",swatch:"linear-gradient(120deg,#f43f5e,#be123c)"},
+    {id:"gold",name:"Gold",desc:"Warm gold with bright amber highlights",a:"#fbbf24",b:"#d97706",c:"#d97706",bg:"#171105",panel:"#241a08",panel2:"#33240b",panel3:"#45300e",sidebar:"#1c1507",border:"#5d4315",hover:"#392b0d",swatch:"linear-gradient(120deg,#fbbf24,#d97706)"},
+    {id:"indigo",name:"Indigo",desc:"Midnight indigo with electric violet-blue accents",a:"#818cf8",b:"#4f46e5",c:"#4f46e5",bg:"#0b0b1b",panel:"#14142a",panel2:"#1d1d39",panel3:"#29294b",sidebar:"#101022",border:"#36365f",hover:"#222244",swatch:"linear-gradient(120deg,#818cf8,#4f46e5)"},
+    {id:"yellow",name:"Yellow",desc:"Bright golden yellow accents",a:"#f5c842",b:"#b8860b",c:"#b8860b",bg:"#171307",panel:"#241d0b",panel2:"#33290e",panel3:"#453713",sidebar:"#1c1709",border:"#5a4818",hover:"#3a2f12",swatch:"linear-gradient(120deg,#f5c842,#b8860b)"},
+    {id:"cyan",name:"Cyan",desc:"Clear electric cyan accents",a:"#22d3ee",b:"#087eaa",c:"#087eaa",bg:"#061317",panel:"#0b1d23",panel2:"#102a33",panel3:"#173944",sidebar:"#08191e",border:"#24505d",hover:"#15323c",swatch:"linear-gradient(120deg,#22d3ee,#087eaa)"},
+    {id:"lime",name:"Lime",desc:"Vivid lime green accents",a:"#a3e635",b:"#4d7c0f",c:"#4d7c0f",bg:"#101505",panel:"#1a2309",panel2:"#26320d",panel3:"#354414",sidebar:"#131b07",border:"#43551a",hover:"#2b3910",swatch:"linear-gradient(120deg,#a3e635,#4d7c0f)"},
     {id:"teal",name:"Teal",desc:"Dark teal with a muted aqua accent",a:"#65a9a5",b:"#3d7477",c:"#3d7477",bg:"#091415",panel:"#101f20",panel2:"#172a2b",panel3:"#203839",sidebar:"#0b191a",border:"#2a494a",hover:"#1a3334",swatch:"linear-gradient(120deg,#65a9a5,#3d7477)"},
     {id:"grey",name:"Grey",desc:"Almost black with cool grey accents",a:"#a0aab8",b:"#596575",c:"#596575",bg:"#0c0f13",panel:"#15191f",panel2:"#1d232b",panel3:"#282f39",sidebar:"#101419",border:"#343d49",hover:"#252d37",swatch:"linear-gradient(120deg,#a0aab8,#596575)"}
   ];
@@ -1806,7 +1899,26 @@ body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-i
     return restored;
   }
 
-  function setView(v){state.currentView=v;state.selected=[];state.detail=null;localifyClearPages();if(v==="profile"){showProfile();$("#main").scrollTop=0;return}if(v==="listeningStats"){showListeningStats();$("#main").scrollTop=0;return}if(v==="accountSettings"){showAccountSettings();$("#main").scrollTop=0;return}render();$("#main").scrollTop=0}
+
+  function localifySetHash(route){
+    const next="#"+String(route||"home").replace(/^#/,"");
+    if(location.hash!==next)history.pushState(null,"",next);
+  }
+  function localifyApplyHash(){
+    const raw=decodeURIComponent((location.hash||"#home").slice(1));
+    const [kind,...rest]=raw.split("/");
+    const id=rest.join("/");
+    if(kind==="album"&&id&&albumById(id)){showAlbum(id);return}
+    if(kind==="artist"&&id&&artistById(id)){showArtist(id);return}
+    if(kind==="folder"&&id&&folderById(id)){showFolder(id);return}
+    const valid=["home","search","library","albums","folders","artists","playlists","liked","recent","profile","listeningStats","accountSettings"];
+    const view=valid.includes(kind)?kind:"home";
+    state.currentView=view;state.detail=null;state.selected=[];render();
+  }
+  window.addEventListener("hashchange",localifyApplyHash);
+  window.addEventListener("popstate",localifyApplyHash);
+
+  function setView(v){localifySetHash(v);state.currentView=v;state.selected=[];state.detail=null;localifyClearPages();if(v==="profile"){showProfile();$("#main").scrollTop=0;return}if(v==="listeningStats"){showListeningStats();$("#main").scrollTop=0;return}if(v==="accountSettings"){showAccountSettings();$("#main").scrollTop=0;return}render();$("#main").scrollTop=0}
   function empty(title,desc){return `<div class="empty"><h3>${esc(title)}</h3><div>${esc(desc)}</div></div>`}
   function renderNav(){
     $$("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===state.currentView));
@@ -1973,11 +2085,11 @@ body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-i
   }
   function showFolder(id){
     const f=folderById(id);if(!f)return;
-    state.currentView="folders";state.detail={type:"folder",id};state.selected=[];renderNav();
+    localifySetHash("folder/"+encodeURIComponent(id));state.currentView="folders";state.detail={type:"folder",id};state.selected=[];renderNav();
     const items=folderItems(f),albums=items.filter(x=>x.type==="album"),songs=items.filter(x=>x.type==="song"),artists=items.filter(x=>x.type==="artist"),playlists=items.filter(x=>x.type==="playlist");
-    let html='<div class="sectionHead"><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+items.length+' items</div></div><div class="sectionHeadActions folderDetailActions"><button class="secondary" id="folderDownload">'+uiIcon("download")+' Download folder</button><button class="secondary" id="folderEdit">'+uiIcon("edit")+' Edit</button><button class="dangerBtn" id="folderDelete">'+uiIcon("trash")+' Delete folder</button><button class="primary" id="folderAddItems">'+uiIcon("plus")+' Add items</button></div></div>';
-    if(albums.length)html+='<div class="section"><div class="sectionHead"><h2>Albums</h2><span>'+albums.length+' · Drag to reorder</span></div><div class="grid folderAlbumOrder">'+albums.map(x=>albumCard(albumById(x.id))).join("")+'</div></div>';
-    if(songs.length)html+='<div class="section"><div class="sectionHead"><h2>Songs</h2><span>'+songs.length+' · Drag to reorder</span></div><div class="tableWrap">'+trackTable(songs.map(x=>trackById(x.id)).filter(Boolean),false,"folder:"+id,"title",true)+'</div></div>';
+    let html='<div class="sectionHead"><div><h2 class="viewTitle">'+esc(f.name)+'</h2><div class="subtle">'+items.length+' items</div></div><div class="sectionHeadActions folderDetailActions"><button class="secondary folderIconAction" id="folderDownload" title="Download folder" aria-label="Download folder">'+uiIcon("download")+'</button><button class="secondary folderIconAction" id="folderEdit" title="Edit folder" aria-label="Edit folder">'+uiIcon("edit")+'</button><button class="primary folderIconAction" id="folderAddItems" title="Add items" aria-label="Add items">'+uiIcon("plus")+'</button><button class="dangerBtn folderIconAction folderDeleteAction" id="folderDelete" title="Delete folder" aria-label="Delete folder">'+uiIcon("trash")+'</button></div></div>';
+    if(albums.length)html+='<div class="section"><div class="sectionHead"><h2>Albums</h2><span>'+albums.length+'</span></div><div class="grid folderAlbumOrder">'+albums.map(x=>albumCard(albumById(x.id))).join("")+'</div></div>';
+    if(songs.length)html+='<div class="section"><div class="sectionHead"><h2>Songs</h2><span>'+songs.length+'</span></div><div class="tableWrap">'+trackTable(songs.map(x=>trackById(x.id)).filter(Boolean),false,"folder:"+id,"title",true)+'</div></div>';
     if(artists.length)html+='<div class="section"><div class="sectionHead"><h2>Artists</h2><span>'+artists.length+'</span></div><div class="viewGrid">'+artists.map(x=>artistCard(artistById(x.id))).join("")+'</div></div>';
     if(playlists.length)html+='<div class="section"><div class="sectionHead"><h2>Playlists</h2><span>'+playlists.length+'</span></div><div class="viewGrid">'+playlists.map(x=>playlistCard(playlistById(x.id))).join("")+'</div></div>';
     if(!items.length)html+=empty("Folder is empty","Add albums, songs, artists or playlists to this folder.");
@@ -2053,7 +2165,7 @@ body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-i
     const mode=normalizeViewMode(state.viewModes?.songs||"list");
     const tracks=sortedTrackTableTracks(state.tracks,"library","title");
     const body=tracks.length?(mode==="list"?'<div class="tableWrap">'+trackTable(tracks,false,"library","title")+'</div>':localifyPagedHtml(tracks,trackCard,"songs","catalogGrid catalog-songs mode-"+mode)):empty("Your library is empty xD","Use Add music or drag audio files into the Home screen.");
-    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Songs</h2><span>'+state.tracks.length+' songs</span></div><div class="sectionHeadActions">'+viewModeToolbar("songs",mode)+'</div></div>'+body;
+    $("#content").innerHTML='<div class="sectionHead"><div><h2 class="viewTitle">Songs</h2><span>'+state.tracks.length+' songs · '+Object.keys(state.analytics?.completed||{}).filter(id=>state.analytics.completed[id]===true&&trackById(id)).length+'/'+state.tracks.length+' completed ✓</span></div><div class="sectionHeadActions">'+viewModeToolbar("songs",mode)+'</div></div>'+body;
     if(mode==="list")bindTrackTable();else bindCards();
   }
   function renderAlbums(){
@@ -2244,6 +2356,7 @@ body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-i
   }
   function renderCurrentViewWithoutScroll(){
     __prepareLocalifyDerived();
+    if(state.currentView==="lyrics"){renderPlayer();renderNowSidebar();applyContextArtworkTheme();return;}
     if(state.detail?.type==="album")showAlbum(state.detail.id,true);
     else if(state.detail?.type==="artist")showArtist(state.detail.id,true);
     else if(state.detail?.type==="playlist")showPlaylist(state.detail.id,true);
@@ -2268,14 +2381,13 @@ body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-i
 
   function showAlbum(id,keepDetail=false){
     __prepareLocalifyDerived();
-    const a=albumById(id);if(!a)return; state.detail={type:"album",id};
+    const a=albumById(id);if(!a)return; localifySetHash("album/"+encodeURIComponent(id));state.detail={type:"album",id};
     const tracks=sortAlbumTracks(__localifyCatalog().byAlbum.get(id)||[]);
     const artistNames=artistNamesForAlbum(a);
-    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img class="localifyCoverImage" src="${esc(coverForAlbum(a,a.cover))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${artistLinksForAlbumHtml(a)||"Unknown Artist"} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="secondary" id="albumDownload">${uiIcon("download")} Download album</button><button class="dangerBtn" id="albumDelete">${uiIcon("trash")} Delete album</button><button class="secondary infoBtn" id="albumInfo" title="Album credits">${uiIcon("info")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
+    $("#content").innerHTML=`<div class="profileHero"><div class="profileArt">${coverForAlbum(a,a.cover)?`<img class="localifyCoverImage" src="${esc(coverForAlbum(a,a.cover))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:fallbackArt("album")}</div><div><h2 class="viewTitle">${esc(a.title)}</h2><div class="subtle">${artistLinksForAlbumHtml(a)||"Unknown Artist"} • ${tracks.length} songs • ${durationLabel(tracks)}${a.year?` • ${esc(a.year)}`:""}</div><div class="metaLine albumMetaLine">${a.genre?`<span class="metaPill">${esc(a.genre)}</span>`:""}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}<button class="secondary infoBtn albumInfoInline" id="albumInfo" title="Album credits" aria-label="Album credits">${uiIcon("info")}</button></div><div class="entityActions"><button class="primary" id="albumPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="albumAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary iconOnlyAction" id="albumEdit" title="Edit album" aria-label="Edit album">${uiIcon("edit")}</button><button class="dangerBtn iconOnlyAction responsiveIconAction" id="albumDelete" title="Delete album" aria-label="Delete album">${uiIcon("trash")}</button></div></div></div>${a.description?`<div class="subtle">${esc(a.description)}</div>`:""}${tracks.length?`<div class="section"><div class="tableWrap">${trackTable(tracks,true,"album:"+id,"track",true)}</div></div>`:empty("Album is empty","Add songs to this album. New tracks inherit the album artist, cover and credits by default.")}`;
     $("#albumPlay").onclick=()=>playQueue(tracks,0);
     $("#albumAdd").onclick=()=>pickFiles({albumId:id});
     $("#albumEdit").onclick=()=>editAlbum(id);
-    $("#albumDownload").onclick=()=>downloadAlbumArchive(id);
     $("#albumDelete").onclick=()=>deleteAlbum(id);
     $("#albumInfo").onclick=()=>showCredits(id);
     bindTrackTable();
@@ -2284,7 +2396,7 @@ body.theme-gradient .customThemeEditor input[type=text]{background:var(--theme-i
 
   function showArtist(id,keepDetail=false){
     __prepareLocalifyDerived();
-    const a=artistById(id);if(!a)return; state.detail={type:"artist",id}; const tracks=__localifyCatalog().byArtist.get(id)||[]; const albums=state.albums.filter(x=>artistIdsForAlbum(x).includes(id));
+    const a=artistById(id);if(!a)return; localifySetHash("artist/"+encodeURIComponent(id));state.detail={type:"artist",id}; const tracks=__localifyCatalog().byArtist.get(id)||[]; const albums=state.albums.filter(x=>artistIdsForAlbum(x).includes(id));
     $("#content").innerHTML=`<div class="profileHero"><div class="profileArt artist">${a.image?`<img class="localifyCoverImage" src="${esc(a.image)}" alt="">`:fallbackArt("artist")}</div><div><h2 class="viewTitle">${esc(a.name)}</h2><div class="subtle">${tracks.length} songs • ${albums.length} albums</div><div class="metaLine">${(a.genres||[]).map(g=>`<span class="metaPill">${esc(g)}</span>`).join("")}${a.label?`<span class="metaPill">${esc(a.label)}</span>`:""}</div><div class="entityActions"><button class="primary" id="artistPlay">${uiIcon("play")} Play</button><button class="secondary iconOnlyAction" id="artistEdit" title="Edit artist" aria-label="Edit artist">${uiIcon("edit")}</button><button class="secondary iconOnlyAction" id="artistAdd" title="Add songs" aria-label="Add songs">${uiIcon("plus")}</button><button class="secondary" id="artistAlbum">${uiIcon("plus")} Create album</button></div></div></div>${a.bio?`<div class="subtle">${esc(a.bio)}</div>`:""}${a.website?`<div class="subtle" style="margin-top:7px">${esc(a.website)}</div>`:""}<div class="section"><div class="sectionHead"><h2>Albums</h2><span>${albums.length}</span></div>${albums.length?'<div class="grid">'+albums.map(albumCard).join("")+'</div>':empty("No albums yet","Create an album for this artist.")}</div><div class="section"><div class="sectionHead"><h2>Songs</h2><span>${tracks.length}</span></div>${tracks.length?`<div class="tableWrap">${trackTable(tracks)}</div>`:empty("No songs yet","Add songs to this artist.")}</div>`;
     $("#artistPlay").onclick=()=>playQueue(tracks,0);$("#artistEdit").onclick=()=>editArtist(id);$("#artistAdd").onclick=()=>pickFiles({artistId:id});$("#artistAlbum").onclick=()=>editAlbum(null,{artistIds:[id]});bindTrackTable();bindAlbumCards();
     applyContextArtworkTheme();
@@ -4381,7 +4493,7 @@ function editLocalProfile(){
     const m=$("#contextMenu");
     const playlist=kind==="playlist"?playlistById(playlistId):null;
     const playlistAction=playlist?`<button data-a="remove-playlist" class="dangerText">${uiIcon("trash")} Remove from playlist</button>`:`<button data-a="playlist">${uiIcon("playlist")} Add to playlist</button>`;
-    m.innerHTML=`<button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button>${playlistAction}<button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button><button data-a="download">${uiIcon("download")} Download</button>`;
+    m.innerHTML=`<button data-a="queue">${uiIcon("plus")} Add to queue</button><button data-a="like">${uiIcon("heart")} ${state.liked.includes(id)?"Unlike":"Like"}</button>${playlistAction}<button data-a="lyrics">${uiIcon("lyrics")} View lyrics</button><button data-a="edit">${uiIcon("edit")} Edit song</button><button data-a="delete" class="dangerText">${uiIcon("trash")} Remove from library</button><button data-a="download">${uiIcon("download")} Download</button><button data-a="download-preset">${uiIcon("download")} Download Preset</button>`;
     m.classList.add("show");
     const rect=m.getBoundingClientRect(),pad=8;
     m.style.left=Math.max(pad,Math.min(x,innerWidth-rect.width-pad))+"px";
@@ -4397,6 +4509,7 @@ function editLocalProfile(){
       if(a==="edit")editTrack(id);
       if(a==="delete"){if(confirm(`Remove this song from Localify?`)){removeTracks([id]);await save();scheduleManagedLibrarySync()}}
       if(a==="download")downloadTrack(id);
+      if(a==="download-preset")exportPreset("songs",[id]);
     })
   }
   document.addEventListener("click",e=>{const button=e.target.closest(".more-row");if(!button)return;const row=button.closest(".track-row");if(!row)return;e.preventDefault();e.stopPropagation();const inPlaylist=state.detail?.type==="playlist";openContext(e.clientX,e.clientY,row.dataset.id,inPlaylist?"playlist":"song",inPlaylist?state.detail.id:null)},true);
@@ -4410,6 +4523,7 @@ function editLocalProfile(){
     });
     const timed=rows.filter(r=>r.time!==null);
     const hasTimed=timed.length>0;
+    state.detail=null;state.currentView="lyrics";
     $("#content").innerHTML='<div class="profileHero"><div class="profileArt">'+coverHtml(t)+'</div><div><h2 class="viewTitle">'+esc(t.title)+'</h2><div class="subtle">'+artistLinksForTrackHtml(t)+' • '+albumLinkForTrackHtml(t)+'</div><div class="entityActions"><button class="primary" id="playLyrics">'+uiIcon("play")+' Play</button><button class="secondary" id="editLyrics">'+uiIcon("edit")+' Edit song</button></div></div></div><div class="lyricsPanel '+(hasTimed?"syncedLyrics":"")+'" id="lyricsDisplay">'+(rows.length?rows.map(r=>'<div class="lyricLine '+(r.time!==null?"clickableLyric":"")+'" data-lyric-index="'+r.index+'" '+(r.time!==null?'role="button" tabindex="0" aria-label="Play from '+Math.floor(r.time/60)+':'+String(Math.floor(r.time%60)).padStart(2,"0")+'" data-lyric-time="'+r.time+'"':'')+'>'+esc(r.text||" ")+'</div>').join(""):'No lyrics saved for this song yet.')+'</div>';
     $("#playLyrics").onclick=()=>playId(id);$("#editLyrics").onclick=()=>editTrack(id);
     const seekToLyric=time=>{
@@ -5489,6 +5603,7 @@ async function renderSongWithEffectsWav(blob,eq){
     state.selected=[];
     const persisted=true;
     render();renderPlayer();
+    if(kind==="albums"&&Array.isArray(p.albums)&&p.albums.length){const target=albumMap.get(p.albums[0].id);if(target&&albumById(target))showAlbum(target)}else if(kind==="songs"&&Array.isArray(p.tracks)&&p.tracks.length){const target=trackMap.get(p.tracks[0].id),t=trackById(target);if(t){state.search=t.title;state.currentView="search";state.searchFilter="all";render();const input=$("#searchInput");if(input)input.value=t.title}}else if(kind==="folders"&&Array.isArray(p.folders)&&p.folders.length){const f=state.folders.find(x=>x.name===p.folders[0].name);if(f)showFolder(f.id)}
     toast(presetLabel(kind)+' preset '+(mode==='set'?'set':'added')+'.')
   }catch(e){console.error('Localify backup import failed',e);toast(e?.message||'Could not import this Localify backup.')}}
   function publicShareCover(v){const s=typeof v==="string"?v:"";return /^(https?:\/\/)/i.test(s)?s:""}
@@ -5930,7 +6045,7 @@ function submitGlobalSearch(){
       }
     }
     renderProfileTopButton();
-    render();
+    if(location.hash)localifyApplyHash();else render();
     const managedVisibilitySync=()=>{if(document.visibilityState==="visible"&&state.libraryFolderHandle)scanManagedLibraryFolder({silent:true})};
     document.addEventListener("visibilitychange",managedVisibilitySync);
     setInterval(()=>{if(document.visibilityState==="visible"&&state.libraryFolderHandle)scanManagedLibraryFolder({silent:true})},20000);
